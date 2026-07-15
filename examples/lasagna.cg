@@ -1,0 +1,130 @@
+culinograph 0.1;
+
+recipe lasagna {
+    title "Lasagna";
+
+    type Sauce as Material<Mass> {
+        state temperature as Temperature;
+        state viscosity as Viscosity;
+    }
+
+    ingredient beef measured by mass {
+        name "ground beef";
+        quantity 500 g;
+    }
+
+    ingredient tomatoes measured by mass {
+        name "canned tomatoes";
+        quantity 800 g;
+    }
+
+    ingredient pasta measured by mass {
+        name "lasagna noodles";
+        quantity 400 g;
+    }
+
+    ingredient ricotta measured by mass {
+        quantity 450 g;
+        allergen milk;
+    }
+
+    equipment oven as Oven measured by temperature {
+        capacity 1 chamber;
+        state temperature 20 C;
+        state mode off;
+    }
+
+    resource sauce_pan as Pan<Volume> {
+        capacity 3 L;
+    }
+
+    resource pasta_pot as Pot<Volume> {
+        capacity 8 L;
+    }
+
+    resource baking_dish as BakingDish<Volume> {
+        size 9 in by 13 in;
+    }
+
+    process sauce {
+        operation brown_beef does heat {
+            input beef;
+            target sauce_pan;
+            duration 8 min;
+            labor active;
+            produces browned_beef;
+        }
+
+        operation simmer does heat {
+            input [browned_beef, tomatoes];
+            target sauce_pan;
+            after brown_beef;
+            duration 30 min;
+            labor passive;
+            produces meat_sauce;
+        }
+    }
+
+    process pasta_work {
+        operation cook_pasta does heat {
+            input pasta;
+            target pasta_pot;
+            duration 10 min;
+            labor monitor;
+            produces cooked_pasta;
+        }
+    }
+
+    process oven_work {
+        operation preheat does setstate {
+            target oven;
+            set oven.mode = bake;
+            set oven.temperature = 190 C;
+            duration estimated 15 min;
+            labor passive;
+        }
+    }
+
+    process assembly {
+        operation assemble does combine {
+            input [meat_sauce, cooked_pasta, ricotta];
+            target baking_dish;
+            after [sauce.simmer, pasta_work.cook_pasta];
+            duration estimated 12 min;
+            labor active;
+            produces assembled_lasagna;
+        }
+
+        operation bake does heat {
+            input assembled_lasagna;
+            uses oven exclusively;
+            after [assemble, oven_work.preheat];
+            requires oven.temperature >= 190 C;
+            duration 40 min;
+            labor passive;
+            produces baked_lasagna;
+        }
+
+        operation rest does rest {
+            input baked_lasagna;
+            after bake;
+            duration 15 min;
+            labor passive;
+            produces finished_lasagna;
+        }
+    }
+
+    parallel initial_work as ParallelGroup {
+        members [sauce.brown_beef, pasta_work.cook_pasta, oven_work.preheat];
+    }
+
+    yield finished as Yield<Serving> {
+        product finished_lasagna;
+        portions 8 count;
+
+        serving default as Serving {
+            amount 1 slice;
+            mass estimated 240 g;
+        }
+    }
+}

@@ -1,0 +1,176 @@
+export interface RecipeBookSummary {
+  id: string;
+  symbol: string;
+  title: string;
+  description?: string | null;
+  protocolVersion: string;
+  recipeCount: number;
+  updatedAt: string;
+}
+
+export interface RecipeSummary {
+  id: string;
+  bookId?: string | null;
+  symbol: string;
+  title: string;
+  protocolVersion: string;
+  updatedAt: string;
+}
+
+export interface RecipeDocument extends RecipeSummary {
+  sourceText: string;
+}
+
+export interface Diagnostic {
+  severity: "error" | "warning" | "info" | "information";
+  message: string;
+  start?: number;
+  end?: number;
+}
+
+export interface RecipeOutline {
+  title: string;
+  symbol: string;
+  protocolVersion: string;
+  typeCount: number;
+  resourceCount: number;
+  processCount: number;
+  operationCount: number;
+  servingCount: number;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  diagnostics: Diagnostic[];
+  outline?: RecipeOutline;
+}
+
+export type FormulaBasis = "reference_percent" | "percent_of_total" | "absolute_mass";
+
+export interface FormulaIngredient {
+  id: string;
+  symbol: string;
+  name: string;
+  stage: string;
+  basis: FormulaBasis;
+  percentage?: number | null;
+  mass_grams?: number | null;
+  is_reference: boolean;
+  is_flour: boolean;
+  water_fraction: number;
+  scalable: boolean;
+  properties: Record<string, unknown>;
+}
+
+export interface Formula {
+  id: string;
+  recipe_id?: string | null;
+  symbol: string;
+  name: string;
+  basis: FormulaBasis;
+  ingredients: FormulaIngredient[];
+  properties: Record<string, unknown>;
+}
+
+export interface FormulaLineResult {
+  ingredient_id: string;
+  symbol: string;
+  name: string;
+  stage: string;
+  percentage?: number | null;
+  mass_grams: number;
+  is_reference: boolean;
+  is_flour: boolean;
+  total_percentage: number;
+}
+
+export interface FormulaResult {
+  target_mass_grams: number;
+  reference_mass_grams: number;
+  total_flour_grams: number;
+  total_mass_grams: number;
+  hydration_percent: number;
+  prefermented_flour_percent: number;
+  lines: FormulaLineResult[];
+}
+
+export type PercentageView = "reference" | "total";
+export interface PercentageConversion {
+  view: PercentageView;
+  reference_mass_grams: number;
+  total_mass_grams: number;
+  lines: FormulaLineResult[];
+}
+
+export interface NutritionFacts {
+  servingsPerContainer: number;
+  servingSize: string;
+  servingSizeGrams?: number | null;
+  calories: number;
+  totalFatGrams: number;
+  saturatedFatGrams: number;
+  transFatGrams: number;
+  cholesterolMilligrams: number;
+  sodiumMilligrams: number;
+  totalCarbohydrateGrams: number;
+  dietaryFiberGrams: number;
+  totalSugarsGrams: number;
+  addedSugarsGrams: number;
+  proteinGrams: number;
+  vitaminDMicrograms?: number | null;
+  calciumMilligrams?: number | null;
+  ironMilligrams?: number | null;
+  potassiumMilligrams?: number | null;
+}
+export type RecipeExportFormat =
+  "web" | "markdown" | "plain_text" | "ingredient_csv" | "json" | "print_html" | "epub";
+export interface RecipeExportOptions {
+  siteTitle?: string | null;
+  author?: string | null;
+  description?: string | null;
+  includeSource: boolean;
+  formats: RecipeExportFormat[];
+  nutrition: NutritionFacts;
+}
+export interface RecipeExportResponse {
+  fileName: string;
+  mediaType: string;
+  archiveBase64: string;
+  files: string[];
+}
+
+export interface PublicImportSettings {
+  apiKeyConfigured: boolean;
+  openaiModel: string;
+  useLocalOcr: boolean;
+  tesseractCommand: string;
+}
+export interface RecipeImageInput {
+  fileName: string;
+  mediaType: string;
+  dataBase64: string;
+}
+export interface RecipeImportResult {
+  title: string;
+  sourceText: string;
+  extractedText: string;
+  warnings: string[];
+  validation: ValidationResult;
+}
+
+export interface ScheduledOperation {
+  symbol: string;
+  process: string;
+  action: string;
+  startSeconds: number;
+  endSeconds: number;
+  durationSeconds: number;
+  labor?: string | null;
+  dependencies: string[];
+  resources: string[];
+}
+export interface RecipeSchedule {
+  operations: ScheduledOperation[];
+  makespanSeconds: number;
+  criticalPath: string[];
+}

@@ -1,0 +1,28 @@
+document       = "culinograph", version, ";", recipe ;
+recipe         = "recipe", identifier, [ "as", type_ref ], block ;
+block          = "{", { declaration | property }, "}" ;
+declaration    = type_decl | resource_decl | formula_decl | process_decl | operation_decl | yield_decl | serving_decl ;
+type_decl      = "type", identifier, "as", type_ref, block ;
+resource_decl  = resource_kind, identifier, [ "as", type_ref ], [ measurement ], block
+               | "resource", identifier, "as", type_ref, [ measurement ], block ;
+resource_kind  = "ingredient" | "material" | "container" | "equipment" | "environment" | "labor" ;
+measurement    = "measured", "by", dimension ;
+dimension      = "mass" | "volume" | "count" | "time" | "temperature" | "length" | "area" | "energy" | "ratio" | "concentration" ;
+formula_decl   = "formula", identifier, formula_basis, "{", { formula_ingredient | property }, "}" ;
+formula_basis  = [ "as", type_ref ] | [ "relative", "to", identifier ] | [ "of", "total" ] ;
+formula_ingredient = "ingredient", identifier, [ "as", type_ref ], [ measurement ], block ;
+process_decl   = "process", identifier, [ "as", type_ref ], "{", { process_decl | operation_decl | property }, "}" ;
+operation_decl = "operation", identifier, ( [ "as", type_ref ] | [ "does", identifier ] ), block ;
+yield_decl     = "yield", identifier, [ "as", type_ref ], [ measurement ], block ;
+serving_decl   = "serving", identifier, [ "as", type_ref ], [ measurement ], block ;
+property       = identifier, value, ";" ;
+type_ref       = identifier, [ "<", type_ref, { ",", type_ref }, ">" ] ;
+value          = string | number | percentage | quantity | identifier | list ;
+quantity       = number, identifier ;
+list           = "[", [ value, { ",", value } ], "]" ;
+
+(* Recipe-book document root *)
+document        = protocol_header, ( recipe | recipe_book ) ;
+recipe_book     = ( "book" | "recipe_book" ), identifier, [ "as", type_ref ], "{", { book_member }, "}" ;
+book_member     = title_property | description_property | recipe | property ;
+description_property = "description", string, ";" ;

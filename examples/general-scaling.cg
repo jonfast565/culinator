@@ -1,0 +1,42 @@
+culinograph 0.2;
+
+recipe tomato_sauce {
+    title "Tomato Sauce";
+
+    ingredient tomatoes measured by mass { name "tomatoes"; quantity 2400 g; }
+    ingredient onion measured by mass { name "onion"; quantity 300 g; }
+    ingredient olive_oil measured by mass { name "olive oil"; quantity 120 g; }
+    ingredient salt measured by mass { name "salt"; quantity 36 g; }
+
+    formula production_formula relative to tomatoes {
+        name "Tomato Sauce Production Formula";
+        ingredient tomatoes measured by mass {
+            percentage 100%;
+            mass 2400 g;
+            reference true;
+        }
+        ingredient onion measured by mass {
+            percentage 12.5%;
+            mass 300 g;
+        }
+        ingredient olive_oil measured by mass {
+            percentage 5%;
+            mass 120 g;
+        }
+        ingredient salt measured by mass {
+            percentage 1.5%;
+            mass 36 g;
+        }
+    }
+
+    process cook {
+        operation simmer does heat {
+            input [tomatoes, onion, olive_oil, salt];
+            labor passive;
+            duration 45 min;
+        }
+    }
+
+    yield sauce measured by mass { mass 2400 g; }
+    serving portion measured by mass { mass 125 g; default true; }
+}

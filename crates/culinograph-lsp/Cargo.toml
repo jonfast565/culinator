@@ -1,0 +1,13 @@
+[package]
+name = "culinograph-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+culinograph-parser = { path = "../culinograph-parser" }
+culinograph-validator = { path = "../culinograph-validator" }
+tokio.workspace = true
+tower-lsp.workspace = true
+
+[lints]
+workspace = true

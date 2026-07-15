@@ -1,0 +1,34 @@
+culinograph 0.3;
+
+book family_favorites as RecipeBook {
+    title "Family Favorites";
+    description "Recipes we make often.";
+
+    recipe sunday_bread {
+        title "Sunday Bread";
+
+        ingredient flour measured by mass {
+            quantity 500 g;
+        }
+
+        ingredient water measured by mass {
+            quantity 340 g;
+        }
+
+        process dough {
+            operation mix does mix {
+                input [flour, water];
+                duration 8 min;
+                labor active;
+            }
+        }
+    }
+
+    recipe tomato_soup {
+        title "Tomato Soup";
+
+        ingredient tomatoes measured by mass {
+            quantity 800 g;
+        }
+    }
+}

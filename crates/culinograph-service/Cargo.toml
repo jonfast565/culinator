@@ -1,0 +1,29 @@
+[package]
+name = "culinograph-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+culinograph-validator = { path = "../culinograph-validator" }
+culinograph-application = { path = "../culinograph-application" }
+culinograph-models = { path = "../culinograph-models" }
+axum.workspace = true
+culinograph-export = { path = "../culinograph-export" }
+culinograph-import = { path = "../culinograph-import" }
+base64.workspace = true
+culinograph-core = { path = "../culinograph-core" }
+culinograph-parser = { path = "../culinograph-parser" }
+culinograph-sqlite = { path = "../culinograph-sqlite" }
+culinograph-scheduler = { path = "../culinograph-scheduler" }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tower-http.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

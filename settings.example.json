@@ -1,0 +1,6 @@
+{
+  "openai_api_key": "",
+  "openai_model": "gpt-4.1-mini",
+  "use_local_ocr": true,
+  "tesseract_command": "tesseract"
+}

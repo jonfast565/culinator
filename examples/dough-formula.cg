@@ -1,0 +1,30 @@
+culinograph 0.1;
+
+recipe country_loaf as Recipe {
+    title "Country Loaf";
+
+    formula dough as BakersFormula {
+        target 1800 g;
+
+        ingredient bread_flour as Flour<BakersPercent> {
+            stage final;
+            baker 80%;
+        }
+
+        ingredient levain_flour as Flour<BakersPercent> {
+            stage levain;
+            baker 20%;
+        }
+
+        ingredient water as Liquid<BakersPercent> {
+            stage final;
+            baker 70%;
+            water_fraction 1;
+        }
+
+        ingredient salt as Ingredient<BakersPercent> {
+            stage final;
+            baker 2%;
+        }
+    }
+}

@@ -1,0 +1,15 @@
+[package]
+name = "culinograph-models"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+async-trait.workspace = true
+culinograph-core = { path = "../culinograph-core" }
+serde.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,21 @@
+[package]
+name = "culinograph-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+culinograph-export = { path = "../culinograph-export" }
+culinograph-models = { path = "../culinograph-models" }
+culinograph-core = { path = "../culinograph-core" }
+culinograph-parser = { path = "../culinograph-parser" }
+culinograph-validator = { path = "../culinograph-validator" }
+culinograph-sqlite = { path = "../culinograph-sqlite" }
+rusqlite.workspace = true
+serde_json.workspace = true
+
+uuid.workspace = true
+
+[lints]
+workspace = true
