@@ -3,6 +3,11 @@ name = "culinograph-nutrition-fdc"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+autobins = false
+
+[[bin]]
+name = "culinograph-fdc-build"
+path = "src/bin/culinograph-fdc-build.rs"
 
 [dependencies]
 anyhow.workspace = true

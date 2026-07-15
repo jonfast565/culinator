@@ -9,6 +9,7 @@ mod scheduler;
 pub use parser::DocumentParser;
 pub use repository::{CatalogRepository, FormulaRepository, RecipeBookRepository, RecipeRepository};
 pub use validator::RecipeValidator;
+pub use export::RecipeExporter;
 pub use nutrition::{NutritionCatalog, NutritionImportStore};
 pub use import::{OcrEngine, RecipeImageInterpreter, SettingsStore};
 pub use scheduler::RecipeScheduler;

@@ -9,5 +9,8 @@ culinograph-core = { path = "../culinograph-core" }
 culinograph-models = { path = "../culinograph-models" }
 serde.workspace = true
 
+[dev-dependencies]
+uuid.workspace = true
+
 [lints]
 workspace = true

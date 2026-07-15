@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+autobins = false
+
+[[bin]]
+name = "culinograph-service"
+path = "src/bin/culinograph-service.rs"
 
 [dependencies]
 culinograph-validator = { path = "../culinograph-validator" }

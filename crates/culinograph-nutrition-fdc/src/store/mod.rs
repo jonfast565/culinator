@@ -5,6 +5,7 @@ use culinograph_models::{
 };
 use rusqlite::{params, Connection, OptionalExtension};
 use std::path::Path;
+use std::sync::Mutex;
 
 const SCHEMA: &str = r#"
 PRAGMA foreign_keys = ON;
@@ -68,7 +69,7 @@ END;
 "#;
 
 pub struct SqliteNutritionCatalog {
-    connection: Connection,
+    connection: Mutex<Connection>,
     imported_rows: usize,
 }
 
@@ -76,7 +77,7 @@ impl SqliteNutritionCatalog {
     pub fn open(path: impl AsRef<Path>) -> AnyResult<Self> {
         let connection = Connection::open(path)?;
         connection.execute_batch(SCHEMA)?;
-        Ok(Self { connection, imported_rows: 0 })
+        Ok(Self { connection: Mutex::new(connection), imported_rows: 0 })
     }
 
     pub fn update_branded_fields(
@@ -89,7 +90,7 @@ impl SqliteNutritionCatalog {
         serving_size: Option<f64>,
         serving_size_unit: Option<&str>,
     ) -> AnyResult<()> {
-        self.connection.execute(
+        self.lock().execute(
             "UPDATE foods SET brand_owner=?2, brand_name=?3, gtin_upc=?4, ingredients=?5, serving_size=?6, serving_size_unit=?7 WHERE fdc_id=?1",
             params![fdc_id, brand_owner, brand_name, gtin_upc, ingredients, serving_size, serving_size_unit],
         )?;
@@ -99,13 +100,17 @@ impl SqliteNutritionCatalog {
     fn persistence(error: impl std::fmt::Display) -> ApplicationError {
         ApplicationError::Persistence(error.to_string())
     }
+
+    fn lock(&self) -> std::sync::MutexGuard<'_, Connection> {
+        self.connection.lock().expect("nutrition catalog connection mutex poisoned")
+    }
 }
 
 impl NutritionImportStore for SqliteNutritionCatalog {
     fn begin_import(&mut self, release: &str) -> std::result::Result<(), ApplicationError> {
-        self.connection.execute_batch("PRAGMA foreign_keys=OFF; PRAGMA defer_foreign_keys=ON;")
+        self.lock().execute_batch("PRAGMA foreign_keys=OFF; PRAGMA defer_foreign_keys=ON;")
             .map_err(Self::persistence)?;
-        self.connection.execute(
+        self.lock().execute(
             "INSERT INTO metadata(key,value) VALUES('fdc_release',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             [release],
         ).map_err(Self::persistence)?;
@@ -113,7 +118,7 @@ impl NutritionImportStore for SqliteNutritionCatalog {
     }
 
     fn upsert_nutrient(&mut self, item: &NutrientDefinition) -> std::result::Result<(), ApplicationError> {
-        self.connection.execute(
+        self.lock().execute(
             "INSERT INTO nutrients(id,number,name,unit_name,rank) VALUES(?1,?2,?3,?4,?5)
              ON CONFLICT(id) DO UPDATE SET number=excluded.number,name=excluded.name,unit_name=excluded.unit_name,rank=excluded.rank",
             params![item.id, item.number, item.name, item.unit_name, item.rank],
@@ -122,7 +127,7 @@ impl NutritionImportStore for SqliteNutritionCatalog {
     }
 
     fn upsert_food(&mut self, item: &FoodRecord) -> std::result::Result<(), ApplicationError> {
-        self.connection.execute(
+        self.lock().execute(
             "INSERT INTO foods(fdc_id,data_type,description,food_category_id,publication_date,brand_owner,brand_name,gtin_upc,ingredients,serving_size,serving_size_unit)
              VALUES(?1,?2,?3,?4,?5,?6,?7,?8,?9,?10,?11)
              ON CONFLICT(fdc_id) DO UPDATE SET data_type=excluded.data_type,description=excluded.description,food_category_id=excluded.food_category_id,publication_date=excluded.publication_date",
@@ -130,13 +135,13 @@ impl NutritionImportStore for SqliteNutritionCatalog {
         ).map_err(Self::persistence)?;
         self.imported_rows += 1;
         if self.imported_rows % 50_000 == 0 {
-            self.connection.execute_batch("PRAGMA wal_checkpoint(PASSIVE);").map_err(Self::persistence)?;
+            self.lock().execute_batch("PRAGMA wal_checkpoint(PASSIVE);").map_err(Self::persistence)?;
         }
         Ok(())
     }
 
     fn upsert_food_nutrient(&mut self, item: &FoodNutrientRecord) -> std::result::Result<(), ApplicationError> {
-        self.connection.execute(
+        self.lock().execute(
             "INSERT OR REPLACE INTO food_nutrients(id,fdc_id,nutrient_id,amount,data_points,derivation_id,min,max,median)
              VALUES(COALESCE(?1, (SELECT IFNULL(MAX(id),0)+1 FROM food_nutrients)),?2,?3,?4,?5,?6,?7,?8,?9)",
             params![item.id,item.fdc_id,item.nutrient_id,item.amount,item.data_points,item.derivation_id,item.min,item.max,item.median],
@@ -145,7 +150,7 @@ impl NutritionImportStore for SqliteNutritionCatalog {
     }
 
     fn finish_import(&mut self) -> std::result::Result<(), ApplicationError> {
-        self.connection.execute_batch(
+        self.lock().execute_batch(
             "PRAGMA foreign_keys=ON; INSERT INTO foods_fts(foods_fts) VALUES('rebuild'); ANALYZE; PRAGMA optimize; PRAGMA wal_checkpoint(TRUNCATE);",
         ).map_err(Self::persistence)
     }
@@ -153,7 +158,8 @@ impl NutritionImportStore for SqliteNutritionCatalog {
 
 impl NutritionCatalog for SqliteNutritionCatalog {
     fn search_foods(&self, query: &str, limit: usize) -> std::result::Result<Vec<NutritionSearchResult>, ApplicationError> {
-        let mut statement = self.connection.prepare(
+        let connection = self.lock();
+        let mut statement = connection.prepare(
             "SELECT f.fdc_id,f.description,f.data_type,f.brand_owner,f.serving_size,f.serving_size_unit
              FROM foods_fts x JOIN foods f ON f.fdc_id=x.rowid WHERE foods_fts MATCH ?1 ORDER BY rank LIMIT ?2",
         ).map_err(Self::persistence)?;
@@ -164,7 +170,7 @@ impl NutritionCatalog for SqliteNutritionCatalog {
     }
 
     fn food(&self, fdc_id: i64) -> std::result::Result<Option<FoodRecord>, ApplicationError> {
-        self.connection.query_row(
+        self.lock().query_row(
             "SELECT fdc_id,data_type,description,food_category_id,publication_date,brand_owner,brand_name,gtin_upc,ingredients,serving_size,serving_size_unit FROM foods WHERE fdc_id=?1",
             [fdc_id], |row| Ok(FoodRecord {
                 fdc_id: row.get(0)?, data_type: row.get(1)?, description: row.get(2)?, food_category_id: row.get(3)?, publication_date: row.get(4)?,
@@ -174,7 +180,8 @@ impl NutritionCatalog for SqliteNutritionCatalog {
     }
 
     fn nutrients_for_food(&self, fdc_id: i64) -> std::result::Result<Vec<FoodNutrientRecord>, ApplicationError> {
-        let mut statement = self.connection.prepare(
+        let connection = self.lock();
+        let mut statement = connection.prepare(
             "SELECT id,fdc_id,nutrient_id,amount,data_points,derivation_id,min,max,median FROM food_nutrients WHERE fdc_id=?1",
         ).map_err(Self::persistence)?;
         statement.query_map([fdc_id], |row| Ok(FoodNutrientRecord {

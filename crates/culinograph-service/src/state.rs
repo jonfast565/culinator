@@ -68,4 +68,12 @@ impl ServiceState {
 }
 
 #[cfg(test)]
+pub(crate) fn test_state() -> ServiceState {
+    let base = std::env::temp_dir().join(format!("culinograph-service-test-{}", uuid::Uuid::new_v4()));
+    std::fs::create_dir_all(&base).expect("create temp dir");
+    ServiceState::sqlite(base.join("catalog.sqlite3"), base.join("settings.json"))
+        .expect("initialize service state")
+}
+
+#[cfg(test)]
 mod test;
