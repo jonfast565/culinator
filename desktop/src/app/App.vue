@@ -1,6 +1,7 @@
 <script setup lang="ts">
+/* global PointerEvent, HTMLElement */
 import { onBeforeUnmount, ref } from "vue";
-import { Save, Trash2, Plus, Route, Database, ScanLine } from "lucide-vue-next";
+import { Save, Trash2, Plus, Route, Database } from "lucide-vue-next";
 import RecipeBookSidebar from "../features/library/components/RecipeBookSidebar.vue";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
 import SourceEditor from "../features/recipe-editor/components/SourceEditor.vue";
@@ -18,6 +19,29 @@ const stopStatus = onConnectionStatus((status) => {
   connection.value = status;
 });
 onBeforeUnmount(stopStatus);
+
+const clampInspector = (width: number): number => Math.min(760, Math.max(280, width));
+const inspectorWidth = ref(
+  clampInspector(Number(window.localStorage.getItem("cg:inspector-width")) || 390),
+);
+let resizeStartX = 0;
+let resizeStartWidth = 0;
+function startResize(event: PointerEvent): void {
+  resizeStartX = event.clientX;
+  resizeStartWidth = inspectorWidth.value;
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  window.addEventListener("pointermove", onResize);
+  window.addEventListener("pointerup", stopResize);
+}
+function onResize(event: PointerEvent): void {
+  inspectorWidth.value = clampInspector(resizeStartWidth - (event.clientX - resizeStartX));
+}
+function stopResize(): void {
+  window.removeEventListener("pointermove", onResize);
+  window.removeEventListener("pointerup", stopResize);
+  window.localStorage.setItem("cg:inspector-width", String(inspectorWidth.value));
+}
+onBeforeUnmount(stopResize);
 
 async function createBook(): Promise<void> {
   const title = window.prompt("Recipe book name", "My Recipe Book")?.trim();
@@ -80,6 +104,7 @@ function quickOperation(): void {
       @select-book="library.selectedBookId.value = $event"
       @select-recipe="selectRecipe"
       @create-recipe="library.createRecipe"
+      @import-recipe="importing = true"
       @create-book="createBook"
       @rename-book="renameBook"
       @delete-book="deleteBook"
@@ -93,7 +118,6 @@ function quickOperation(): void {
           /></small>
         </div>
         <div class="toolbar-actions">
-          <button @click="importing = true"><ScanLine :size="15" /> Import photo</button>
           <select
             v-if="library.selectedRecipe.value"
             :value="library.selectedRecipe.value.bookId ?? ''"
@@ -116,8 +140,20 @@ function quickOperation(): void {
           </button>
         </div>
       </header>
-      <section v-if="library.selectedRecipe.value" class="editor-layout">
-        <SourceEditor v-model="editor.source.value" /><InspectorPanel
+      <section
+        v-if="library.selectedRecipe.value"
+        class="editor-layout"
+        :style="{ '--inspector-w': inspectorWidth + 'px' }"
+      >
+        <SourceEditor v-model="editor.source.value" />
+        <div
+          class="pane-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          title="Drag to resize"
+          @pointerdown="startResize"
+        ></div>
+        <InspectorPanel
           :model="editor.model.value"
           :validation="editor.validation.value"
           :recipe-id="library.selectedRecipe.value.id"

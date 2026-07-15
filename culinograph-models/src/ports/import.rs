@@ -3,12 +3,22 @@ use async_trait::async_trait;
 
 #[async_trait]
 pub trait OcrEngine: Send + Sync {
-    async fn extract_text(&self, images: &[RecipeImage], settings: &ImportSettings) -> Result<Option<String>, ApplicationError>;
+    async fn extract_text(
+        &self,
+        images: &[RecipeImage],
+        settings: &ImportSettings,
+    ) -> Result<Option<String>, ApplicationError>;
 }
 
 #[async_trait]
 pub trait RecipeImageInterpreter: Send + Sync {
-    async fn interpret(&self, images: &[RecipeImage], extracted_text: Option<&str>, target_language: Option<&str>, settings: &ImportSettings) -> Result<(String, String, Vec<String>), ApplicationError>;
+    async fn interpret(
+        &self,
+        images: &[RecipeImage],
+        extracted_text: Option<&str>,
+        target_language: Option<&str>,
+        settings: &ImportSettings,
+    ) -> Result<(String, String, Vec<String>), ApplicationError>;
 }
 
 pub trait SettingsStore: Send + Sync {

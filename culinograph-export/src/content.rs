@@ -11,7 +11,11 @@ pub(crate) fn extract(recipe: &Recipe) -> RecipeContent {
         .iter()
         .filter(|resource| resource.kind == ResourceKind::Ingredient)
         .map(|resource| {
-            let quantity = resource.properties.get("quantity").map(display_value).unwrap_or_default();
+            let quantity = resource
+                .properties
+                .get("quantity")
+                .map(display_value)
+                .unwrap_or_default();
             let name = resource
                 .properties
                 .get("name")
@@ -35,10 +39,17 @@ pub(crate) fn extract(recipe: &Recipe) -> RecipeContent {
                 .get("description")
                 .map(display_value)
                 .unwrap_or_else(|| operation.symbol.replace('_', " "));
-            if inputs.is_empty() { detail } else { format!("{detail}: {}", inputs.join(", ")) }
+            if inputs.is_empty() {
+                detail
+            } else {
+                format!("{detail}: {}", inputs.join(", "))
+            }
         })
         .collect();
-    RecipeContent { ingredients, instructions }
+    RecipeContent {
+        ingredients,
+        instructions,
+    }
 }
 
 pub(crate) fn display_value(value: &Value) -> String {
@@ -47,7 +58,11 @@ pub(crate) fn display_value(value: &Value) -> String {
         Value::Number(value) => value.to_string(),
         Value::Boolean(value) => value.to_string(),
         Value::Quantity(quantity) => format!("{} {}", quantity.value, quantity.unit),
-        Value::List(values) => values.iter().map(display_value).collect::<Vec<_>>().join(", "),
+        Value::List(values) => values
+            .iter()
+            .map(display_value)
+            .collect::<Vec<_>>()
+            .join(", "),
         Value::Object(_) => String::new(),
     }
 }

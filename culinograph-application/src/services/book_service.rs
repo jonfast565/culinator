@@ -18,12 +18,18 @@ impl BookService {
 
     pub fn create(&self, input: NewRecipeBook) -> Result<RecipeBookSummary, ApplicationError> {
         if input.title.trim().is_empty() {
-            return Err(ApplicationError::InvalidInput("book title cannot be empty".to_owned()));
+            return Err(ApplicationError::InvalidInput(
+                "book title cannot be empty".to_owned(),
+            ));
         }
         self.repository.create_recipe_book(input)
     }
 
-    pub fn update(&self, id: Uuid, input: NewRecipeBook) -> Result<RecipeBookSummary, ApplicationError> {
+    pub fn update(
+        &self,
+        id: Uuid,
+        input: NewRecipeBook,
+    ) -> Result<RecipeBookSummary, ApplicationError> {
         self.repository
             .update_recipe_book(id, input)?
             .ok_or_else(|| ApplicationError::not_found("recipe book"))

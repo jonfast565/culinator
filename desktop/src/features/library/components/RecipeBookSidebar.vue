@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BookPlus, FilePlus2, Library, Pencil, Trash2, Utensils } from "lucide-vue-next";
+import { BookPlus, FilePlus2, Library, Pencil, ScanLine, Trash2, Utensils } from "lucide-vue-next";
 import type { RecipeBookSummary, RecipeSummary } from "../../../domain/types";
 
 defineProps<{
@@ -12,6 +12,7 @@ const emit = defineEmits<{
   selectBook: [id: string | null];
   selectRecipe: [id: string];
   createRecipe: [];
+  importRecipe: [];
   createBook: [];
   renameBook: [book: RecipeBookSummary];
   deleteBook: [book: RecipeBookSummary];
@@ -27,12 +28,19 @@ function recipesFor(bookId: string | null, recipes: RecipeSummary[]): RecipeSumm
       <span class="brand-mark"><Utensils :size="19" /></span
       ><span><strong>Culinograph</strong><small>Food production studio</small></span>
     </header>
+    <div class="sidebar-actions">
+      <button class="sidebar-action" @click="emit('createRecipe')">
+        <FilePlus2 :size="16" />New recipe
+      </button>
+      <button class="sidebar-action" @click="emit('importRecipe')">
+        <ScanLine :size="16" />Import
+      </button>
+    </div>
     <div class="sidebar-heading">
       <span>Recipe books</span
-      ><span class="actions"
-        ><button title="New book" @click="emit('createBook')"><BookPlus :size="17" /></button
-        ><button title="New recipe" @click="emit('createRecipe')"><FilePlus2 :size="17" /></button
-      ></span>
+      ><button class="icon-button" title="New book" @click="emit('createBook')">
+        <BookPlus :size="16" />
+      </button>
     </div>
     <nav class="library-list">
       <section v-for="book in books" :key="book.id" class="book-group">

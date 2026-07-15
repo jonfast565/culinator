@@ -1,0 +1,69 @@
+culinograph 0.3;
+
+recipe easy_crepes {
+    title "Easy Crepes";
+
+    source "Alton Brown";
+    publisher "Food Network / altonbrown.com";
+    source_url "https://altonbrown.com/recipes/easy-crepes/";
+    attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
+
+    ingredient eggs measured by count {
+        name "large eggs";
+        quantity 2 count;
+        allergen egg;
+    }
+    ingredient milk measured by volume {
+        name "milk";
+        quantity 0.75 cup;
+        allergen milk;
+    }
+    ingredient water measured by volume {
+        name "water";
+        quantity 0.5 cup;
+    }
+    ingredient flour measured by mass {
+        name "all-purpose flour";
+        quantity 1 cup;
+    }
+    ingredient butter measured by mass {
+        name "melted butter";
+        quantity 3 tbsp;
+        allergen milk;
+    }
+    ingredient salt measured by mass {
+        name "kosher salt";
+        quantity 0.25 tsp;
+    }
+
+    material crepe_batter measured by volume { }
+    material rested_batter measured by volume { }
+
+    process batter {
+        operation blend does mix {
+            input [eggs, milk, water, flour, butter, salt];
+            duration 1 min;
+            labor active;
+            produces crepe_batter;
+        }
+        operation chill does rest {
+            input [crepe_batter];
+            after blend;
+            duration 60 min;
+            labor passive;
+            produces rested_batter;
+        }
+    }
+    process cooking {
+        operation cook does heat {
+            input [rested_batter];
+            after chill;
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield crepes measured by count {
+        amount 11 count;
+    }
+}

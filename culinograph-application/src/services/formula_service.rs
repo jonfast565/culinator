@@ -13,13 +13,21 @@ impl FormulaService {
         Self { repository }
     }
 
-    pub fn calculate(&self, formula: &Formula, target_mass_grams: f64) -> Result<FormulaResult, ApplicationError> {
+    pub fn calculate(
+        &self,
+        formula: &Formula,
+        target_mass_grams: f64,
+    ) -> Result<FormulaResult, ApplicationError> {
         formula
             .solve_for_target_mass(target_mass_grams)
             .map_err(|error| ApplicationError::InvalidInput(error.to_string()))
     }
 
-    pub fn percentages(&self, formula: &Formula, view: PercentageView) -> Result<PercentageConversion, ApplicationError> {
+    pub fn percentages(
+        &self,
+        formula: &Formula,
+        view: PercentageView,
+    ) -> Result<PercentageConversion, ApplicationError> {
         formula
             .weights_to_percentages(view)
             .map_err(|error| ApplicationError::InvalidInput(error.to_string()))
@@ -39,10 +47,15 @@ impl FormulaService {
         self.repository.list_formulas_for_recipe(recipe_id)
     }
 
-    pub fn calculate_and_record(&self, formula_id: Uuid, target_mass_grams: f64) -> Result<FormulaResult, ApplicationError> {
+    pub fn calculate_and_record(
+        &self,
+        formula_id: Uuid,
+        target_mass_grams: f64,
+    ) -> Result<FormulaResult, ApplicationError> {
         let formula = self.get(formula_id)?;
         let result = self.calculate(&formula, target_mass_grams)?;
-        self.repository.save_formula_run(formula_id, target_mass_grams, &result)?;
+        self.repository
+            .save_formula_run(formula_id, target_mass_grams, &result)?;
         Ok(result)
     }
 }

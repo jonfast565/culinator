@@ -203,7 +203,6 @@ impl From<culinograph_application::RecipeBookSummary> for RecipeBookSummary {
     }
 }
 
-
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportRecipeRequest {
@@ -219,15 +218,33 @@ pub struct ExportRecipeResponse {
     pub files: Vec<String>,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TranslateRecipeImagesRequest {
+    pub images: Vec<RecipeImage>,
+    pub target_language: Option<String>,
+    pub recipe_book_title: Option<String>,
+}
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct TranslateRecipeImagesRequest { pub images: Vec<RecipeImage>, pub target_language: Option<String>, pub recipe_book_title: Option<String> }
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct UpdateImportSettingsRequest { pub openai_api_key: Option<String>, pub openai_model: String, pub use_local_ocr: bool, pub tesseract_command: String }
+pub struct UpdateImportSettingsRequest {
+    pub openai_api_key: Option<String>,
+    pub openai_model: String,
+    pub use_local_ocr: bool,
+    pub tesseract_command: String,
+}
 
 impl UpdateImportSettingsRequest {
- pub fn merge(self, mut existing: ImportSettings)->ImportSettings { if let Some(key)=self.openai_api_key { if !key.trim().is_empty(){existing.openai_api_key=key;} } existing.openai_model=self.openai_model; existing.use_local_ocr=self.use_local_ocr; existing.tesseract_command=self.tesseract_command; existing }
+    pub fn merge(self, mut existing: ImportSettings) -> ImportSettings {
+        if let Some(key) = self.openai_api_key {
+            if !key.trim().is_empty() {
+                existing.openai_api_key = key;
+            }
+        }
+        existing.openai_model = self.openai_model;
+        existing.use_local_ocr = self.use_local_ocr;
+        existing.tesseract_command = self.tesseract_command;
+        existing
+    }
 }

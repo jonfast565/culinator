@@ -1,2 +1,33 @@
-use super::*; use culinograph_core::{Recipe,TypeRef}; use culinograph_models::{NutritionFacts,RecipeExportOptions}; use std::collections::BTreeMap; use uuid::Uuid;
-#[test] fn renders_sections(){let r=Recipe{id:Uuid::new_v4(),book_id:None,symbol:"x".into(),declared_type:TypeRef::named("Recipe"),title:"X".into(),protocol_version:"0.3".into(),types:vec![],resources:vec![],processes:vec![],operations:vec![],servings:vec![],formulas:vec![],yields:vec![],properties:BTreeMap::new()};let o=RecipeExportOptions{site_title:None,author:None,description:None,include_source:false,formats:vec![],nutrition:NutritionFacts::default()};assert!(render(&r,&o).contains("INGREDIENTS"));}
+use super::*;
+use culinograph_core::{Recipe, TypeRef};
+use culinograph_models::{NutritionFacts, RecipeExportOptions};
+use std::collections::BTreeMap;
+use uuid::Uuid;
+#[test]
+fn renders_sections() {
+    let r = Recipe {
+        id: Uuid::new_v4(),
+        book_id: None,
+        symbol: "x".into(),
+        declared_type: TypeRef::named("Recipe"),
+        title: "X".into(),
+        protocol_version: "0.3".into(),
+        types: vec![],
+        resources: vec![],
+        processes: vec![],
+        operations: vec![],
+        servings: vec![],
+        formulas: vec![],
+        yields: vec![],
+        properties: BTreeMap::new(),
+    };
+    let o = RecipeExportOptions {
+        site_title: None,
+        author: None,
+        description: None,
+        include_source: false,
+        formats: vec![],
+        nutrition: NutritionFacts::default(),
+    };
+    assert!(render(&r, &o).contains("INGREDIENTS"));
+}

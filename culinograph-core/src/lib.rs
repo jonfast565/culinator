@@ -12,7 +12,10 @@ pub struct TypeRef {
 
 impl TypeRef {
     pub fn named(name: impl Into<String>) -> Self {
-        Self { name: name.into(), arguments: Vec::new() }
+        Self {
+            name: name.into(),
+            arguments: Vec::new(),
+        }
     }
 }
 
@@ -75,6 +78,10 @@ pub enum ResourceKind {
     Equipment,
     Environment,
     Labor,
+    /// A product created by an operation partway through the recipe (declared
+    /// implicitly via an operation's `produces` clause) rather than supplied as
+    /// an input. Lets downstream operations reference it without a warning.
+    Intermediate,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,10 +95,20 @@ pub struct Resource {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum LaborMode { Active, Passive, Monitor, Automated }
+pub enum LaborMode {
+    Active,
+    Passive,
+    Monitor,
+    Automated,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum DependencyKind { FinishStart, StartStart, FinishFinish, StartFinish }
+pub enum DependencyKind {
+    FinishStart,
+    StartStart,
+    FinishFinish,
+    StartFinish,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Dependency {
@@ -111,7 +128,16 @@ pub struct ResourceBinding {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum BindingRole { Input, Output, Target, Tool, Container, Equipment, Environment, Labor }
+pub enum BindingRole {
+    Input,
+    Output,
+    Target,
+    Tool,
+    Container,
+    Equipment,
+    Environment,
+    Labor,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Predicate {
@@ -192,7 +218,11 @@ pub struct RecipeBook {
 }
 
 impl RecipeBook {
-    pub fn empty(symbol: impl Into<String>, title: impl Into<String>, protocol_version: impl Into<String>) -> Self {
+    pub fn empty(
+        symbol: impl Into<String>,
+        title: impl Into<String>,
+        protocol_version: impl Into<String>,
+    ) -> Self {
         Self {
             id: Uuid::new_v4(),
             symbol: symbol.into(),
@@ -212,7 +242,6 @@ pub enum Document {
     Recipe { recipe: Recipe },
     RecipeBook { book: RecipeBook },
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct YieldDefinition {
@@ -266,7 +295,9 @@ pub struct FormulaIngredient {
     pub properties: BTreeMap<Symbol, Value>,
 }
 
-fn default_true() -> bool { true }
+fn default_true() -> bool {
+    true
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Formula {
@@ -328,12 +359,24 @@ impl std::fmt::Display for FormulaError {
         match self {
             Self::EmptyFormula => write!(f, "formula has no ingredients"),
             Self::InvalidTargetMass => write!(f, "target mass must be greater than zero"),
-            Self::MissingPercentage { symbol } => write!(f, "ingredient `{symbol}` is missing a percentage"),
+            Self::MissingPercentage { symbol } => {
+                write!(f, "ingredient `{symbol}` is missing a percentage")
+            }
             Self::MissingMass { symbol } => write!(f, "ingredient `{symbol}` is missing a mass"),
-            Self::NegativeValue { symbol } => write!(f, "ingredient `{symbol}` has a negative percentage or mass"),
-            Self::ReferencePercentMustEqualOneHundred => write!(f, "reference ingredients must total 100 reference percent"),
-            Self::MissingReferenceIngredients => write!(f, "reference-percentage formulas require at least one reference ingredient"),
-            Self::PercentOfTotalExceedsOneHundred => write!(f, "percent-of-total ingredients must total less than 100% when other scalable ingredients exist"),
+            Self::NegativeValue { symbol } => {
+                write!(f, "ingredient `{symbol}` has a negative percentage or mass")
+            }
+            Self::ReferencePercentMustEqualOneHundred => {
+                write!(f, "reference ingredients must total 100 reference percent")
+            }
+            Self::MissingReferenceIngredients => write!(
+                f,
+                "reference-percentage formulas require at least one reference ingredient"
+            ),
+            Self::PercentOfTotalExceedsOneHundred => write!(
+                f,
+                "percent-of-total ingredients must total less than 100% when other scalable ingredients exist"
+            ),
         }
     }
 }
@@ -342,45 +385,92 @@ impl std::error::Error for FormulaError {}
 impl Formula {
     /// Resolve any recipe formula to a target final mass. Reference-relative,
     /// percent-of-total and fixed-mass lines may coexist.
-    pub fn solve_for_target_mass(&self, target_mass_grams: f64) -> Result<FormulaResult, FormulaError> {
-        if self.ingredients.is_empty() { return Err(FormulaError::EmptyFormula); }
-        if !target_mass_grams.is_finite() || target_mass_grams <= 0.0 { return Err(FormulaError::InvalidTargetMass); }
+    pub fn solve_for_target_mass(
+        &self,
+        target_mass_grams: f64,
+    ) -> Result<FormulaResult, FormulaError> {
+        if self.ingredients.is_empty() {
+            return Err(FormulaError::EmptyFormula);
+        }
+        if !target_mass_grams.is_finite() || target_mass_grams <= 0.0 {
+            return Err(FormulaError::InvalidTargetMass);
+        }
 
         let mut fixed = 0.0;
         let mut total_pct = 0.0;
         let mut reference_line_pct = 0.0;
         let mut reference_members_pct = 0.0;
         for item in &self.ingredients {
-            if !(0.0..=1.0).contains(&item.water_fraction) { return Err(FormulaError::NegativeValue { symbol: item.symbol.clone() }); }
+            if !(0.0..=1.0).contains(&item.water_fraction) {
+                return Err(FormulaError::NegativeValue {
+                    symbol: item.symbol.clone(),
+                });
+            }
             match item.basis {
                 FormulaBasis::ReferencePercent => {
-                    let pct = item.percentage.ok_or_else(|| FormulaError::MissingPercentage { symbol: item.symbol.clone() })?;
-                    if pct < 0.0 { return Err(FormulaError::NegativeValue { symbol: item.symbol.clone() }); }
+                    let pct = item
+                        .percentage
+                        .ok_or_else(|| FormulaError::MissingPercentage {
+                            symbol: item.symbol.clone(),
+                        })?;
+                    if pct < 0.0 {
+                        return Err(FormulaError::NegativeValue {
+                            symbol: item.symbol.clone(),
+                        });
+                    }
                     reference_line_pct += pct;
-                    if item.is_reference { reference_members_pct += pct; }
+                    if item.is_reference {
+                        reference_members_pct += pct;
+                    }
                 }
                 FormulaBasis::PercentOfTotal => {
-                    let pct = item.percentage.ok_or_else(|| FormulaError::MissingPercentage { symbol: item.symbol.clone() })?;
-                    if pct < 0.0 { return Err(FormulaError::NegativeValue { symbol: item.symbol.clone() }); }
+                    let pct = item
+                        .percentage
+                        .ok_or_else(|| FormulaError::MissingPercentage {
+                            symbol: item.symbol.clone(),
+                        })?;
+                    if pct < 0.0 {
+                        return Err(FormulaError::NegativeValue {
+                            symbol: item.symbol.clone(),
+                        });
+                    }
                     total_pct += pct;
                 }
                 FormulaBasis::AbsoluteMass => {
-                    let mass = item.mass_grams.ok_or_else(|| FormulaError::MissingMass { symbol: item.symbol.clone() })?;
-                    if mass < 0.0 { return Err(FormulaError::NegativeValue { symbol: item.symbol.clone() }); }
+                    let mass = item.mass_grams.ok_or_else(|| FormulaError::MissingMass {
+                        symbol: item.symbol.clone(),
+                    })?;
+                    if mass < 0.0 {
+                        return Err(FormulaError::NegativeValue {
+                            symbol: item.symbol.clone(),
+                        });
+                    }
                     fixed += mass;
                 }
             }
         }
         if reference_line_pct > 0.0 {
-            if reference_members_pct == 0.0 { return Err(FormulaError::MissingReferenceIngredients); }
-            if (reference_members_pct - 100.0).abs() > 0.001 { return Err(FormulaError::ReferencePercentMustEqualOneHundred); }
+            if reference_members_pct == 0.0 {
+                return Err(FormulaError::MissingReferenceIngredients);
+            }
+            if (reference_members_pct - 100.0).abs() > 0.001 {
+                return Err(FormulaError::ReferencePercentMustEqualOneHundred);
+            }
         }
-        if total_pct >= 100.0 && (reference_line_pct > 0.0 || fixed > 0.0) { return Err(FormulaError::PercentOfTotalExceedsOneHundred); }
+        if total_pct >= 100.0 && (reference_line_pct > 0.0 || fixed > 0.0) {
+            return Err(FormulaError::PercentOfTotalExceedsOneHundred);
+        }
 
         let total_based_mass = target_mass_grams * total_pct / 100.0;
         let reference_target = target_mass_grams - fixed - total_based_mass;
-        if reference_target < -0.001 { return Err(FormulaError::InvalidTargetMass); }
-        let reference_mass = if reference_line_pct > 0.0 { reference_target / (reference_line_pct / 100.0) } else { 0.0 };
+        if reference_target < -0.001 {
+            return Err(FormulaError::InvalidTargetMass);
+        }
+        let reference_mass = if reference_line_pct > 0.0 {
+            reference_target / (reference_line_pct / 100.0)
+        } else {
+            0.0
+        };
 
         let mut lines = Vec::with_capacity(self.ingredients.len());
         let mut total = 0.0;
@@ -389,49 +479,112 @@ impl Formula {
         let mut prefermented_flour = 0.0;
         for item in &self.ingredients {
             let mass = match item.basis {
-                FormulaBasis::ReferencePercent => reference_mass * item.percentage.unwrap_or(0.0) / 100.0,
-                FormulaBasis::PercentOfTotal => target_mass_grams * item.percentage.unwrap_or(0.0) / 100.0,
+                FormulaBasis::ReferencePercent => {
+                    reference_mass * item.percentage.unwrap_or(0.0) / 100.0
+                }
+                FormulaBasis::PercentOfTotal => {
+                    target_mass_grams * item.percentage.unwrap_or(0.0) / 100.0
+                }
                 FormulaBasis::AbsoluteMass => item.mass_grams.unwrap_or(0.0),
             };
             total += mass;
-            if item.is_flour { flour += mass; }
+            if item.is_flour {
+                flour += mass;
+            }
             water += mass * item.water_fraction;
-            if item.is_flour && !matches!(item.stage.as_str(), "final" | "main") { prefermented_flour += mass; }
+            if item.is_flour && !matches!(item.stage.as_str(), "final" | "main") {
+                prefermented_flour += mass;
+            }
             lines.push(FormulaLineResult {
-                ingredient_id: item.id, symbol: item.symbol.clone(), name: item.name.clone(), stage: item.stage.clone(),
-                percentage: item.percentage, total_percentage: mass / target_mass_grams * 100.0, mass_grams: mass,
-                is_reference: item.is_reference, is_flour: item.is_flour,
+                ingredient_id: item.id,
+                symbol: item.symbol.clone(),
+                name: item.name.clone(),
+                stage: item.stage.clone(),
+                percentage: item.percentage,
+                total_percentage: mass / target_mass_grams * 100.0,
+                mass_grams: mass,
+                is_reference: item.is_reference,
+                is_flour: item.is_flour,
             });
         }
         Ok(FormulaResult {
-            target_mass_grams, reference_mass_grams: reference_mass, total_flour_grams: flour, total_mass_grams: total,
-            hydration_percent: if flour > 0.0 { water / flour * 100.0 } else { 0.0 },
-            prefermented_flour_percent: if flour > 0.0 { prefermented_flour / flour * 100.0 } else { 0.0 }, lines,
+            target_mass_grams,
+            reference_mass_grams: reference_mass,
+            total_flour_grams: flour,
+            total_mass_grams: total,
+            hydration_percent: if flour > 0.0 {
+                water / flour * 100.0
+            } else {
+                0.0
+            },
+            prefermented_flour_percent: if flour > 0.0 {
+                prefermented_flour / flour * 100.0
+            } else {
+                0.0
+            },
+            lines,
         })
     }
 
     /// Convert entered ingredient weights back to either percentages of the
     /// selected reference group or percentages of total recipe mass.
-    pub fn weights_to_percentages(&self, view: PercentageView) -> Result<PercentageConversion, FormulaError> {
-        if self.ingredients.is_empty() { return Err(FormulaError::EmptyFormula); }
+    pub fn weights_to_percentages(
+        &self,
+        view: PercentageView,
+    ) -> Result<PercentageConversion, FormulaError> {
+        if self.ingredients.is_empty() {
+            return Err(FormulaError::EmptyFormula);
+        }
         let mut total = 0.0;
         let mut reference = 0.0;
         for item in &self.ingredients {
-            let mass = item.mass_grams.ok_or_else(|| FormulaError::MissingMass { symbol: item.symbol.clone() })?;
-            if mass < 0.0 { return Err(FormulaError::NegativeValue { symbol: item.symbol.clone() }); }
+            let mass = item.mass_grams.ok_or_else(|| FormulaError::MissingMass {
+                symbol: item.symbol.clone(),
+            })?;
+            if mass < 0.0 {
+                return Err(FormulaError::NegativeValue {
+                    symbol: item.symbol.clone(),
+                });
+            }
             total += mass;
-            if item.is_reference { reference += mass; }
+            if item.is_reference {
+                reference += mass;
+            }
         }
-        if total <= 0.0 { return Err(FormulaError::InvalidTargetMass); }
-        if view == PercentageView::Reference && reference <= 0.0 { return Err(FormulaError::MissingReferenceIngredients); }
-        let divisor = match view { PercentageView::Reference => reference, PercentageView::Total => total };
-        let lines = self.ingredients.iter().map(|item| {
-            let mass = item.mass_grams.unwrap_or(0.0);
-            FormulaLineResult { ingredient_id:item.id, symbol:item.symbol.clone(), name:item.name.clone(), stage:item.stage.clone(),
-                percentage:Some(mass/divisor*100.0), total_percentage:mass/total*100.0, mass_grams:mass,
-                is_reference:item.is_reference, is_flour:item.is_flour }
-        }).collect();
-        Ok(PercentageConversion { view, reference_mass_grams: reference, total_mass_grams: total, lines })
+        if total <= 0.0 {
+            return Err(FormulaError::InvalidTargetMass);
+        }
+        if view == PercentageView::Reference && reference <= 0.0 {
+            return Err(FormulaError::MissingReferenceIngredients);
+        }
+        let divisor = match view {
+            PercentageView::Reference => reference,
+            PercentageView::Total => total,
+        };
+        let lines = self
+            .ingredients
+            .iter()
+            .map(|item| {
+                let mass = item.mass_grams.unwrap_or(0.0);
+                FormulaLineResult {
+                    ingredient_id: item.id,
+                    symbol: item.symbol.clone(),
+                    name: item.name.clone(),
+                    stage: item.stage.clone(),
+                    percentage: Some(mass / divisor * 100.0),
+                    total_percentage: mass / total * 100.0,
+                    mass_grams: mass,
+                    is_reference: item.is_reference,
+                    is_flour: item.is_flour,
+                }
+            })
+            .collect();
+        Ok(PercentageConversion {
+            view,
+            reference_mass_grams: reference,
+            total_mass_grams: total,
+            lines,
+        })
     }
 }
 #[cfg(test)]

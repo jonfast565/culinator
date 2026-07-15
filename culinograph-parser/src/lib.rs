@@ -13,8 +13,8 @@ pub mod syntax;
 
 pub use semantic::ParseError;
 pub use syntax::{
-    apply_text_edits, CstElement, CstNode, CstNodeKind, LosslessDocument,
-    SyntaxError, SyntaxKind, SyntaxToken, TextEdit, TextRange,
+    CstElement, CstNode, CstNodeKind, LosslessDocument, SyntaxError, SyntaxKind, SyntaxToken,
+    TextEdit, TextRange, apply_text_edits,
 };
 
 use culinograph_core::{Document, Recipe, RecipeBook};
@@ -55,8 +55,7 @@ impl ParsedDocument {
     /// Applies non-overlapping edits to the original source and reparses both
     /// layers. Untouched bytes remain byte-for-byte identical.
     pub fn edit(&self, edits: &[TextEdit]) -> Result<Self, ParseError> {
-        let source = apply_text_edits(self.syntax.source(), edits)
-            .map_err(ParseError::from)?;
+        let source = apply_text_edits(self.syntax.source(), edits).map_err(ParseError::from)?;
         parse_lossless(&source)
     }
 }
@@ -69,9 +68,8 @@ impl culinograph_models::DocumentParser for CulinographParser {
         &self,
         source: &str,
     ) -> Result<Document, culinograph_models::ApplicationError> {
-        parse_document(source).map_err(|error| {
-            culinograph_models::ApplicationError::Parse(error.to_string())
-        })
+        parse_document(source)
+            .map_err(|error| culinograph_models::ApplicationError::Parse(error.to_string()))
     }
 }
 

@@ -5,16 +5,15 @@ mod routes;
 mod state;
 mod ws;
 
+pub use auth::AccessPolicy;
 use axum::{
-    http::{header, HeaderValue, Method},
+    Json, Router,
+    http::{HeaderValue, Method, header},
     middleware,
     routing::{get, post, put},
-    Json, Router,
 };
-pub use auth::AccessPolicy;
 pub use error::ApiError;
 pub use state::ServiceState;
-pub use ws::WebSocketState;
 use std::{io, net::SocketAddr};
 use tokio::net::TcpListener;
 use tokio_util::sync::CancellationToken;
@@ -22,6 +21,7 @@ use tower_http::{
     cors::{AllowOrigin, CorsLayer},
     trace::TraceLayer,
 };
+pub use ws::WebSocketState;
 
 #[derive(Clone)]
 pub struct ServiceConfig {
@@ -75,7 +75,10 @@ pub fn router(config: ServiceConfig) -> Router {
 
     let websocket = Router::new()
         .route("/ws", get(ws::upgrade))
-        .with_state(WebSocketState::new(config.state.clone(), config.access.clone()));
+        .with_state(WebSocketState::new(
+            config.state.clone(),
+            config.access.clone(),
+        ));
 
     let api = Router::new()
         .route("/health", get(health))
@@ -91,10 +94,7 @@ pub fn router(config: ServiceConfig) -> Router {
             "/api/v1/books/{id}",
             put(routes::books::update).delete(routes::books::delete),
         )
-        .route(
-            "/api/v1/recipes/{id}/book",
-            put(routes::books::move_recipe),
-        )
+        .route("/api/v1/recipes/{id}/book", put(routes::books::move_recipe))
         .route(
             "/api/v1/recipes/{id}",
             get(routes::recipes::get)
@@ -102,10 +102,19 @@ pub fn router(config: ServiceConfig) -> Router {
                 .delete(routes::recipes::delete),
         )
         .route("/api/v1/validation", post(routes::recipes::validate))
-        .route("/api/v1/import/settings", get(routes::imports::get_settings).put(routes::imports::update_settings))
+        .route(
+            "/api/v1/import/settings",
+            get(routes::imports::get_settings).put(routes::imports::update_settings),
+        )
         .route("/api/v1/import/translate", post(routes::imports::translate))
-        .route("/api/v1/recipes/{id}/export", post(routes::exports::export_recipe))
-        .route("/api/v1/formulas/calculate", post(routes::formulas::calculate))
+        .route(
+            "/api/v1/recipes/{id}/export",
+            post(routes::exports::export_recipe),
+        )
+        .route(
+            "/api/v1/formulas/calculate",
+            post(routes::formulas::calculate),
+        )
         .route(
             "/api/v1/formulas/percentages",
             post(routes::formulas::percentages),

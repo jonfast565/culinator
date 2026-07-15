@@ -2,13 +2,16 @@ use crate::{
     delete_recipe, get_formula, list_formulas_for_recipe, list_recipe_books, migrate,
     move_recipe_to_book, save_formula, save_formula_run, save_recipe, save_recipe_book,
 };
+use culinograph_core::{Formula, FormulaResult, Recipe, RecipeBook, TypeRef};
 use culinograph_models::{
     ApplicationError, FormulaRepository, NewRecipe, NewRecipeBook, RecipeBookRepository,
     RecipeBookSummary, RecipeDocument, RecipeRepository, RecipeSummary,
 };
-use culinograph_core::{Formula, FormulaResult, Recipe, RecipeBook, TypeRef};
-use rusqlite::{params, Connection, OptionalExtension};
-use std::{collections::BTreeMap, path::{Path, PathBuf}};
+use rusqlite::{Connection, OptionalExtension, params};
+use std::{
+    collections::BTreeMap,
+    path::{Path, PathBuf},
+};
 use uuid::Uuid;
 
 #[derive(Debug, Clone)]
@@ -112,11 +115,16 @@ impl RecipeRepository for SqliteCatalogRepository {
             )?;
             Ok(())
         })?;
-        self.get_recipe(id)?
-            .ok_or_else(|| ApplicationError::Internal("created recipe could not be read".to_owned()))
+        self.get_recipe(id)?.ok_or_else(|| {
+            ApplicationError::Internal("created recipe could not be read".to_owned())
+        })
     }
 
-    fn save_recipe(&self, recipe: &Recipe, source_text: &str) -> Result<RecipeDocument, ApplicationError> {
+    fn save_recipe(
+        &self,
+        recipe: &Recipe,
+        source_text: &str,
+    ) -> Result<RecipeDocument, ApplicationError> {
         self.with_connection(|connection| save_recipe(connection, recipe, source_text))?;
         self.get_recipe(recipe.id)?
             .ok_or_else(|| ApplicationError::Internal("saved recipe could not be read".to_owned()))
@@ -126,7 +134,12 @@ impl RecipeRepository for SqliteCatalogRepository {
         self.with_connection(|connection| delete_recipe(connection, &id.to_string()))
     }
 
-    fn move_recipe(&self, id: Uuid, book_id: Option<Uuid>, position: i64) -> Result<bool, ApplicationError> {
+    fn move_recipe(
+        &self,
+        id: Uuid,
+        book_id: Option<Uuid>,
+        position: i64,
+    ) -> Result<bool, ApplicationError> {
         self.with_connection(|connection| {
             let book = book_id.map(|value| value.to_string());
             move_recipe_to_book(connection, &id.to_string(), book.as_deref(), position)
@@ -153,7 +166,10 @@ impl RecipeBookRepository for SqliteCatalogRepository {
             .collect()
     }
 
-    fn create_recipe_book(&self, input: NewRecipeBook) -> Result<RecipeBookSummary, ApplicationError> {
+    fn create_recipe_book(
+        &self,
+        input: NewRecipeBook,
+    ) -> Result<RecipeBookSummary, ApplicationError> {
         let id = Uuid::new_v4();
         let book = RecipeBook {
             id,
@@ -172,7 +188,11 @@ impl RecipeBookRepository for SqliteCatalogRepository {
             .ok_or_else(|| ApplicationError::Internal("created book could not be read".to_owned()))
     }
 
-    fn update_recipe_book(&self, id: Uuid, input: NewRecipeBook) -> Result<Option<RecipeBookSummary>, ApplicationError> {
+    fn update_recipe_book(
+        &self,
+        id: Uuid,
+        input: NewRecipeBook,
+    ) -> Result<Option<RecipeBookSummary>, ApplicationError> {
         let symbol = input.symbol.unwrap_or_else(|| slug(&input.title));
         let changed = self.with_connection(|connection| {
             connection.execute(
@@ -185,7 +205,10 @@ impl RecipeBookRepository for SqliteCatalogRepository {
         if changed == 0 {
             return Ok(None);
         }
-        Ok(self.list_recipe_books()?.into_iter().find(|book| book.id == id))
+        Ok(self
+            .list_recipe_books()?
+            .into_iter()
+            .find(|book| book.id == id))
     }
 
     fn save_recipe_book(&self, book: &RecipeBook) -> Result<(), ApplicationError> {
@@ -209,7 +232,9 @@ impl FormulaRepository for SqliteCatalogRepository {
     }
 
     fn list_formulas_for_recipe(&self, recipe_id: Uuid) -> Result<Vec<Formula>, ApplicationError> {
-        self.with_connection(|connection| list_formulas_for_recipe(connection, &recipe_id.to_string()))
+        self.with_connection(|connection| {
+            list_formulas_for_recipe(connection, &recipe_id.to_string())
+        })
     }
 
     fn save_formula_run(
@@ -219,7 +244,13 @@ impl FormulaRepository for SqliteCatalogRepository {
         result: &FormulaResult,
     ) -> Result<(), ApplicationError> {
         self.with_connection(|connection| {
-            save_formula_run(connection, &formula_id.to_string(), target_mass_grams, result).map(|_| ())
+            save_formula_run(
+                connection,
+                &formula_id.to_string(),
+                target_mass_grams,
+                result,
+            )
+            .map(|_| ())
         })
     }
 }
@@ -242,7 +273,13 @@ fn slug(value: &str) -> String {
     value
         .to_lowercase()
         .chars()
-        .map(|character| if character.is_ascii_alphanumeric() { character } else { '_' })
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character
+            } else {
+                '_'
+            }
+        })
         .collect::<String>()
         .split('_')
         .filter(|part| !part.is_empty())

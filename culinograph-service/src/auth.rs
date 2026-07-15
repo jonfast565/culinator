@@ -1,6 +1,6 @@
 use axum::{
     extract::{Request, State},
-    http::{header, HeaderValue, StatusCode},
+    http::{HeaderValue, StatusCode, header},
     middleware::Next,
     response::Response,
 };
@@ -51,7 +51,10 @@ pub async fn require_local_client(
 ) -> Result<Response, ApiError> {
     let origin = request.headers().get(header::ORIGIN);
     if !policy.is_origin_allowed(origin) {
-        return Err(ApiError::new(StatusCode::FORBIDDEN, "Origin is not allowed"));
+        return Err(ApiError::new(
+            StatusCode::FORBIDDEN,
+            "Origin is not allowed",
+        ));
     }
 
     if request.method() == axum::http::Method::OPTIONS {
@@ -66,7 +69,10 @@ pub async fn require_local_client(
         .is_some_and(|value| constant_time_eq(value.as_bytes(), expected.as_bytes()));
 
     if !authorized {
-        return Err(ApiError::new(StatusCode::UNAUTHORIZED, "Missing or invalid launch token"));
+        return Err(ApiError::new(
+            StatusCode::UNAUTHORIZED,
+            "Missing or invalid launch token",
+        ));
     }
 
     Ok(next.run(request).await)

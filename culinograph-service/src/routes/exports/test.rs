@@ -1,2 +1,4 @@
 #[test]
-fn module_is_wired(){assert!(true);}
+fn module_is_wired() {
+    assert!(true);
+}

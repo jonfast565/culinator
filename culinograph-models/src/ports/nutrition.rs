@@ -3,7 +3,11 @@ use crate::models::{FoodNutrientRecord, FoodRecord, NutrientDefinition, Nutritio
 
 /// Read-side contract for interchangeable nutrition databases.
 pub trait NutritionCatalog: Send + Sync {
-    fn search_foods(&self, query: &str, limit: usize) -> Result<Vec<NutritionSearchResult>, ApplicationError>;
+    fn search_foods(
+        &self,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<NutritionSearchResult>, ApplicationError>;
     fn food(&self, fdc_id: i64) -> Result<Option<FoodRecord>, ApplicationError>;
     fn nutrients_for_food(&self, fdc_id: i64) -> Result<Vec<FoodNutrientRecord>, ApplicationError>;
 }

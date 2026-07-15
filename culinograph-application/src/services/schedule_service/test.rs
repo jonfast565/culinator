@@ -1,1 +1,4 @@
-#[test] fn module_is_linked() { assert!(true); }
+#[test]
+fn module_is_linked() {
+    assert!(true);
+}

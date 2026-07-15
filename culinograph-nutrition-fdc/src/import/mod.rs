@@ -2,8 +2,10 @@ mod source;
 
 use crate::store::SqliteNutritionCatalog;
 use anyhow::{Context, Result};
-use culinograph_models::{FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionImportStore};
 use csv::StringRecord;
+use culinograph_models::{
+    FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionImportStore,
+};
 use source::PreparedDataset;
 use std::path::{Path, PathBuf};
 
@@ -47,7 +49,11 @@ impl FdcDatabaseBuilder {
     }
 }
 
-fn import_nutrients(root: &Path, store: &mut SqliteNutritionCatalog, report: &mut BuildReport) -> Result<()> {
+fn import_nutrients(
+    root: &Path,
+    store: &mut SqliteNutritionCatalog,
+    report: &mut BuildReport,
+) -> Result<()> {
     read_csv(root, "nutrient.csv", |headers, row| {
         store.upsert_nutrient(&NutrientDefinition {
             id: required_i64(headers, row, "id")?,
@@ -61,7 +67,11 @@ fn import_nutrients(root: &Path, store: &mut SqliteNutritionCatalog, report: &mu
     })
 }
 
-fn import_foods(root: &Path, store: &mut SqliteNutritionCatalog, report: &mut BuildReport) -> Result<()> {
+fn import_foods(
+    root: &Path,
+    store: &mut SqliteNutritionCatalog,
+    report: &mut BuildReport,
+) -> Result<()> {
     read_csv(root, "food.csv", |headers, row| {
         store.upsert_food(&FoodRecord {
             fdc_id: required_i64(headers, row, "fdc_id")?,
@@ -95,7 +105,11 @@ fn import_branded_foods(root: &Path, store: &mut SqliteNutritionCatalog) -> Resu
     })
 }
 
-fn import_food_nutrients(root: &Path, store: &mut SqliteNutritionCatalog, report: &mut BuildReport) -> Result<()> {
+fn import_food_nutrients(
+    root: &Path,
+    store: &mut SqliteNutritionCatalog,
+    report: &mut BuildReport,
+) -> Result<()> {
     read_csv(root, "food_nutrient.csv", |headers, row| {
         store.upsert_food_nutrient(&FoodNutrientRecord {
             id: optional_i64(headers, row, "id")?,
@@ -118,26 +132,53 @@ where
     F: FnMut(&StringRecord, &StringRecord) -> Result<()>,
 {
     let path = root.join(name);
-    if !path.exists() { return Ok(()); }
-    let mut reader = csv::ReaderBuilder::new().flexible(true).from_path(&path)
+    if !path.exists() {
+        return Ok(());
+    }
+    let mut reader = csv::ReaderBuilder::new()
+        .flexible(true)
+        .from_path(&path)
         .with_context(|| format!("open {}", path.display()))?;
     let headers = reader.headers()?.clone();
-    for row in reader.records() { callback(&headers, &row?)?; }
+    for row in reader.records() {
+        callback(&headers, &row?)?;
+    }
     Ok(())
 }
 
 fn index(headers: &StringRecord, name: &str) -> Result<usize> {
-    headers.iter().position(|value| value == name).with_context(|| format!("missing CSV column {name}"))
+    headers
+        .iter()
+        .position(|value| value == name)
+        .with_context(|| format!("missing CSV column {name}"))
 }
 fn required<'a>(headers: &StringRecord, row: &'a StringRecord, name: &str) -> Result<&'a str> {
-    row.get(index(headers, name)?).filter(|v| !v.is_empty()).with_context(|| format!("missing value for {name}"))
+    row.get(index(headers, name)?)
+        .filter(|v| !v.is_empty())
+        .with_context(|| format!("missing value for {name}"))
 }
 fn optional<'a>(headers: &StringRecord, row: &'a StringRecord, name: &str) -> Option<&'a str> {
-    headers.iter().position(|value| value == name).and_then(|i| row.get(i)).filter(|v| !v.is_empty())
+    headers
+        .iter()
+        .position(|value| value == name)
+        .and_then(|i| row.get(i))
+        .filter(|v| !v.is_empty())
 }
-fn required_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<i64> { Ok(required(headers, row, name)?.parse()?) }
-fn optional_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<i64>> { optional(headers, row, name).map(str::parse).transpose().map_err(Into::into) }
-fn optional_f64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<f64>> { optional(headers, row, name).map(str::parse).transpose().map_err(Into::into) }
+fn required_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<i64> {
+    Ok(required(headers, row, name)?.parse()?)
+}
+fn optional_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<i64>> {
+    optional(headers, row, name)
+        .map(str::parse)
+        .transpose()
+        .map_err(Into::into)
+}
+fn optional_f64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<f64>> {
+    optional(headers, row, name)
+        .map(str::parse)
+        .transpose()
+        .map_err(Into::into)
+}
 
 #[cfg(test)]
 mod test;

@@ -6,6 +6,7 @@ import FormulaCalculator from "../../formulas/components/FormulaCalculator.vue";
 import ExportPanel from "../../export/components/ExportPanel.vue";
 import VisualAuthoringPanel from "../../visual-authoring/components/VisualAuthoringPanel.vue";
 import GanttSchedule from "../../scheduling/components/GanttSchedule.vue";
+import RecipeNarrative from "./RecipeNarrative.vue";
 const props = defineProps<{
   model: UiRecipeModel;
   validation: ValidationResult | null;
@@ -14,8 +15,15 @@ const props = defineProps<{
 }>();
 const emit = defineEmits<{ "update:source": [value: string] }>();
 const tab = ref<
-  "outline" | "ingredients" | "author" | "timeline" | "formula" | "export" | "diagnostics"
->("outline");
+  | "narrative"
+  | "outline"
+  | "ingredients"
+  | "author"
+  | "timeline"
+  | "formula"
+  | "export"
+  | "diagnostics"
+>("narrative");
 const operations = computed(() => props.model.operations ?? []);
 </script>
 <template>
@@ -23,6 +31,7 @@ const operations = computed(() => props.model.operations ?? []);
     <nav class="tabs">
       <button
         v-for="item in [
+          'narrative',
           'outline',
           'ingredients',
           'author',
@@ -38,7 +47,8 @@ const operations = computed(() => props.model.operations ?? []);
         {{ item }}
       </button>
     </nav>
-    <section v-if="tab === 'outline'" class="panel">
+    <RecipeNarrative v-if="tab === 'narrative'" :model="model" />
+    <section v-else-if="tab === 'outline'" class="panel">
       <h3>{{ model.title || "Untitled recipe" }}</h3>
       <dl>
         <div>

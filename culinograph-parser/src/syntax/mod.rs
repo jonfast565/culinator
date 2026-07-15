@@ -2,8 +2,8 @@ mod edit;
 mod lexer;
 mod tree;
 
-pub use edit::{apply_text_edits, TextEdit};
-pub use lexer::{lex_lossless, SyntaxError, SyntaxKind, SyntaxToken, TextRange};
+pub use edit::{TextEdit, apply_text_edits};
+pub use lexer::{SyntaxError, SyntaxKind, SyntaxToken, TextRange, lex_lossless};
 pub use tree::{CstElement, CstNode, CstNodeKind, LosslessDocument};
 
 #[cfg(test)]

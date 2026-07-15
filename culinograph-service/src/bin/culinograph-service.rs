@@ -1,5 +1,9 @@
-use culinograph_service::{bind, AccessPolicy, ServiceConfig, ServiceState};
-use std::{env, net::{IpAddr, Ipv4Addr, SocketAddr}, path::PathBuf};
+use culinograph_service::{AccessPolicy, ServiceConfig, ServiceState, bind};
+use std::{
+    env,
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    path::PathBuf,
+};
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
@@ -7,7 +11,9 @@ use uuid::Uuid;
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let options = Options::parse(env::args().skip(1))
         .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidInput, message))?;
-    let token = options.token.unwrap_or_else(|| Uuid::new_v4().simple().to_string());
+    let token = options
+        .token
+        .unwrap_or_else(|| Uuid::new_v4().simple().to_string());
     let origins = if options.origins.is_empty() {
         vec!["http://localhost:1420".to_owned()]
     } else {
@@ -17,7 +23,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .allow_missing_origin(options.allow_missing_origin);
     let service = bind(
         ServiceConfig {
-            state: ServiceState::sqlite(options.database.clone(), options.database.with_file_name("settings.json"))?,
+            state: ServiceState::sqlite(
+                options.database.clone(),
+                options.database.with_file_name("settings.json"),
+            )?,
             access,
             allowed_origins: origins,
         },
@@ -88,7 +97,8 @@ fn next_value(
     args: &mut std::iter::Peekable<impl Iterator<Item = String>>,
     flag: &str,
 ) -> Result<String, String> {
-    args.next().ok_or_else(|| format!("{flag} requires a value"))
+    args.next()
+        .ok_or_else(|| format!("{flag} requires a value"))
 }
 #[cfg(test)]
 #[path = "test.rs"]

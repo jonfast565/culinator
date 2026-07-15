@@ -3,7 +3,7 @@
 mod import;
 mod store;
 
-pub use import::{BuildOptions, BuildReport, FdcDatabaseBuilder, DEFAULT_FULL_DOWNLOAD_URL};
+pub use import::{BuildOptions, BuildReport, DEFAULT_FULL_DOWNLOAD_URL, FdcDatabaseBuilder};
 pub use store::SqliteNutritionCatalog;
 
 #[cfg(test)]

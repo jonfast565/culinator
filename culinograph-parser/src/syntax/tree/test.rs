@@ -10,5 +10,8 @@ fn builds_balanced_lossless_tree() {
 
 #[test]
 fn rejects_unbalanced_tree() {
-    assert!(matches!(LosslessDocument::parse("x {"), Err(SyntaxError::UnclosedDelimiter { .. })));
+    assert!(matches!(
+        LosslessDocument::parse("x {"),
+        Err(SyntaxError::UnclosedDelimiter { .. })
+    ));
 }

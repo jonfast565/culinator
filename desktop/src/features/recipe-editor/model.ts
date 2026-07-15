@@ -20,6 +20,8 @@ export interface UiOperation {
   durationMinutes: number;
   labor: string;
   after: string[];
+  inputs: string[];
+  produces?: string;
   range?: SourceRange;
 }
 export interface UiRecipeModel {
@@ -28,6 +30,9 @@ export interface UiRecipeModel {
   resources: UiResource[];
   processes: UiProcess[];
   operations: UiOperation[];
+  source?: string;
+  sourceUrl?: string;
+  attribution?: string;
 }
 
 export function parseUiModel(source: string): UiRecipeModel {
@@ -82,7 +87,15 @@ export function parseUiModel(source: string): UiRecipeModel {
       .match(/after\s+(?:\[([^\]]+)\]|([\w.]+))\s*;/)
       ?.slice(1)
       .find(Boolean);
+    const inputText = body
+      .match(/\binput\s+(?:\[([^\]]+)\]|([\w.]+))\s*;/)
+      ?.slice(1)
+      .find(Boolean);
+    const produces = body.match(/\bproduces\s+([\w.]+)\s*;/)?.[1];
     operations.push({
+      inputs:
+        inputText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
+      produces: produces?.split(".").pop(),
       symbol: header[1],
       action: (header[2] ?? "operation").replace(/<.*$/, ""),
       process,
@@ -98,5 +111,17 @@ export function parseUiModel(source: string): UiRecipeModel {
       },
     });
   }
-  return { title, symbol, resources, processes, operations };
+  const source_ = source.match(/\bsource\s+"([^"]+)"\s*;/)?.[1];
+  const sourceUrl = source.match(/\bsource_url\s+"([^"]+)"\s*;/)?.[1];
+  const attribution = source.match(/\battribution\s+"([^"]+)"\s*;/)?.[1];
+  return {
+    title,
+    symbol,
+    resources,
+    processes,
+    operations,
+    source: source_,
+    sourceUrl,
+    attribution,
+  };
 }

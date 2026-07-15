@@ -8,15 +8,31 @@ pub trait RecipeRepository: Send + Sync {
     fn list_recipes(&self) -> Result<Vec<RecipeSummary>, ApplicationError>;
     fn get_recipe(&self, id: Uuid) -> Result<Option<RecipeDocument>, ApplicationError>;
     fn create_recipe(&self, recipe: NewRecipe) -> Result<RecipeDocument, ApplicationError>;
-    fn save_recipe(&self, recipe: &Recipe, source_text: &str) -> Result<RecipeDocument, ApplicationError>;
+    fn save_recipe(
+        &self,
+        recipe: &Recipe,
+        source_text: &str,
+    ) -> Result<RecipeDocument, ApplicationError>;
     fn delete_recipe(&self, id: Uuid) -> Result<bool, ApplicationError>;
-    fn move_recipe(&self, id: Uuid, book_id: Option<Uuid>, position: i64) -> Result<bool, ApplicationError>;
+    fn move_recipe(
+        &self,
+        id: Uuid,
+        book_id: Option<Uuid>,
+        position: i64,
+    ) -> Result<bool, ApplicationError>;
 }
 
 pub trait RecipeBookRepository: Send + Sync {
     fn list_recipe_books(&self) -> Result<Vec<RecipeBookSummary>, ApplicationError>;
-    fn create_recipe_book(&self, input: NewRecipeBook) -> Result<RecipeBookSummary, ApplicationError>;
-    fn update_recipe_book(&self, id: Uuid, input: NewRecipeBook) -> Result<Option<RecipeBookSummary>, ApplicationError>;
+    fn create_recipe_book(
+        &self,
+        input: NewRecipeBook,
+    ) -> Result<RecipeBookSummary, ApplicationError>;
+    fn update_recipe_book(
+        &self,
+        id: Uuid,
+        input: NewRecipeBook,
+    ) -> Result<Option<RecipeBookSummary>, ApplicationError>;
     fn save_recipe_book(&self, book: &RecipeBook) -> Result<(), ApplicationError>;
     fn delete_recipe_book(&self, id: Uuid) -> Result<bool, ApplicationError>;
 }

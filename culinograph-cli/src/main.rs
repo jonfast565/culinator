@@ -5,7 +5,11 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "culinograph", version, about = "Typed food-production DSL toolchain")]
+#[command(
+    name = "culinograph",
+    version,
+    about = "Typed food-production DSL toolchain"
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,

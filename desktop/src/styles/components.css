@@ -87,6 +87,9 @@
     padding: 8px 0;
     border-bottom: 1px solid #e0e3e0;
   }
+  dl > div:last-child {
+    border-bottom: 0;
+  }
   dt {
     color: #718078;
   }
@@ -172,5 +175,107 @@
   }
   .error {
     color: #a93434;
+  }
+
+  /* Printable recipe narrative */
+  .narrative {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .narrative-head {
+    border-bottom: 1px solid #dfe4df;
+    padding-bottom: 12px;
+  }
+  .narrative-head h3 {
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .narrative-head small {
+    display: block;
+    margin-top: 3px;
+  }
+  .narrative-section h4 {
+    margin: 0 0 10px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: #6d7972;
+  }
+  .ingredient-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .ingredient-list li {
+    display: grid;
+    grid-template-columns: 96px 1fr;
+    gap: 10px;
+    align-items: baseline;
+    padding: 6px 0;
+    border-bottom: 1px dashed #e2e6e1;
+  }
+  .ingredient-list li:last-child {
+    border-bottom: 0;
+  }
+  .ingredient-list .qty {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    color: #27342d;
+    text-align: right;
+  }
+  .ingredient-list .name {
+    color: #35423b;
+  }
+  .method {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .method-heading {
+    margin: 6px 0 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #28643b;
+  }
+  .method-step {
+    display: grid;
+    grid-template-columns: 26px 1fr;
+    gap: 11px;
+    align-items: start;
+  }
+  .step-number {
+    display: grid;
+    place-items: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #e4efe6;
+    color: #28643b;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .step-body p {
+    margin: 0;
+    line-height: 1.45;
+  }
+  .step-body small {
+    text-transform: capitalize;
+  }
+  .narrative-credit {
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 1px solid #dfe4df;
+    font-size: 11px;
+    color: #7f8b84;
+  }
+  .narrative-credit p {
+    margin: 0 0 3px;
+  }
+  .narrative-credit a {
+    color: #28643b;
+    word-break: break-all;
   }
 }

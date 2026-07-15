@@ -1,4 +1,4 @@
-use culinograph_service::{bind, AccessPolicy, ServiceConfig, ServiceState};
+use culinograph_service::{AccessPolicy, ServiceConfig, ServiceState, bind};
 use serde::Serialize;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -38,9 +38,13 @@ pub fn run() {
                 "https://tauri.localhost".to_owned(),
                 "http://localhost:1420".to_owned(),
             ];
+            let state = ServiceState::sqlite(database_path, settings_path)?;
+            if let Err(error) = state.seed_if_empty() {
+                eprintln!("Culinograph sample recipes were not seeded: {error}");
+            }
             let service = tauri::async_runtime::block_on(bind(
                 ServiceConfig {
-                    state: ServiceState::sqlite(database_path, settings_path)?,
+                    state,
                     access: AccessPolicy::new(token.clone(), allowed_origins.clone()),
                     allowed_origins,
                 },

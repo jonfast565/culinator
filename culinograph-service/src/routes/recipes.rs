@@ -1,4 +1,8 @@
-use axum::{extract::{Path, State}, http::StatusCode, Json};
+use axum::{
+    Json,
+    extract::{Path, State},
+    http::StatusCode,
+};
 use uuid::Uuid;
 
 use crate::{
@@ -11,14 +15,23 @@ use crate::{
 };
 
 pub async fn list(State(state): State<ServiceState>) -> Result<Json<Vec<RecipeSummary>>, ApiError> {
-    Ok(Json(state.recipes().list()?.into_iter().map(RecipeSummary::from).collect()))
+    Ok(Json(
+        state
+            .recipes()
+            .list()?
+            .into_iter()
+            .map(RecipeSummary::from)
+            .collect(),
+    ))
 }
 
 pub async fn get(
     Path(id): Path<String>,
     State(state): State<ServiceState>,
 ) -> Result<Json<RecipeDocument>, ApiError> {
-    Ok(Json(RecipeDocument::from(state.recipes().get(parse_id(&id)?)?)))
+    Ok(Json(RecipeDocument::from(
+        state.recipes().get(parse_id(&id)?)?,
+    )))
 }
 
 pub async fn create(
@@ -54,7 +67,11 @@ pub async fn validate(
     let report = state.recipes().validate_source(&request.source_text);
     Json(ValidationResult {
         valid: report.valid,
-        diagnostics: report.diagnostics.into_iter().map(Diagnostic::from).collect(),
+        diagnostics: report
+            .diagnostics
+            .into_iter()
+            .map(Diagnostic::from)
+            .collect(),
         outline: report.outline.map(RecipeOutline::from),
     })
 }

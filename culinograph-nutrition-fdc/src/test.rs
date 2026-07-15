@@ -1,2 +1,4 @@
 #[test]
-fn exposes_builder() { let _ = crate::FdcDatabaseBuilder; }
+fn exposes_builder() {
+    let _ = crate::FdcDatabaseBuilder;
+}

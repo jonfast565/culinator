@@ -19,7 +19,11 @@ impl RecipeService {
         parser: Arc<dyn DocumentParser>,
         validator: Arc<dyn RecipeValidator>,
     ) -> Self {
-        Self { repository, parser, validator }
+        Self {
+            repository,
+            parser,
+            validator,
+        }
     }
 
     pub fn list(&self) -> Result<Vec<crate::RecipeSummary>, ApplicationError> {
@@ -38,18 +42,30 @@ impl RecipeService {
             symbol: "new_recipe".to_owned(),
             title: "Untitled Recipe".to_owned(),
             protocol_version: "0.3".to_owned(),
-            source_text: "culinograph 0.3;\n\nrecipe new_recipe {\n    title \"Untitled Recipe\";\n}\n".to_owned(),
+            source_text:
+                "culinograph 0.3;\n\nrecipe new_recipe {\n    title \"Untitled Recipe\";\n}\n"
+                    .to_owned(),
         })
     }
 
-    pub fn save(&self, id: Uuid, source_text: &str) -> Result<crate::RecipeDocument, ApplicationError> {
+    pub fn save(
+        &self,
+        id: Uuid,
+        source_text: &str,
+    ) -> Result<crate::RecipeDocument, ApplicationError> {
         let mut recipe = self.parser.parse_recipe(source_text)?;
         let diagnostics = self.validator.validate(&recipe);
-        if diagnostics.iter().any(|item| item.severity == DiagnosticSeverity::Error) {
+        if diagnostics
+            .iter()
+            .any(|item| item.severity == DiagnosticSeverity::Error)
+        {
             return Err(ApplicationError::Validation);
         }
         recipe.id = id;
-        recipe.book_id = self.repository.get_recipe(id)?.and_then(|document| document.book_id);
+        recipe.book_id = self
+            .repository
+            .get_recipe(id)?
+            .and_then(|document| document.book_id);
         self.repository.save_recipe(&recipe, source_text)
     }
 
@@ -61,7 +77,12 @@ impl RecipeService {
         }
     }
 
-    pub fn move_to_book(&self, id: Uuid, book_id: Option<Uuid>, position: i64) -> Result<(), ApplicationError> {
+    pub fn move_to_book(
+        &self,
+        id: Uuid,
+        book_id: Option<Uuid>,
+        position: i64,
+    ) -> Result<(), ApplicationError> {
         if self.repository.move_recipe(id, book_id, position)? {
             Ok(())
         } else {
@@ -88,7 +109,9 @@ impl RecipeService {
 
     fn report_for_recipe(&self, recipe: &Recipe) -> ValidationReport {
         let diagnostics = self.validator.validate(recipe);
-        let valid = !diagnostics.iter().any(|item| item.severity == DiagnosticSeverity::Error);
+        let valid = !diagnostics
+            .iter()
+            .any(|item| item.severity == DiagnosticSeverity::Error);
         ValidationReport {
             valid,
             diagnostics,

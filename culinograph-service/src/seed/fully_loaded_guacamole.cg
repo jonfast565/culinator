@@ -1,0 +1,82 @@
+culinograph 0.3;
+
+recipe fully_loaded_guacamole {
+    title "Fully Loaded Guacamole";
+
+    source "Alton Brown";
+    publisher "Food Network / altonbrown.com";
+    source_url "https://altonbrown.com/recipes/fully-loaded-guacamole/";
+    attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
+
+    ingredient avocados measured by count {
+        name "ripe Hass avocados";
+        quantity 3 count;
+    }
+    ingredient lime_juice measured by volume {
+        name "fresh lime juice";
+        quantity 1 tbsp;
+    }
+    ingredient salt measured by mass {
+        name "kosher salt";
+        quantity 0.5 tsp;
+    }
+    ingredient cumin measured by mass {
+        name "ground cumin";
+        quantity 0.5 tsp;
+    }
+    ingredient cayenne measured by mass {
+        name "ground cayenne";
+        quantity 0.25 tsp;
+    }
+    ingredient onion measured by count {
+        name "onion, diced";
+        quantity 0.5 count;
+    }
+    ingredient tomatoes measured by count {
+        name "Roma tomatoes, seeded and diced";
+        quantity 2 count;
+    }
+    ingredient cilantro measured by mass {
+        name "chopped cilantro";
+        quantity 1 tbsp;
+    }
+    ingredient jalapeno measured by count {
+        name "jalapeno, minced";
+        quantity 0.5 count;
+    }
+    ingredient garlic measured by count {
+        name "garlic clove, minced";
+        quantity 1 clove;
+    }
+
+    material mashed_avocado measured by mass { }
+    material guacamole_mix measured by mass { }
+
+    process mixing {
+        operation mash does mix {
+            input [avocados, lime_juice, salt, cumin, cayenne];
+            duration 3 min;
+            labor active;
+            produces mashed_avocado;
+        }
+        operation fold does mix {
+            input [mashed_avocado, onion, tomatoes, cilantro, jalapeno, garlic];
+            after mash;
+            duration 2 min;
+            labor active;
+            produces guacamole_mix;
+        }
+    }
+    process resting {
+        operation rest does rest {
+            input [guacamole_mix];
+            after fold;
+            duration 120 min;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

@@ -8,10 +8,18 @@ pub struct TextRange {
 }
 
 impl TextRange {
-    pub const fn new(start: usize, end: usize) -> Self { Self { start, end } }
-    pub const fn len(self) -> usize { self.end - self.start }
-    pub const fn is_empty(self) -> bool { self.start == self.end }
-    pub fn as_range(self) -> Range<usize> { self.start..self.end }
+    pub const fn new(start: usize, end: usize) -> Self {
+        Self { start, end }
+    }
+    pub const fn len(self) -> usize {
+        self.end - self.start
+    }
+    pub const fn is_empty(self) -> bool {
+        self.start == self.end
+    }
+    pub fn as_range(self) -> Range<usize> {
+        self.start..self.end
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -45,7 +53,10 @@ pub enum SyntaxKind {
 
 impl SyntaxKind {
     pub const fn is_trivia(self) -> bool {
-        matches!(self, Self::Whitespace | Self::LineComment | Self::BlockComment)
+        matches!(
+            self,
+            Self::Whitespace | Self::LineComment | Self::BlockComment
+        )
     }
 }
 
@@ -63,7 +74,11 @@ pub enum SyntaxError {
     #[error("unterminated block comment at byte {0}")]
     UnterminatedBlockComment(usize),
     #[error("invalid edit range {start}..{end} for source length {source_len}")]
-    InvalidEditRange { start: usize, end: usize, source_len: usize },
+    InvalidEditRange {
+        start: usize,
+        end: usize,
+        source_len: usize,
+    },
     #[error("overlapping edits at byte {0}")]
     OverlappingEdits(usize),
     #[error("unclosed delimiter `{delimiter}` at byte {offset}")]
@@ -81,12 +96,16 @@ pub fn lex_lossless(source: &str) -> Result<Vec<SyntaxToken>, SyntaxError> {
         let kind = match bytes[i] {
             b if b.is_ascii_whitespace() => {
                 i += 1;
-                while i < bytes.len() && bytes[i].is_ascii_whitespace() { i += 1; }
+                while i < bytes.len() && bytes[i].is_ascii_whitespace() {
+                    i += 1;
+                }
                 SyntaxKind::Whitespace
             }
             b'/' if bytes.get(i + 1) == Some(&b'/') => {
                 i += 2;
-                while i < bytes.len() && bytes[i] != b'\n' { i += 1; }
+                while i < bytes.len() && bytes[i] != b'\n' {
+                    i += 1;
+                }
                 SyntaxKind::LineComment
             }
             b'/' if bytes.get(i + 1) == Some(&b'*') => {
@@ -100,7 +119,9 @@ pub fn lex_lossless(source: &str) -> Result<Vec<SyntaxToken>, SyntaxError> {
                     }
                     i += 1;
                 }
-                if !closed { return Err(SyntaxError::UnterminatedBlockComment(start)); }
+                if !closed {
+                    return Err(SyntaxError::UnterminatedBlockComment(start));
+                }
                 SyntaxKind::BlockComment
             }
             b'"' => {
@@ -108,41 +129,114 @@ pub fn lex_lossless(source: &str) -> Result<Vec<SyntaxToken>, SyntaxError> {
                 let mut closed = false;
                 while i < bytes.len() {
                     match bytes[i] {
-                        b'\\' => { i += 1; if i < bytes.len() { i += 1; } }
-                        b'"' => { i += 1; closed = true; break; }
+                        b'\\' => {
+                            i += 1;
+                            if i < bytes.len() {
+                                i += 1;
+                            }
+                        }
+                        b'"' => {
+                            i += 1;
+                            closed = true;
+                            break;
+                        }
                         _ => i += 1,
                     }
                 }
-                if !closed { return Err(SyntaxError::UnterminatedString(start)); }
+                if !closed {
+                    return Err(SyntaxError::UnterminatedString(start));
+                }
                 SyntaxKind::String
             }
             b if b.is_ascii_alphabetic() || b == b'_' => {
                 i += 1;
-                while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || matches!(bytes[i], b'_' | b'-')) { i += 1; }
+                while i < bytes.len()
+                    && (bytes[i].is_ascii_alphanumeric() || matches!(bytes[i], b'_' | b'-'))
+                {
+                    i += 1;
+                }
                 SyntaxKind::Identifier
             }
             b if b.is_ascii_digit() => {
                 i += 1;
-                while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b'.') { i += 1; }
-                if bytes.get(i) == Some(&b'%') { i += 1; SyntaxKind::Percent } else { SyntaxKind::Number }
+                while i < bytes.len() && (bytes[i].is_ascii_digit() || bytes[i] == b'.') {
+                    i += 1;
+                }
+                if bytes.get(i) == Some(&b'%') {
+                    i += 1;
+                    SyntaxKind::Percent
+                } else {
+                    SyntaxKind::Number
+                }
             }
-            b'{' => { i += 1; SyntaxKind::LBrace }
-            b'}' => { i += 1; SyntaxKind::RBrace }
-            b'[' => { i += 1; SyntaxKind::LBracket }
-            b']' => { i += 1; SyntaxKind::RBracket }
-            b'(' => { i += 1; SyntaxKind::LParen }
-            b')' => { i += 1; SyntaxKind::RParen }
-            b'<' => { i += 1; SyntaxKind::Less }
-            b'>' => { i += 1; SyntaxKind::Greater }
-            b',' => { i += 1; SyntaxKind::Comma }
-            b';' => { i += 1; SyntaxKind::Semicolon }
-            b'=' => { i += 1; SyntaxKind::Equals }
-            b'.' => { i += 1; SyntaxKind::Dot }
-            b':' => { i += 1; SyntaxKind::Colon }
-            b'+' => { i += 1; SyntaxKind::Plus }
-            b'-' => { i += 1; SyntaxKind::Minus }
-            b'*' => { i += 1; SyntaxKind::Star }
-            b'/' => { i += 1; SyntaxKind::Slash }
+            b'{' => {
+                i += 1;
+                SyntaxKind::LBrace
+            }
+            b'}' => {
+                i += 1;
+                SyntaxKind::RBrace
+            }
+            b'[' => {
+                i += 1;
+                SyntaxKind::LBracket
+            }
+            b']' => {
+                i += 1;
+                SyntaxKind::RBracket
+            }
+            b'(' => {
+                i += 1;
+                SyntaxKind::LParen
+            }
+            b')' => {
+                i += 1;
+                SyntaxKind::RParen
+            }
+            b'<' => {
+                i += 1;
+                SyntaxKind::Less
+            }
+            b'>' => {
+                i += 1;
+                SyntaxKind::Greater
+            }
+            b',' => {
+                i += 1;
+                SyntaxKind::Comma
+            }
+            b';' => {
+                i += 1;
+                SyntaxKind::Semicolon
+            }
+            b'=' => {
+                i += 1;
+                SyntaxKind::Equals
+            }
+            b'.' => {
+                i += 1;
+                SyntaxKind::Dot
+            }
+            b':' => {
+                i += 1;
+                SyntaxKind::Colon
+            }
+            b'+' => {
+                i += 1;
+                SyntaxKind::Plus
+            }
+            b'-' => {
+                i += 1;
+                SyntaxKind::Minus
+            }
+            b'*' => {
+                i += 1;
+                SyntaxKind::Star
+            }
+            b'/' => {
+                i += 1;
+                SyntaxKind::Slash
+            }
             _ => {
                 // Preserve one full UTF-8 scalar as an unknown token.
                 let width = source[i..].chars().next().map(char::len_utf8).unwrap_or(1);
@@ -158,7 +252,6 @@ pub fn lex_lossless(source: &str) -> Result<Vec<SyntaxToken>, SyntaxError> {
     }
     Ok(tokens)
 }
-
 
 #[cfg(test)]
 mod test;

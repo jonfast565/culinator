@@ -1,13 +1,17 @@
-use tower_lsp::{jsonrpc::Result, lsp_types::*, Client, LanguageServer, LspService, Server};
+use tower_lsp::{Client, LanguageServer, LspService, Server, jsonrpc::Result, lsp_types::*};
 
-struct Backend { client: Client }
+struct Backend {
+    client: Client,
+}
 
 #[tower_lsp::async_trait]
 impl LanguageServer for Backend {
     async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
         Ok(InitializeResult {
             capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Kind(TextDocumentSyncKind::FULL)),
+                text_document_sync: Some(TextDocumentSyncCapability::Kind(
+                    TextDocumentSyncKind::FULL,
+                )),
                 hover_provider: Some(HoverProviderCapability::Simple(true)),
                 definition_provider: Some(OneOf::Left(true)),
                 rename_provider: Some(OneOf::Left(true)),
@@ -18,18 +22,34 @@ impl LanguageServer for Backend {
         })
     }
     async fn initialized(&self, _: InitializedParams) {
-        self.client.log_message(MessageType::INFO, "Culinograph language server initialized").await;
+        self.client
+            .log_message(MessageType::INFO, "Culinograph language server initialized")
+            .await;
     }
-    async fn shutdown(&self) -> Result<()> { Ok(()) }
+    async fn shutdown(&self) -> Result<()> {
+        Ok(())
+    }
     async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        self.publish(&params.text_document.uri, &params.text_document.text).await;
+        self.publish(&params.text_document.uri, &params.text_document.text)
+            .await;
     }
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        if let Some(change) = params.content_changes.into_iter().last() { self.publish(&params.text_document.uri, &change.text).await; }
+        if let Some(change) = params.content_changes.into_iter().last() {
+            self.publish(&params.text_document.uri, &change.text).await;
+        }
     }
-    async fn hover(&self, _: HoverParams) -> Result<Option<Hover>> { Ok(None) }
-    async fn goto_definition(&self, _: GotoDefinitionParams) -> Result<Option<GotoDefinitionResponse>> { Ok(None) }
-    async fn rename(&self, _: RenameParams) -> Result<Option<WorkspaceEdit>> { Ok(None) }
+    async fn hover(&self, _: HoverParams) -> Result<Option<Hover>> {
+        Ok(None)
+    }
+    async fn goto_definition(
+        &self,
+        _: GotoDefinitionParams,
+    ) -> Result<Option<GotoDefinitionResponse>> {
+        Ok(None)
+    }
+    async fn rename(&self, _: RenameParams) -> Result<Option<WorkspaceEdit>> {
+        Ok(None)
+    }
     async fn completion(&self, _: CompletionParams) -> Result<Option<CompletionResponse>> {
         Ok(Some(CompletionResponse::Array(vec![
             CompletionItem::new_simple("resource".into(), "Declare a typed resource".into()),
@@ -42,12 +62,28 @@ impl LanguageServer for Backend {
 impl Backend {
     async fn publish(&self, uri: &Url, text: &str) {
         let diagnostics = match culinograph_parser::parse_recipe(text) {
-            Ok(recipe) => culinograph_validator::validate(&recipe).into_iter().map(|d| Diagnostic {
-                range: Range::default(), severity: Some(DiagnosticSeverity::WARNING), code: Some(NumberOrString::String(d.code.into())), source: Some("culinograph".into()), message: d.message, ..Default::default()
-            }).collect(),
-            Err(error) => vec![Diagnostic { range: Range::default(), severity: Some(DiagnosticSeverity::ERROR), source: Some("culinograph".into()), message: error.to_string(), ..Default::default() }],
+            Ok(recipe) => culinograph_validator::validate(&recipe)
+                .into_iter()
+                .map(|d| Diagnostic {
+                    range: Range::default(),
+                    severity: Some(DiagnosticSeverity::WARNING),
+                    code: Some(NumberOrString::String(d.code.into())),
+                    source: Some("culinograph".into()),
+                    message: d.message,
+                    ..Default::default()
+                })
+                .collect(),
+            Err(error) => vec![Diagnostic {
+                range: Range::default(),
+                severity: Some(DiagnosticSeverity::ERROR),
+                source: Some("culinograph".into()),
+                message: error.to_string(),
+                ..Default::default()
+            }],
         };
-        self.client.publish_diagnostics(uri.clone(), diagnostics, None).await;
+        self.client
+            .publish_diagnostics(uri.clone(), diagnostics, None)
+            .await;
     }
 }
 

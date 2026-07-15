@@ -142,7 +142,6 @@ pub struct NutritionSearchResult {
     pub serving_size_unit: Option<String>,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct NutritionFacts {
@@ -235,7 +234,6 @@ pub struct RecipeExportBundle {
     pub archive: Vec<u8>,
 }
 
-
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecipeImage {
@@ -257,13 +255,24 @@ pub struct ImportSettings {
     pub tesseract_command: String,
 }
 
-fn default_openai_model() -> String { "gpt-4.1-mini".to_owned() }
-fn default_true() -> bool { true }
-fn default_tesseract() -> String { "tesseract".to_owned() }
+fn default_openai_model() -> String {
+    "gpt-4.1-mini".to_owned()
+}
+fn default_true() -> bool {
+    true
+}
+fn default_tesseract() -> String {
+    "tesseract".to_owned()
+}
 
 impl Default for ImportSettings {
     fn default() -> Self {
-        Self { openai_api_key: String::new(), openai_model: default_openai_model(), use_local_ocr: true, tesseract_command: default_tesseract() }
+        Self {
+            openai_api_key: String::new(),
+            openai_model: default_openai_model(),
+            use_local_ocr: true,
+            tesseract_command: default_tesseract(),
+        }
     }
 }
 
@@ -278,7 +287,12 @@ pub struct PublicImportSettings {
 
 impl From<&ImportSettings> for PublicImportSettings {
     fn from(value: &ImportSettings) -> Self {
-        Self { api_key_configured: !value.openai_api_key.trim().is_empty(), openai_model: value.openai_model.clone(), use_local_ocr: value.use_local_ocr, tesseract_command: value.tesseract_command.clone() }
+        Self {
+            api_key_configured: !value.openai_api_key.trim().is_empty(),
+            openai_model: value.openai_model.clone(),
+            use_local_ocr: value.use_local_ocr,
+            tesseract_command: value.tesseract_command.clone(),
+        }
     }
 }
 
@@ -306,8 +320,16 @@ pub struct ScheduleOptions {
     #[serde(default = "default_schedule_duration")]
     pub default_duration_seconds: u64,
 }
-fn default_schedule_duration() -> u64 { 300 }
-impl Default for ScheduleOptions { fn default() -> Self { Self { default_duration_seconds: default_schedule_duration() } } }
+fn default_schedule_duration() -> u64 {
+    300
+}
+impl Default for ScheduleOptions {
+    fn default() -> Self {
+        Self {
+            default_duration_seconds: default_schedule_duration(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

@@ -1,19 +1,26 @@
 use axum::{
-    extract::{ws::{Message, WebSocket, WebSocketUpgrade}, State},
-    http::{header, HeaderMap, StatusCode},
+    extract::{
+        State,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+    },
+    http::{HeaderMap, StatusCode, header},
     response::{IntoResponse, Response},
 };
 use culinograph_core::{Formula, PercentageView};
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::sync::Arc;
 use tokio::sync::broadcast;
 
 use crate::{
-    auth::AccessPolicy,
-    models::{CreateRecipeRequest, FormulaCalculationRequest, ExportRecipeRequest, MoveRecipeRequest, PercentageRequest, SaveRecipeBookRequest, SaveRecipeRequest, TranslateRecipeImagesRequest, UpdateImportSettingsRequest, ValidateRequest},
-    routes,
     ServiceState,
+    auth::AccessPolicy,
+    models::{
+        CreateRecipeRequest, ExportRecipeRequest, FormulaCalculationRequest, MoveRecipeRequest,
+        PercentageRequest, SaveRecipeBookRequest, SaveRecipeRequest, TranslateRecipeImagesRequest,
+        UpdateImportSettingsRequest, ValidateRequest,
+    },
+    routes,
 };
 
 const PROTOCOL: &str = "culinograph.v1";
@@ -29,7 +36,11 @@ pub struct WebSocketState {
 impl WebSocketState {
     pub fn new(service: ServiceState, access: AccessPolicy) -> Self {
         let (events, _) = broadcast::channel(128);
-        Self { service, access, events }
+        Self {
+            service,
+            access,
+            events,
+        }
     }
 
     pub fn publish(&self, event: ServerEvent) {
@@ -80,16 +91,28 @@ pub async fn upgrade(
         return (StatusCode::FORBIDDEN, "Origin is not allowed").into_response();
     }
 
-    let Some(protocols) = headers.get(header::SEC_WEBSOCKET_PROTOCOL).and_then(|v| v.to_str().ok()) else {
-        return (StatusCode::UNAUTHORIZED, "Missing WebSocket protocol authentication").into_response();
+    let Some(protocols) = headers
+        .get(header::SEC_WEBSOCKET_PROTOCOL)
+        .and_then(|v| v.to_str().ok())
+    else {
+        return (
+            StatusCode::UNAUTHORIZED,
+            "Missing WebSocket protocol authentication",
+        )
+            .into_response();
     };
     let offered = protocols.split(',').map(str::trim).collect::<Vec<_>>();
     let expected_auth = format!("{AUTH_PREFIX}{}", state.access.token());
-    if !offered.contains(&PROTOCOL) || !offered.iter().any(|value| constant_time_eq(value, &expected_auth)) {
+    if !offered.contains(&PROTOCOL)
+        || !offered
+            .iter()
+            .any(|value| constant_time_eq(value, &expected_auth))
+    {
         return (StatusCode::UNAUTHORIZED, "Invalid launch token").into_response();
     }
 
-    ws.protocols([PROTOCOL]).on_upgrade(move |socket| session(socket, state))
+    ws.protocols([PROTOCOL])
+        .on_upgrade(move |socket| session(socket, state))
 }
 
 async fn session(mut socket: WebSocket, state: WebSocketState) {
@@ -139,31 +162,59 @@ async fn session(mut socket: WebSocket, state: WebSocketState) {
 async fn dispatch(request: RpcRequest, state: &WebSocketState) -> RpcResponse {
     let result = dispatch_inner(&request.method, request.params, state).await;
     match result {
-        Ok(value) => RpcResponse { id: request.id, ok: true, result: Some(value), error: None },
+        Ok(value) => RpcResponse {
+            id: request.id,
+            ok: true,
+            result: Some(value),
+            error: None,
+        },
         Err(message) => RpcResponse {
             id: request.id,
             ok: false,
             result: None,
-            error: Some(RpcError { code: "operation_failed", message }),
+            error: Some(RpcError {
+                code: "operation_failed",
+                message,
+            }),
         },
     }
 }
 
-async fn dispatch_inner(method: &str, params: Value, state: &WebSocketState) -> Result<Value, String> {
+async fn dispatch_inner(
+    method: &str,
+    params: Value,
+    state: &WebSocketState,
+) -> Result<Value, String> {
     match method {
         "recipes.list" => {
-            let axum::Json(value) = routes::recipes::list(State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) = routes::recipes::list(State(state.service.clone()))
+                .await
+                .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.get" => {
             let id = required_string(&params, "id")?;
-            let axum::Json(value) = routes::recipes::get(axum::extract::Path(id), State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) =
+                routes::recipes::get(axum::extract::Path(id), State(state.service.clone()))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.create" => {
-            let book_id = params.get("bookId").and_then(Value::as_str).map(ToOwned::to_owned);
-            let (_, axum::Json(value)) = routes::recipes::create(State(state.service.clone()), axum::Json(CreateRecipeRequest { book_id })).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "recipes.changed".to_owned(), payload: json!({"kind":"created","id":value.id}) });
+            let book_id = params
+                .get("bookId")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let (_, axum::Json(value)) = routes::recipes::create(
+                State(state.service.clone()),
+                axum::Json(CreateRecipeRequest { book_id }),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"created","id":value.id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.save" => {
@@ -173,109 +224,256 @@ async fn dispatch_inner(method: &str, params: Value, state: &WebSocketState) -> 
                 axum::extract::Path(id.clone()),
                 State(state.service.clone()),
                 axum::Json(SaveRecipeRequest { source_text }),
-            ).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "recipes.changed".to_owned(), payload: json!({"kind":"saved","id":id}) });
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"saved","id":id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.delete" => {
             let id = required_string(&params, "id")?;
-            routes::recipes::delete(axum::extract::Path(id.clone()), State(state.service.clone())).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "recipes.changed".to_owned(), payload: json!({"kind":"deleted","id":id}) });
+            routes::recipes::delete(
+                axum::extract::Path(id.clone()),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"deleted","id":id}),
+            });
             Ok(Value::Null)
         }
         "books.list" => {
-            let axum::Json(value) = routes::books::list(State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) = routes::books::list(State(state.service.clone()))
+                .await
+                .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "books.create" => {
             let title = required_string(&params, "title")?;
-            let symbol = params.get("symbol").and_then(Value::as_str).map(ToOwned::to_owned);
-            let description = params.get("description").and_then(Value::as_str).map(ToOwned::to_owned);
-            let (_, axum::Json(value)) = routes::books::create(State(state.service.clone()), axum::Json(SaveRecipeBookRequest { title, symbol, description })).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "books.changed".to_owned(), payload: json!({"kind":"created","id":value.id}) });
+            let symbol = params
+                .get("symbol")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let description = params
+                .get("description")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let (_, axum::Json(value)) = routes::books::create(
+                State(state.service.clone()),
+                axum::Json(SaveRecipeBookRequest {
+                    title,
+                    symbol,
+                    description,
+                }),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "books.changed".to_owned(),
+                payload: json!({"kind":"created","id":value.id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "books.update" => {
             let id = required_string(&params, "id")?;
             let title = required_string(&params, "title")?;
-            let symbol = params.get("symbol").and_then(Value::as_str).map(ToOwned::to_owned);
-            let description = params.get("description").and_then(Value::as_str).map(ToOwned::to_owned);
-            let axum::Json(value) = routes::books::update(axum::extract::Path(id.clone()), State(state.service.clone()), axum::Json(SaveRecipeBookRequest { title, symbol, description })).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "books.changed".to_owned(), payload: json!({"kind":"updated","id":id}) });
+            let symbol = params
+                .get("symbol")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let description = params
+                .get("description")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let axum::Json(value) = routes::books::update(
+                axum::extract::Path(id.clone()),
+                State(state.service.clone()),
+                axum::Json(SaveRecipeBookRequest {
+                    title,
+                    symbol,
+                    description,
+                }),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "books.changed".to_owned(),
+                payload: json!({"kind":"updated","id":id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "books.delete" => {
             let id = required_string(&params, "id")?;
-            routes::books::delete(axum::extract::Path(id.clone()), State(state.service.clone())).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "books.changed".to_owned(), payload: json!({"kind":"deleted","id":id}) });
+            routes::books::delete(
+                axum::extract::Path(id.clone()),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "books.changed".to_owned(),
+                payload: json!({"kind":"deleted","id":id}),
+            });
             Ok(Value::Null)
         }
         "recipes.move" => {
             let id = required_string(&params, "id")?;
-            let book_id = params.get("bookId").and_then(Value::as_str).map(ToOwned::to_owned);
+            let book_id = params
+                .get("bookId")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
             let position = params.get("position").and_then(Value::as_i64).unwrap_or(0);
-            routes::books::move_recipe(axum::extract::Path(id.clone()), State(state.service.clone()), axum::Json(MoveRecipeRequest { book_id: book_id.clone(), position })).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "recipes.changed".to_owned(), payload: json!({"kind":"moved","id":id,"bookId":book_id}) });
-            state.publish(ServerEvent { event: "books.changed".to_owned(), payload: json!({"kind":"membership"}) });
+            routes::books::move_recipe(
+                axum::extract::Path(id.clone()),
+                State(state.service.clone()),
+                axum::Json(MoveRecipeRequest {
+                    book_id: book_id.clone(),
+                    position,
+                }),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"moved","id":id,"bookId":book_id}),
+            });
+            state.publish(ServerEvent {
+                event: "books.changed".to_owned(),
+                payload: json!({"kind":"membership"}),
+            });
             Ok(Value::Null)
         }
         "recipes.export" => {
             let id = required_string(&params, "id")?;
-            let options = serde_json::from_value(params.get("options").cloned().ok_or("Missing options")?).map_err(to_string)?;
-            let axum::Json(value) = routes::exports::export_recipe(axum::extract::Path(id), State(state.service.clone()), axum::Json(ExportRecipeRequest { options })).await.map_err(to_string)?;
+            let options =
+                serde_json::from_value(params.get("options").cloned().ok_or("Missing options")?)
+                    .map_err(to_string)?;
+            let axum::Json(value) = routes::exports::export_recipe(
+                axum::extract::Path(id),
+                State(state.service.clone()),
+                axum::Json(ExportRecipeRequest { options }),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "imports.settings.get" => {
-            let axum::Json(value)=routes::imports::get_settings(State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) = routes::imports::get_settings(State(state.service.clone()))
+                .await
+                .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "imports.settings.update" => {
-            let request: UpdateImportSettingsRequest=serde_json::from_value(params).map_err(to_string)?;
-            let axum::Json(value)=routes::imports::update_settings(State(state.service.clone()),axum::Json(request)).await.map_err(to_string)?;
+            let request: UpdateImportSettingsRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) =
+                routes::imports::update_settings(State(state.service.clone()), axum::Json(request))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "imports.translate" => {
-            let request: TranslateRecipeImagesRequest=serde_json::from_value(params).map_err(to_string)?;
-            let axum::Json(value)=routes::imports::translate(State(state.service.clone()),axum::Json(request)).await.map_err(to_string)?;
+            let request: TranslateRecipeImagesRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) =
+                routes::imports::translate(State(state.service.clone()), axum::Json(request))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.schedule" => {
             let source_text = required_string(&params, "sourceText")?;
-            let options: culinograph_models::ScheduleOptions = params.get("options").cloned().map(serde_json::from_value).transpose().map_err(to_string)?.unwrap_or_default();
-            let value = state.service.schedules().schedule_source(&source_text, &options).map_err(to_string)?;
+            let options: culinograph_models::ScheduleOptions = params
+                .get("options")
+                .cloned()
+                .map(serde_json::from_value)
+                .transpose()
+                .map_err(to_string)?
+                .unwrap_or_default();
+            let value = state
+                .service
+                .schedules()
+                .schedule_source(&source_text, &options)
+                .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.validate" => {
             let source_text = required_string(&params, "sourceText")?;
-            let axum::Json(value) = routes::recipes::validate(State(state.service.clone()), axum::Json(ValidateRequest { source_text })).await;
+            let axum::Json(value) = routes::recipes::validate(
+                State(state.service.clone()),
+                axum::Json(ValidateRequest { source_text }),
+            )
+            .await;
             serde_json::to_value(value).map_err(to_string)
         }
         "formulas.calculate" => {
-            let formula: Formula = serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?).map_err(to_string)?;
+            let formula: Formula =
+                serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?)
+                    .map_err(to_string)?;
             let target_mass_grams = required_f64(&params, "targetMassGrams")?;
-            let axum::Json(value) = routes::formulas::calculate(State(state.service.clone()), axum::Json(FormulaCalculationRequest { formula, target_mass_grams })).await.map_err(to_string)?;
+            let axum::Json(value) = routes::formulas::calculate(
+                State(state.service.clone()),
+                axum::Json(FormulaCalculationRequest {
+                    formula,
+                    target_mass_grams,
+                }),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "formulas.percentages" => {
-            let formula: Formula = serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?).map_err(to_string)?;
-            let view: PercentageView = serde_json::from_value(params.get("view").cloned().ok_or("Missing view")?).map_err(to_string)?;
-            let axum::Json(value) = routes::formulas::percentages(State(state.service.clone()), axum::Json(PercentageRequest { formula, view })).await.map_err(to_string)?;
+            let formula: Formula =
+                serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?)
+                    .map_err(to_string)?;
+            let view: PercentageView =
+                serde_json::from_value(params.get("view").cloned().ok_or("Missing view")?)
+                    .map_err(to_string)?;
+            let axum::Json(value) = routes::formulas::percentages(
+                State(state.service.clone()),
+                axum::Json(PercentageRequest { formula, view }),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "formulas.save" => {
-            let formula: Formula = serde_json::from_value(params.get("formula").cloned().unwrap_or(params)).map_err(to_string)?;
-            let axum::Json(value) = routes::formulas::save(State(state.service.clone()), axum::Json(formula)).await.map_err(to_string)?;
-            state.publish(ServerEvent { event: "formulas.changed".to_owned(), payload: json!({"recipeId":value.recipe_id,"formulaId":value.id}) });
+            let formula: Formula =
+                serde_json::from_value(params.get("formula").cloned().unwrap_or(params))
+                    .map_err(to_string)?;
+            let axum::Json(value) =
+                routes::formulas::save(State(state.service.clone()), axum::Json(formula))
+                    .await
+                    .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "formulas.changed".to_owned(),
+                payload: json!({"recipeId":value.recipe_id,"formulaId":value.id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "formulas.list" => {
             let recipe_id = required_string(&params, "recipeId")?;
-            let axum::Json(value) = routes::formulas::list_for_recipe(axum::extract::Path(recipe_id), State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) = routes::formulas::list_for_recipe(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "formulas.get" => {
             let formula_id = required_string(&params, "formulaId")?;
-            let axum::Json(value) = routes::formulas::get(axum::extract::Path(formula_id), State(state.service.clone())).await.map_err(to_string)?;
+            let axum::Json(value) = routes::formulas::get(
+                axum::extract::Path(formula_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "service.ping" => Ok(json!({"status":"ok"})),
@@ -289,20 +487,34 @@ async fn send_json<T: Serialize>(socket: &mut WebSocket, value: &T) -> Result<()
 }
 
 fn required_string(value: &Value, key: &str) -> Result<String, String> {
-    value.get(key).and_then(Value::as_str).map(ToOwned::to_owned).ok_or_else(|| format!("Missing {key}"))
+    value
+        .get(key)
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+        .ok_or_else(|| format!("Missing {key}"))
 }
 
 fn required_f64(value: &Value, key: &str) -> Result<f64, String> {
-    value.get(key).and_then(Value::as_f64).ok_or_else(|| format!("Missing {key}"))
+    value
+        .get(key)
+        .and_then(Value::as_f64)
+        .ok_or_else(|| format!("Missing {key}"))
 }
 
-fn to_string(error: impl std::fmt::Display) -> String { error.to_string() }
+fn to_string(error: impl std::fmt::Display) -> String {
+    error.to_string()
+}
 
 fn constant_time_eq(left: &str, right: &str) -> bool {
     let left = left.as_bytes();
     let right = right.as_bytes();
-    if left.len() != right.len() { return false; }
-    left.iter().zip(right).fold(0_u8, |difference, (a, b)| difference | (a ^ b)) == 0
+    if left.len() != right.len() {
+        return false;
+    }
+    left.iter()
+        .zip(right)
+        .fold(0_u8, |difference, (a, b)| difference | (a ^ b))
+        == 0
 }
 #[cfg(test)]
 mod test;

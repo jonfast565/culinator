@@ -35,23 +35,46 @@
     background: #d9f0df;
     color: #1f5130;
   }
+  .sidebar-actions {
+    display: flex;
+    gap: 8px;
+    padding: 12px 14px 4px;
+  }
+  .sidebar .sidebar-action {
+    flex: 1;
+    justify-content: center;
+    gap: 7px;
+    padding: 9px 10px;
+    border-radius: 8px;
+    background: #24352c;
+    color: #eaf3ec;
+    font-size: 13px;
+  }
+  .sidebar .sidebar-action:hover {
+    background: #30463a;
+  }
   .sidebar-heading {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 14px 14px 8px;
+    padding: 16px 14px 8px;
     color: #b7c5bc;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
   }
-  .actions {
-    display: flex;
-    gap: 4px;
-  }
   .sidebar button {
     color: inherit;
     background: transparent;
+  }
+  .sidebar .icon-button {
+    padding: 5px;
+    border-radius: 6px;
+    color: #b7c5bc;
+  }
+  .sidebar .icon-button:hover {
+    background: #2c3c33;
+    color: #edf5ef;
   }
   .library-list {
     min-height: 0;
@@ -113,9 +136,15 @@
     background: white;
     border-bottom: 1px solid #d8ddd9;
   }
+  .toolbar > div:first-child {
+    min-width: 0;
+  }
   .toolbar h1 {
     margin: 0 0 3px;
     font-size: 19px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .toolbar small {
     display: flex;
@@ -125,19 +154,41 @@
   .toolbar-actions {
     display: flex;
     align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    flex-shrink: 0;
     gap: 7px;
+  }
+  .toolbar-actions button,
+  .toolbar-actions select {
+    height: 34px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .toolbar-actions button.danger {
+    width: 34px;
+    padding: 0;
   }
   .editor-layout {
     display: grid;
-    grid-template-columns: minmax(400px, 1fr) 390px;
+    grid-template-columns: minmax(360px, 1fr) 6px var(--inspector-w, 390px);
     min-height: 0;
     flex: 1;
+  }
+  .pane-resizer {
+    cursor: col-resize;
+    background: #d8ddd9;
+    transition: background 0.12s ease;
+    touch-action: none;
+  }
+  .pane-resizer:hover,
+  .pane-resizer:active {
+    background: #28643b;
   }
   .source-editor {
     height: 100%;
     min-height: 0;
     overflow: auto;
-    border-right: 1px solid #d8ddd9;
     background: #fbfbf9;
   }
   .source-editor .cm-editor {
@@ -164,6 +215,9 @@
     }
     .editor-layout {
       grid-template-columns: 1fr;
+    }
+    .pane-resizer {
+      display: none;
     }
     .inspector {
       border-top: 1px solid #d8ddd9;

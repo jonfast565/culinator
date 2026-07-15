@@ -8,12 +8,17 @@ pub struct TextEdit {
 
 impl TextEdit {
     pub fn replace(range: TextRange, replacement: impl Into<String>) -> Self {
-        Self { range, replacement: replacement.into() }
+        Self {
+            range,
+            replacement: replacement.into(),
+        }
     }
     pub fn insert(offset: usize, text: impl Into<String>) -> Self {
         Self::replace(TextRange::new(offset, offset), text)
     }
-    pub fn delete(range: TextRange) -> Self { Self::replace(range, "") }
+    pub fn delete(range: TextRange) -> Self {
+        Self::replace(range, "")
+    }
 }
 
 pub fn apply_text_edits(source: &str, edits: &[TextEdit]) -> Result<String, SyntaxError> {
@@ -29,7 +34,9 @@ pub fn apply_text_edits(source: &str, edits: &[TextEdit]) -> Result<String, Synt
                 source_len: source.len(),
             });
         }
-        if edit.range.start < cursor { return Err(SyntaxError::OverlappingEdits(edit.range.start)); }
+        if edit.range.start < cursor {
+            return Err(SyntaxError::OverlappingEdits(edit.range.start));
+        }
         output.push_str(&source[cursor..edit.range.start]);
         output.push_str(&edit.replacement);
         cursor = edit.range.end;
@@ -37,7 +44,6 @@ pub fn apply_text_edits(source: &str, edits: &[TextEdit]) -> Result<String, Synt
     output.push_str(&source[cursor..]);
     Ok(output)
 }
-
 
 #[cfg(test)]
 mod test;
