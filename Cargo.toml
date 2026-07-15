@@ -1,20 +1,20 @@
 [workspace]
 resolver = "2"
 members = [
-  "crates/culinograph-core",
-  "crates/culinograph-models",
-  "crates/culinograph-application",
-  "crates/culinograph-nutrition-fdc",
-  "crates/culinograph-export",
-  "crates/culinograph-import",
-  "crates/culinograph-parser",
-  "crates/culinograph-validator",
-  "crates/culinograph-sqlite",
-  "crates/culinograph-lsp",
-  "crates/culinograph-cli",
-  "crates/culinograph-service",
-  "crates/culinograph-scheduler",
-  "apps/desktop/src-tauri",
+  "culinograph-core",
+  "culinograph-models",
+  "culinograph-application",
+  "culinograph-nutrition-fdc",
+  "culinograph-export",
+  "culinograph-import",
+  "culinograph-parser",
+  "culinograph-validator",
+  "culinograph-sqlite",
+  "culinograph-lsp",
+  "culinograph-cli",
+  "culinograph-service",
+  "culinograph-scheduler",
+  "desktop/src-tauri",
 ]
 
 [workspace.package]

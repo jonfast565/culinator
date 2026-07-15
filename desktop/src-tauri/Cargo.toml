@@ -17,11 +17,11 @@ path = "src/main.rs"
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-culinograph-core = { path = "../../../crates/culinograph-core" }
-culinograph-parser = { path = "../../../crates/culinograph-parser" }
-culinograph-validator = { path = "../../../crates/culinograph-validator" }
-culinograph-sqlite = { path = "../../../crates/culinograph-sqlite" }
-culinograph-service = { path = "../../../crates/culinograph-service" }
+culinograph-core = { path = "../../culinograph-core" }
+culinograph-parser = { path = "../../culinograph-parser" }
+culinograph-validator = { path = "../../culinograph-validator" }
+culinograph-sqlite = { path = "../../culinograph-sqlite" }
+culinograph-service = { path = "../../culinograph-service" }
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true

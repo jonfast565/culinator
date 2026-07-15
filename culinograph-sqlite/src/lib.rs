@@ -5,11 +5,11 @@ use culinograph_core::{Formula, FormulaBasis, FormulaIngredient, FormulaResult, 
 use rusqlite::{params, Connection, OptionalExtension, Result, Transaction};
 use std::collections::HashMap;
 
-pub const MIGRATION_001: &str = include_str!("../../../migrations/001_initial.sql");
-pub const MIGRATION_002: &str = include_str!("../../../migrations/002_domain_extensions.sql");
-pub const MIGRATION_003: &str = include_str!("../../../migrations/003_formulas.sql");
-pub const MIGRATION_004: &str = include_str!("../../../migrations/004_general_formula.sql");
-pub const MIGRATION_005: &str = include_str!("../../../migrations/005_recipe_books.sql");
+pub const MIGRATION_001: &str = include_str!("../../migrations/001_initial.sql");
+pub const MIGRATION_002: &str = include_str!("../../migrations/002_domain_extensions.sql");
+pub const MIGRATION_003: &str = include_str!("../../migrations/003_formulas.sql");
+pub const MIGRATION_004: &str = include_str!("../../migrations/004_general_formula.sql");
+pub const MIGRATION_005: &str = include_str!("../../migrations/005_recipe_books.sql");
 
 #[derive(Debug, Clone)]
 pub struct RecipeRecord {

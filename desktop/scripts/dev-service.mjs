@@ -17,7 +17,7 @@ const service = spawn(
     "--origin",
     "http://localhost:1420",
   ],
-  { cwd: new URL("../../../", import.meta.url), stdio: ["inherit", "pipe", "inherit"] },
+  { cwd: new URL("../../", import.meta.url), stdio: ["inherit", "pipe", "inherit"] },
 );
 
 const lines = readline.createInterface({ input: service.stdout });
