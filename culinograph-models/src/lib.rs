@@ -8,12 +8,14 @@ pub mod error;
 pub mod execution;
 pub mod haccp;
 pub mod models;
+pub mod nutrition;
 pub mod ports;
 
 pub use error::ApplicationError;
 pub use execution::*;
 pub use haccp::*;
 pub use models::*;
+pub use nutrition::*;
 pub use ports::*;
 
 #[cfg(test)]

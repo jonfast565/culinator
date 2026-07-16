@@ -662,6 +662,78 @@ async fn dispatch_inner(
             });
             Ok(Value::Null)
         }
+        "nutrition.status" => {
+            let axum::Json(value) = routes::nutrition::status(State(state.service.clone()))
+                .await
+                .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.search" => {
+            let query = required_string(&params, "query")?;
+            let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(20) as usize;
+            let axum::Json(value) = routes::nutrition::search(
+                axum::extract::Query(routes::nutrition::SearchQuery { q: query, limit }),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.listLinks" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let axum::Json(value) = routes::nutrition::list_links(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.link" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinograph_models::LinkResourceNutritionRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let (_, axum::Json(value)) = routes::nutrition::link_resource(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"linked","recipeId":recipe_id,"resourceSymbol":value.resource_symbol}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.unlink" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let resource_symbol = required_string(&params, "resourceSymbol")?;
+            routes::nutrition::unlink_resource(
+                axum::extract::Path((recipe_id.clone(), resource_symbol.clone())),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"unlinked","recipeId":recipe_id,"resourceSymbol":resource_symbol}),
+            });
+            Ok(Value::Null)
+        }
+        "nutrition.calculate" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinograph_models::CalculateRecipeNutritionRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::nutrition::calculate(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         "service.ping" => Ok(json!({"status":"ok"})),
         _ => Err(format!("Unknown RPC method: {method}")),
     }

@@ -4,6 +4,7 @@ mod formula_service;
 mod haccp_service;
 mod import_service;
 mod kitchen_service;
+mod nutrition_service;
 mod recipe_service;
 mod schedule_service;
 
@@ -13,6 +14,7 @@ pub use formula_service::FormulaService;
 pub use haccp_service::HaccpService;
 pub use import_service::ImportService;
 pub use kitchen_service::KitchenService;
+pub use nutrition_service::NutritionService;
 pub use recipe_service::RecipeService;
 pub use schedule_service::ScheduleService;
 

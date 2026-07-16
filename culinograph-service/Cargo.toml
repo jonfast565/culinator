@@ -14,6 +14,7 @@ path = "src/bin/culinograph-service.rs"
 culinograph-validator = { path = "../culinograph-validator" }
 culinograph-application = { path = "../culinograph-application" }
 culinograph-models = { path = "../culinograph-models" }
+culinograph-nutrition-fdc = { path = "../culinograph-nutrition-fdc" }
 axum.workspace = true
 culinograph-export = { path = "../culinograph-export" }
 culinograph-import = { path = "../culinograph-import" }

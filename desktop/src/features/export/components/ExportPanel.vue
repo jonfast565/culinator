@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { reactive, ref } from "vue";
-import { Download, PackageOpen } from "lucide-vue-next";
+import { Calculator, Download, PackageOpen } from "lucide-vue-next";
 import type { RecipeExportFormat, RecipeExportOptions } from "../../../domain/types";
-import { downloadExport, exportRecipe } from "../../../services/api";
+import { calculateRecipeNutrition, downloadExport, exportRecipe } from "../../../services/api";
 const props = defineProps<{ recipeId: string; recipeTitle: string }>();
 const busy = ref(false);
+const calculating = ref(false);
 const error = ref("");
 const generated = ref<string[]>([]);
 const options = reactive<RecipeExportOptions>({
@@ -62,6 +63,22 @@ const numericFields = [
   ["Added sugars (g)", "addedSugarsGrams"],
   ["Protein (g)", "proteinGrams"],
 ] as const;
+async function calculateFromIngredients() {
+  calculating.value = true;
+  error.value = "";
+  try {
+    const result = await calculateRecipeNutrition(props.recipeId, {
+      servingsPerContainer: options.nutrition.servingsPerContainer,
+      servingSize: options.nutrition.servingSize,
+      servingSizeGrams: options.nutrition.servingSizeGrams,
+    });
+    Object.assign(options.nutrition, result.facts);
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    calculating.value = false;
+  }
+}
 async function generate() {
   busy.value = true;
   error.value = "";
@@ -104,6 +121,15 @@ async function generate() {
         ><input v-model.number="options.nutrition[field[1]]" type="number" min="0" step="0.1"
       /></label>
     </div>
+    <button
+      class="secondary w-full justify-center"
+      :disabled="calculating"
+      @click="calculateFromIngredients"
+    >
+      <Calculator :size="16" />{{
+        calculating ? "Calculating…" : "Calculate from linked ingredients"
+      }}
+    </button>
     <div class="space-y-2">
       <div class="text-sm font-semibold">Formats</div>
       <div class="grid gap-2 sm:grid-cols-2">

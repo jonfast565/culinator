@@ -5,6 +5,7 @@ mod import;
 mod nutrition;
 mod parser;
 mod repository;
+mod resource_nutrition;
 mod scheduler;
 mod validator;
 
@@ -17,6 +18,7 @@ pub use parser::DocumentParser;
 pub use repository::{
     CatalogRepository, FormulaRepository, RecipeBookRepository, RecipeRepository,
 };
+pub use resource_nutrition::ResourceNutritionRepository;
 pub use scheduler::RecipeScheduler;
 pub use validator::RecipeValidator;
 
