@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { BookPlus, FilePlus2, Library, Pencil, ScanLine, Trash2, Utensils } from "lucide-vue-next";
+import {
+  BookPlus,
+  FilePlus2,
+  FileUp,
+  Library,
+  Pencil,
+  ScanLine,
+  Trash2,
+  Utensils,
+} from "lucide-vue-next";
 import type { RecipeBookSummary, RecipeSummary } from "../../../domain/types";
 
 defineProps<{
@@ -13,6 +22,7 @@ const emit = defineEmits<{
   selectRecipe: [id: string];
   createRecipe: [];
   importRecipe: [];
+  importFile: [];
   createBook: [];
   renameBook: [book: RecipeBookSummary];
   deleteBook: [book: RecipeBookSummary];
@@ -33,7 +43,10 @@ function recipesFor(bookId: string | null, recipes: RecipeSummary[]): RecipeSumm
         <FilePlus2 :size="16" />New recipe
       </button>
       <button class="sidebar-action" @click="emit('importRecipe')">
-        <ScanLine :size="16" />Import
+        <ScanLine :size="16" />Scan
+      </button>
+      <button class="sidebar-action" @click="emit('importFile')">
+        <FileUp :size="16" />Import file
       </button>
     </div>
     <div class="sidebar-heading">

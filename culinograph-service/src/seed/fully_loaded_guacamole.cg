@@ -29,29 +29,71 @@ recipe fully_loaded_guacamole {
         quantity 0.25 tsp;
     }
     ingredient onion measured by count {
-        name "onion, diced";
+        name "medium onion";
         quantity 0.5 count;
     }
     ingredient tomatoes measured by count {
-        name "Roma tomatoes, seeded and diced";
+        name "Roma tomatoes";
         quantity 2 count;
     }
     ingredient cilantro measured by mass {
-        name "chopped cilantro";
+        name "fresh cilantro";
         quantity 1 tbsp;
     }
     ingredient jalapeno measured by count {
-        name "jalapeno, minced";
+        name "jalapeno";
         quantity 0.5 count;
     }
     ingredient garlic measured by count {
-        name "garlic clove, minced";
+        name "garlic clove";
         quantity 1 clove;
     }
 
+    material diced_onion measured by mass { }
+    material diced_tomatoes measured by mass { }
+    material chopped_cilantro measured by mass { }
+    material minced_jalapeno measured by mass { }
+    material minced_garlic measured by mass { }
     material mashed_avocado measured by mass { }
     material guacamole_mix measured by mass { }
 
+    // Prep is knife work only: none of these steps depend on one another, so the
+    // scheduler is free to run them in any order (or hand them out in parallel).
+    process prep {
+        operation dice_onion does dice {
+            input [onion];
+            duration 2 min;
+            labor active;
+            produces diced_onion;
+        }
+        operation dice_tomatoes does dice {
+            input [tomatoes];
+            duration 3 min;
+            labor active;
+            produces diced_tomatoes;
+        }
+        operation chop_cilantro does chop {
+            input [cilantro];
+            duration 1 min;
+            labor active;
+            produces chopped_cilantro;
+        }
+        operation mince_jalapeno does mince {
+            input [jalapeno];
+            duration 2 min;
+            labor active;
+            produces minced_jalapeno;
+        }
+        operation mince_garlic does mince {
+            input [garlic];
+            duration 1 min;
+            labor active;
+            produces minced_garlic;
+        }
+    }
+
+    // Mashing the avocados is also independent of the knife work, so it can
+    // overlap with prep; only `fold` waits on everything upstream.
     process mixing {
         operation mash does mix {
             input [avocados, lime_juice, salt, cumin, cayenne];
@@ -60,13 +102,14 @@ recipe fully_loaded_guacamole {
             produces mashed_avocado;
         }
         operation fold does mix {
-            input [mashed_avocado, onion, tomatoes, cilantro, jalapeno, garlic];
-            after mash;
+            input [mashed_avocado, diced_onion, diced_tomatoes, chopped_cilantro, minced_jalapeno, minced_garlic];
+            after [mash, dice_onion, dice_tomatoes, chop_cilantro, mince_jalapeno, mince_garlic];
             duration 2 min;
             labor active;
             produces guacamole_mix;
         }
     }
+
     process resting {
         operation rest does rest {
             input [guacamole_mix];

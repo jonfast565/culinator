@@ -37,11 +37,12 @@
   }
   .sidebar-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 12px 14px 4px;
   }
   .sidebar .sidebar-action {
-    flex: 1;
+    flex: 1 1 calc(50% - 4px);
     justify-content: center;
     gap: 7px;
     padding: 9px 10px;

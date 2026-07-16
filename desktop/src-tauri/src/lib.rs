@@ -1,12 +1,34 @@
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use culinograph_service::{AccessPolicy, ServiceConfig, ServiceState, bind};
 use serde::Serialize;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
+    path::PathBuf,
     sync::{Arc, RwLock},
 };
 use tauri::Manager;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
+
+/// Write a base64-encoded export bundle to a path the user chose via the native
+/// save dialog. Writing on the Rust side keeps us clear of filesystem-scope
+/// permissions while still honoring an arbitrary destination.
+#[tauri::command]
+fn save_export(path: String, contents_base64: String) -> Result<(), String> {
+    let bytes = BASE64
+        .decode(contents_base64.as_bytes())
+        .map_err(|error| format!("Could not decode export bundle: {error}"))?;
+    std::fs::write(PathBuf::from(path), bytes)
+        .map_err(|error| format!("Could not write export file: {error}"))
+}
+
+/// Read a recipe DSL source file the user chose via the native open dialog.
+/// Reading on the Rust side keeps us clear of filesystem-scope permissions.
+#[tauri::command]
+fn read_recipe_file(path: String) -> Result<String, String> {
+    std::fs::read_to_string(PathBuf::from(path))
+        .map_err(|error| format!("Could not read recipe file: {error}"))
+}
 
 #[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,6 +47,8 @@ pub fn run() {
     let bootstrap_for_page_load = Arc::clone(&bootstrap);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![save_export, read_recipe_file])
         .setup(move |app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;

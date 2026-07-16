@@ -9,6 +9,7 @@ import InspectorPanel from "../features/recipe-editor/components/InspectorPanel.
 import { useRecipeEditor } from "../features/recipe-editor/composables/useRecipeEditor";
 import RecipeImportPanel from "../features/import/components/RecipeImportPanel.vue";
 import ConnectionBadge from "../shared/components/ConnectionBadge.vue";
+import { openRecipeFile } from "../services/api";
 import { onConnectionStatus, type ConnectionStatus } from "../services/transport/websocket-client";
 
 const library = useRecipeLibrary();
@@ -82,6 +83,11 @@ async function acceptImport(source: string): Promise<void> {
   await save();
   importing.value = false;
 }
+async function importFromFile(): Promise<void> {
+  const file = await openRecipeFile();
+  if (!file) return;
+  await acceptImport(file.sourceText);
+}
 function quickIngredient(): void {
   editor.appendSnippet(
     `    ingredient new_ingredient measured by mass {\n        quantity 100 g;\n    }`,
@@ -105,6 +111,7 @@ function quickOperation(): void {
       @select-recipe="selectRecipe"
       @create-recipe="library.createRecipe"
       @import-recipe="importing = true"
+      @import-file="importFromFile"
       @create-book="createBook"
       @rename-book="renameBook"
       @delete-book="deleteBook"

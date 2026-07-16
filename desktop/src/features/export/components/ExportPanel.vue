@@ -84,8 +84,8 @@ async function generate() {
   error.value = "";
   try {
     const result = await exportRecipe(props.recipeId, options);
-    generated.value = result.files;
-    downloadExport(result);
+    const saved = await downloadExport(result);
+    generated.value = saved ? result.files : [];
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e);
   } finally {

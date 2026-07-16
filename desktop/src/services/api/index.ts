@@ -10,4 +10,6 @@ export * from "./export-api";
 
 export * from "./import-api";
 
+export * from "./import-file";
+
 export * from "./schedule-api";
