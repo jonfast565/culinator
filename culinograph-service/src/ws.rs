@@ -561,6 +561,107 @@ async fn dispatch_inner(
             });
             serde_json::to_value(value).map_err(to_string)
         }
+        "tries.list" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let axum::Json(value) = routes::kitchen::list_for_recipe(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.get" => {
+            let try_id = required_string(&params, "tryId")?;
+            let axum::Json(value) =
+                routes::kitchen::get(axum::extract::Path(try_id), State(state.service.clone()))
+                    .await
+                    .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.start" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinograph_models::NewRecipeTry =
+                serde_json::from_value(params).map_err(to_string)?;
+            let (_, axum::Json(value)) = routes::kitchen::start(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "tries.changed".to_owned(),
+                payload: json!({"kind":"started","recipeId":recipe_id,"tryId":value.id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.update" => {
+            let try_id = required_string(&params, "tryId")?;
+            let request: culinograph_models::UpdateRecipeTry =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::kitchen::update(
+                axum::extract::Path(try_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "tries.changed".to_owned(),
+                payload: json!({"kind":"updated","tryId":try_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.updateOperation" => {
+            let try_id = required_string(&params, "tryId")?;
+            let operation_id = required_string(&params, "operationId")?;
+            let request: culinograph_models::UpdateTryOperation =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::kitchen::update_operation(
+                axum::extract::Path((try_id.clone(), operation_id.clone())),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "tries.changed".to_owned(),
+                payload: json!({"kind":"operation","tryId":try_id,"operationId":operation_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.observe" => {
+            let try_id = required_string(&params, "tryId")?;
+            let request: culinograph_models::NewTryObservation =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::kitchen::add_observation(
+                axum::extract::Path(try_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "tries.changed".to_owned(),
+                payload: json!({"kind":"observed","tryId":try_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "tries.delete" => {
+            let try_id = required_string(&params, "tryId")?;
+            routes::kitchen::delete(
+                axum::extract::Path(try_id.clone()),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "tries.changed".to_owned(),
+                payload: json!({"kind":"deleted","tryId":try_id}),
+            });
+            Ok(Value::Null)
+        }
         "service.ping" => Ok(json!({"status":"ok"})),
         _ => Err(format!("Unknown RPC method: {method}")),
     }

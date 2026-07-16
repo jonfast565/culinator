@@ -238,3 +238,55 @@ export interface HaccpPlanDocument {
   monitoringRecords: HaccpMonitoringRecord[];
   updatedAt: string;
 }
+
+export type RecipeTryStatus = "active" | "paused" | "completed" | "abandoned";
+export type TryOperationStatus = "pending" | "active" | "completed" | "skipped";
+
+export interface RecipeTrySummary {
+  id: string;
+  recipeId: string;
+  title?: string | null;
+  status: RecipeTryStatus;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  operationCount: number;
+  observationCount: number;
+}
+
+export interface TryOperation {
+  operationId: string;
+  operationSymbol: string;
+  status: TryOperationStatus;
+  scheduledStart?: string | null;
+  scheduledEnd?: string | null;
+  actualStart?: string | null;
+  actualEnd?: string | null;
+  durationSeconds: number;
+  notes?: string | null;
+}
+
+export interface TryObservation {
+  id: string;
+  operationId?: string | null;
+  operationSymbol?: string | null;
+  observedAt: string;
+  propertyPath: string;
+  value: string | number | boolean | null;
+  unit?: string | null;
+  notes?: string | null;
+}
+
+export interface RecipeTryDocument {
+  id: string;
+  recipeId: string;
+  recipeRevisionId?: string | null;
+  title?: string | null;
+  status: RecipeTryStatus;
+  scaleFactor: number;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  notes?: string | null;
+  findings?: string | null;
+  operations: TryOperation[];
+  observations: TryObservation[];
+}

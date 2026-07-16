@@ -3,6 +3,7 @@ mod export_service;
 mod formula_service;
 mod haccp_service;
 mod import_service;
+mod kitchen_service;
 mod recipe_service;
 mod schedule_service;
 
@@ -11,6 +12,7 @@ pub use export_service::ExportService;
 pub use formula_service::FormulaService;
 pub use haccp_service::HaccpService;
 pub use import_service::ImportService;
+pub use kitchen_service::KitchenService;
 pub use recipe_service::RecipeService;
 pub use schedule_service::ScheduleService;
 

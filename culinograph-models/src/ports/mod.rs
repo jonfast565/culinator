@@ -1,3 +1,4 @@
+mod execution;
 mod export;
 mod haccp;
 mod import;
@@ -7,6 +8,7 @@ mod repository;
 mod scheduler;
 mod validator;
 
+pub use execution::ExecutionRepository;
 pub use export::RecipeExporter;
 pub use haccp::HaccpRepository;
 pub use import::{OcrEngine, RecipeImageInterpreter, SettingsStore};

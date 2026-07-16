@@ -1,6 +1,6 @@
 use culinograph_application::{
-    BookService, ExportService, FormulaService, HaccpService, ImportService, NewRecipeBook,
-    RecipeService, ScheduleService,
+    BookService, ExportService, FormulaService, HaccpService, ImportService, KitchenService,
+    NewRecipeBook, RecipeService, ScheduleService,
 };
 use culinograph_export::StaticRecipeExporter;
 use culinograph_import::{JsonSettingsStore, OpenAiRecipeInterpreter, TesseractCommandOcr};
@@ -26,6 +26,7 @@ pub struct ServiceState {
     books: BookService,
     formulas: FormulaService,
     haccp: HaccpService,
+    kitchen: KitchenService,
     exports: ExportService,
     imports: ImportService,
     schedules: ScheduleService,
@@ -52,11 +53,13 @@ impl ServiceState {
         validator: Arc<dyn RecipeValidator>,
         settings_path: PathBuf,
     ) -> Self {
+        let schedules = ScheduleService::new(parser.clone(), Arc::new(CriticalPathScheduler));
         Self {
             recipes: RecipeService::new(repository.clone(), parser.clone(), validator),
             books: BookService::new(repository.clone()),
             formulas: FormulaService::new(repository.clone()),
             haccp: HaccpService::new(repository.clone()),
+            kitchen: KitchenService::new(repository.clone(), repository.clone(), schedules.clone()),
             exports: ExportService::new(repository, parser.clone(), Arc::new(StaticRecipeExporter)),
             imports: ImportService::new(
                 Arc::new(TesseractCommandOcr),
@@ -65,7 +68,7 @@ impl ServiceState {
                 parser.clone(),
                 Arc::new(CulinographValidator),
             ),
-            schedules: ScheduleService::new(parser, Arc::new(CriticalPathScheduler)),
+            schedules,
         }
     }
 
@@ -103,6 +106,10 @@ impl ServiceState {
 
     pub fn haccp(&self) -> &HaccpService {
         &self.haccp
+    }
+
+    pub fn kitchen(&self) -> &KitchenService {
+        &self.kitchen
     }
 
     pub fn imports(&self) -> &ImportService {
