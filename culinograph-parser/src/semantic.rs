@@ -1124,32 +1124,16 @@ fn title_case(s: &str) -> String {
     }
 }
 fn dimension(u: &str) -> Dimension {
-    match u {
-        "g" | "kg" | "mg" | "oz" | "lb" => Dimension::Mass,
-        "ml" | "l" | "cup" | "tbsp" | "tsp" => Dimension::Volume,
-        "c" | "f" => Dimension::Temperature,
-        "s" | "sec" | "min" | "h" | "hr" => Dimension::Time,
-        "each" | "count" | "clove" | "stick" => Dimension::Count,
-        _ => Dimension::Ratio,
-    }
+    Dimension::from_unit(u)
 }
-/// Normalize `<number> <time-unit>` to whole seconds.
+/// Normalize `<number> <time-unit>` to whole seconds. Unknown units fall back to
+/// seconds so a bare number never silently scales wrongly.
 fn duration_seconds(n: f64, unit: &str) -> u64 {
-    (n * match unit {
-        "h" | "hr" => 3600.0,
-        "min" => 60.0,
-        _ => 1.0,
-    }) as u64
+    (n * time_unit_seconds(unit).unwrap_or(1.0)) as u64
 }
 fn quantity_grams(v: &Value) -> Option<f64> {
     match v {
-        Value::Quantity(q) if q.dimension == Dimension::Mass => Some(match q.unit.as_str() {
-            "kg" => q.value * 1000.0,
-            "mg" => q.value / 1000.0,
-            "oz" => q.value * 28.349_523,
-            "lb" => q.value * 453.592_37,
-            _ => q.value,
-        }),
+        Value::Quantity(q) => q.as_grams(),
         _ => None,
     }
 }

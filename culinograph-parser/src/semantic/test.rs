@@ -213,3 +213,67 @@ recipe r {
         other => panic!("expected mass quantity, got {other:?}"),
     }
 }
+
+#[test]
+fn expanded_cooking_units_classify_by_dimension() {
+    use Dimension::*;
+    let cases: &[(&str, Dimension)] = &[
+        ("gram", Mass),
+        ("pounds", Mass),
+        ("oz", Mass),
+        ("tablespoon", Volume),
+        ("tsp", Volume),
+        ("pint", Volume),
+        ("gallon", Volume),
+        ("dash", Volume),
+        ("fahrenheit", Temperature),
+        ("celsius", Temperature),
+        ("minutes", Time),
+        ("hours", Time),
+        ("days", Time),
+        ("inch", Length),
+        ("cm", Length),
+        ("clove", Count),
+        ("bunch", Count),
+        ("head", Count),
+        ("dozen", Count),
+        ("sprig", Count),
+    ];
+    for (unit, expected) in cases {
+        assert_eq!(
+            Dimension::from_unit(unit),
+            *expected,
+            "unit `{unit}` should be {expected:?}"
+        );
+    }
+    // Case-insensitive and trailing-dot tolerant.
+    assert_eq!(Dimension::from_unit("OZ"), Mass);
+    assert_eq!(Dimension::from_unit("tbsp."), Volume);
+}
+
+#[test]
+fn mass_units_convert_to_grams() {
+    use culinograph_core::Quantity;
+    let q = |value: f64, unit: &str| Quantity {
+        value,
+        unit: unit.to_owned(),
+        dimension: Dimension::from_unit(unit),
+    };
+    assert_eq!(q(1.0, "kg").as_grams(), Some(1000.0));
+    assert_eq!(q(1.0, "pound").as_grams(), Some(453.592_37));
+    assert_eq!(q(16.0, "oz").as_grams(), Some(16.0 * 28.349_523_125));
+    // Non-mass units have no gram equivalent.
+    assert_eq!(q(2.0, "cup").as_grams(), None);
+}
+
+#[test]
+fn duration_accepts_long_form_time_units() {
+    let recipe = parse_op_body("      duration 2 hours to 3 hours;");
+    let step = op(&recipe, "step");
+    assert_eq!(step.duration_min_seconds, Some(7200));
+    assert_eq!(step.duration_max_seconds, Some(10800));
+
+    let days = parse_op_body("      duration up to 2 days;");
+    let step = op(&days, "step");
+    assert_eq!(step.duration_max_seconds, Some(172_800));
+}

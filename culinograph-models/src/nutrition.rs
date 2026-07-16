@@ -1,4 +1,4 @@
-use culinograph_core::{Dimension, Resource, ResourceKind, Serving, Value};
+use culinograph_core::{Resource, ResourceKind, Serving, Value};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
@@ -81,13 +81,7 @@ pub fn resource_mass_grams(resource: &Resource) -> Option<f64> {
 
 pub fn value_mass_grams(value: &Value) -> Option<f64> {
     match value {
-        Value::Quantity(quantity) if quantity.dimension == Dimension::Mass => {
-            Some(match quantity.unit.as_str() {
-                "kg" => quantity.value * 1000.0,
-                "mg" => quantity.value / 1000.0,
-                _ => quantity.value,
-            })
-        }
+        Value::Quantity(quantity) => quantity.as_grams(),
         _ => None,
     }
 }

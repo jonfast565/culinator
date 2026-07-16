@@ -42,6 +42,120 @@ pub struct Quantity {
     pub dimension: Dimension,
 }
 
+impl Dimension {
+    /// Classify a cooking unit string into its physical dimension. This is the
+    /// single source of truth for unit → dimension; parsers and consumers should
+    /// delegate here rather than keep their own tables. Matching is
+    /// case-insensitive. Ambiguous single letters (`T`/`t` for tablespoon vs.
+    /// teaspoon) are deliberately excluded — use the spelled-out abbreviations.
+    pub fn from_unit(unit: &str) -> Dimension {
+        match unit.trim().trim_end_matches('.').to_ascii_lowercase().as_str() {
+            // --- Mass / weight ---
+            "g" | "gram" | "grams" | "gm" | "gms" => Dimension::Mass,
+            "kg" | "kilogram" | "kilograms" | "kilo" | "kilos" => Dimension::Mass,
+            "mg" | "milligram" | "milligrams" => Dimension::Mass,
+            "oz" | "ounce" | "ounces" => Dimension::Mass,
+            "lb" | "lbs" | "pound" | "pounds" => Dimension::Mass,
+            "dram" | "drams" => Dimension::Mass,
+
+            // --- Volume ---
+            "ml" | "milliliter" | "milliliters" | "millilitre" | "millilitres" | "cc" => {
+                Dimension::Volume
+            }
+            "cl" | "centiliter" | "centiliters" => Dimension::Volume,
+            "dl" | "deciliter" | "deciliters" => Dimension::Volume,
+            "l" | "liter" | "liters" | "litre" | "litres" => Dimension::Volume,
+            "cup" | "cups" => Dimension::Volume,
+            "tbsp" | "tbsps" | "tbs" | "tablespoon" | "tablespoons" => Dimension::Volume,
+            "tsp" | "tsps" | "teaspoon" | "teaspoons" => Dimension::Volume,
+            "floz" | "fl_oz" | "fluid_ounce" | "fluid_ounces" => Dimension::Volume,
+            "pt" | "pint" | "pints" => Dimension::Volume,
+            "qt" | "quart" | "quarts" => Dimension::Volume,
+            "gal" | "gallon" | "gallons" => Dimension::Volume,
+            "dash" | "dashes" | "pinch" | "pinches" | "smidgen" | "smidgens" | "drop" | "drops" => {
+                Dimension::Volume
+            }
+
+            // --- Temperature ---
+            "c" | "celsius" | "centigrade" => Dimension::Temperature,
+            "f" | "fahrenheit" => Dimension::Temperature,
+            "k" | "kelvin" => Dimension::Temperature,
+
+            // --- Time ---
+            "s" | "sec" | "secs" | "second" | "seconds" => Dimension::Time,
+            "min" | "mins" | "minute" | "minutes" => Dimension::Time,
+            "h" | "hr" | "hrs" | "hour" | "hours" => Dimension::Time,
+            "day" | "days" => Dimension::Time,
+            "wk" | "week" | "weeks" => Dimension::Time,
+
+            // --- Length ---
+            "mm" | "millimeter" | "millimeters" => Dimension::Length,
+            "cm" | "centimeter" | "centimeters" => Dimension::Length,
+            "m" | "meter" | "meters" => Dimension::Length,
+            "in" | "inch" | "inches" => Dimension::Length,
+            "ft" | "foot" | "feet" => Dimension::Length,
+
+            // --- Count / discrete cooking units ---
+            "each" | "ea" | "count" | "ct" | "dozen" | "dozens" => Dimension::Count,
+            "clove" | "cloves" | "stick" | "sticks" | "piece" | "pieces" | "pc" | "pcs" => {
+                Dimension::Count
+            }
+            "slice" | "slices" | "can" | "cans" | "jar" | "jars" => Dimension::Count,
+            "package" | "packages" | "pkg" | "pkgs" | "pack" | "packs" => Dimension::Count,
+            "bunch" | "bunches" | "head" | "heads" | "bulb" | "bulbs" => Dimension::Count,
+            "sprig" | "sprigs" | "stalk" | "stalks" | "stem" | "stems" => Dimension::Count,
+            "leaf" | "leaves" | "ear" | "ears" | "rib" | "ribs" => Dimension::Count,
+            "fillet" | "fillets" | "filet" | "filets" | "strip" | "strips" => Dimension::Count,
+            "wedge" | "wedges" | "cube" | "cubes" | "ball" | "balls" => Dimension::Count,
+            "loaf" | "loaves" | "sheet" | "sheets" | "scoop" | "scoops" => Dimension::Count,
+            "knob" | "knobs" | "handful" | "handfuls" | "sprinkle" | "sprinkles" => {
+                Dimension::Count
+            }
+
+            _ => Dimension::Ratio,
+        }
+    }
+
+    /// True when `from_unit` would classify `unit` as this dimension.
+    pub fn matches_unit(self, unit: &str) -> bool {
+        Dimension::from_unit(unit) == self
+    }
+}
+
+impl Quantity {
+    /// Convert this quantity to grams, if it is a mass quantity with a known
+    /// unit. Volume/count units return `None` (no density is assumed).
+    pub fn as_grams(&self) -> Option<f64> {
+        if self.dimension != Dimension::Mass {
+            return None;
+        }
+        let factor = match self.unit.trim().to_ascii_lowercase().as_str() {
+            "g" | "gram" | "grams" | "gm" | "gms" => 1.0,
+            "kg" | "kilogram" | "kilograms" | "kilo" | "kilos" => 1000.0,
+            "mg" | "milligram" | "milligrams" => 0.001,
+            "oz" | "ounce" | "ounces" => 28.349_523_125,
+            "lb" | "lbs" | "pound" | "pounds" => 453.592_37,
+            "dram" | "drams" => 1.771_845_2,
+            _ => return None,
+        };
+        Some(self.value * factor)
+    }
+}
+
+/// Number of seconds in one of the given time unit, if recognized. Shared by
+/// duration parsing so long forms ("minutes", "hours") behave like the short
+/// ones. Returns `None` for non-time units.
+pub fn time_unit_seconds(unit: &str) -> Option<f64> {
+    Some(match unit.trim().to_ascii_lowercase().as_str() {
+        "s" | "sec" | "secs" | "second" | "seconds" => 1.0,
+        "min" | "mins" | "minute" | "minutes" => 60.0,
+        "h" | "hr" | "hrs" | "hour" | "hours" => 3600.0,
+        "day" | "days" => 86_400.0,
+        "wk" | "week" | "weeks" => 604_800.0,
+        _ => return None,
+    })
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", content = "value")]
 pub enum Value {

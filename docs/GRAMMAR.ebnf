@@ -54,7 +54,21 @@ serving_decl   = "serving", identifier, [ "as", type_ref ], [ measurement ], blo
 property       = identifier, value, ";" ;
 type_ref       = identifier, [ "<", type_ref, { ",", type_ref }, ">" ] ;
 value          = string | number | percentage | quantity | range | identifier | list ;
-quantity       = number, identifier ;
+quantity       = number, identifier ;   (* the identifier is the unit; see below *)
+(* Units are classified into a `dimension` case-insensitively (see
+   `Dimension::from_unit` in culinograph-core). Recognized cooking units include:
+     mass:        g/gram(s), kg/kilogram(s), mg, oz/ounce(s), lb/pound(s), dram
+     volume:      ml/cc, cl, dl, l/liter(s), cup(s), tbsp/tablespoon(s),
+                  tsp/teaspoon(s), floz, pt/pint(s), qt/quart(s), gal/gallon(s),
+                  dash, pinch, smidgen, drop
+     temperature: c/celsius, f/fahrenheit, k/kelvin
+     time:        s/sec/second(s), min/minute(s), h/hr/hour(s), day(s), wk/week(s)
+     length:      mm, cm, m/meter(s), in/inch(es), ft/foot/feet
+     count:       each, ea, count, dozen, clove(s), stick(s), piece(s), slice(s),
+                  can(s), package(s)/pkg, bunch(es), head(s), bulb(s), sprig(s),
+                  stalk(s), leaf/leaves, ear(s), fillet(s), strip(s), wedge(s),
+                  cube(s), loaf/loaves, sheet(s), scoop(s), handful(s), ...
+   Any unrecognized unit is kept verbatim and classified as `ratio`. *)
 (* Inclusive range, e.g. `2 to 3 clove` or `15 min to 20 min`. The unit may
    appear on the upper bound only, or on both bounds. *)
 range          = ( number | quantity ), "to", ( number | quantity ) ;

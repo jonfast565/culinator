@@ -58,24 +58,45 @@ export interface UiRecipeModel {
 }
 
 const DURATION_UNIT_MINUTES: Record<string, number> = {
+  s: 1 / 60,
+  sec: 1 / 60,
+  secs: 1 / 60,
+  second: 1 / 60,
+  seconds: 1 / 60,
+  min: 1,
+  mins: 1,
+  minute: 1,
+  minutes: 1,
   h: 60,
   hr: 60,
-  min: 1,
-  sec: 1 / 60,
-  s: 1 / 60,
+  hrs: 60,
+  hour: 60,
+  hours: 60,
+  day: 1440,
+  days: 1440,
+  wk: 10080,
+  week: 10080,
+  weeks: 10080,
 };
+// Alternation of every recognized time unit, longest-first so e.g. "minutes"
+// matches before "min". Mirrors `time_unit_seconds` in culinograph-core.
+const DURATION_UNIT_PATTERN = Object.keys(DURATION_UNIT_MINUTES)
+  .sort((a, b) => b.length - a.length)
+  .join("|");
 function unitToMinutes(value: string, unit: string): number {
-  return Number(value) * (DURATION_UNIT_MINUTES[unit] ?? 1);
+  return Number(value) * (DURATION_UNIT_MINUTES[unit.toLowerCase()] ?? 1);
 }
 /** Parse a step's `duration`, supporting `N unit`, `N unit to M unit`, and
  *  `up to N unit`. Returns the lower bound (or fixed value) plus an optional
  *  upper bound. Mirrors the Rust semantic parser's duration handling. */
 function parseDuration(body: string): { min: number; max?: number } {
-  const upTo = body.match(/\bduration\s+up\s+to\s+([\d.]+)\s*(min|h|hr|sec|s)\b/);
+  const u = DURATION_UNIT_PATTERN;
+  const upTo = new RegExp(`\\bduration\\s+up\\s+to\\s+([\\d.]+)\\s*(${u})\\b`, "i").exec(body);
   if (upTo) return { min: 0, max: unitToMinutes(upTo[1], upTo[2]) };
-  const range = body.match(
-    /\bduration\s+(?:estimated\s+)?([\d.]+)\s*(min|h|hr|sec|s)(?:\s+to\s+([\d.]+)\s*(min|h|hr|sec|s))?/,
-  );
+  const range = new RegExp(
+    `\\bduration\\s+(?:estimated\\s+)?([\\d.]+)\\s*(${u})(?:\\s+to\\s+([\\d.]+)\\s*(${u}))?`,
+    "i",
+  ).exec(body);
   if (!range) return { min: 1 };
   const min = unitToMinutes(range[1], range[2]);
   return range[3] ? { min, max: unitToMinutes(range[3], range[4]) } : { min };
