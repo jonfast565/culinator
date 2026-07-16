@@ -27,9 +27,10 @@ recipe easy_crepes {
         quantity 1 cup;
     }
     ingredient butter measured by mass {
-        name "melted butter";
+        name "unsalted butter";
         quantity 3 tbsp;
         allergen milk;
+        state melted;
     }
     ingredient salt measured by mass {
         name "kosher salt";
@@ -49,7 +50,7 @@ recipe easy_crepes {
         operation chill does rest {
             input [crepe_batter];
             after blend;
-            duration 60 min;
+            duration 1 h to 8 h;
             labor passive;
             produces rested_batter;
         }
@@ -58,7 +59,9 @@ recipe easy_crepes {
         operation cook does heat {
             input [rested_batter];
             after chill;
-            duration 2 min;
+            heat medium;
+            duration 1 min to 2 min;
+            until visual "golden at the edges";
             labor active;
         }
     }

@@ -34,3 +34,22 @@ fn seeds_sample_recipes_only_once() {
     );
     let _ = std::fs::remove_file(path);
 }
+
+#[test]
+fn seed_recipes_schedule_without_unresolved_dependencies() {
+    let path =
+        std::env::temp_dir().join(format!("culinograph-sched-{}.sqlite3", uuid::Uuid::new_v4()));
+    let state =
+        ServiceState::sqlite(path.clone(), path.with_file_name("settings.json")).expect("state");
+    let options = culinograph_models::ScheduleOptions::default();
+    for source in SEED_RECIPES {
+        // A cycle or an unknown predecessor (e.g. a downstream `after` that no
+        // longer matches a `prep`-desugared operation symbol) surfaces here.
+        let schedule = state
+            .schedules()
+            .schedule_source(source, &options)
+            .expect("seed recipe schedules cleanly");
+        assert!(schedule.makespan_seconds > 0, "recipe has a real makespan");
+    }
+    let _ = std::fs::remove_file(path);
+}

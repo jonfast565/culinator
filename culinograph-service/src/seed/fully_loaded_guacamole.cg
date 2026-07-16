@@ -11,10 +11,11 @@ recipe fully_loaded_guacamole {
     ingredient avocados measured by count {
         name "ripe Hass avocados";
         quantity 3 count;
+        state ripe;
     }
     ingredient lime_juice measured by volume {
         name "fresh lime juice";
-        quantity 1 tbsp;
+        quantity 1 tbsp to 2 tbsp;
     }
     ingredient salt measured by mass {
         name "kosher salt";
@@ -39,57 +40,33 @@ recipe fully_loaded_guacamole {
     ingredient cilantro measured by mass {
         name "fresh cilantro";
         quantity 1 tbsp;
+        optional true;
     }
     ingredient jalapeno measured by count {
         name "jalapeno";
-        quantity 0.5 count;
+        quantity 0.5 count to 1 count;
     }
     ingredient garlic measured by count {
         name "garlic clove";
         quantity 1 clove;
     }
 
-    material diced_onion measured by mass { }
-    material diced_tomatoes measured by mass { }
-    material chopped_cilantro measured by mass { }
-    material minced_jalapeno measured by mass { }
-    material minced_garlic measured by mass { }
-    material mashed_avocado measured by mass { }
-    material guacamole_mix measured by mass { }
+    // `mashed_avocado` is declared so it can carry a state; the diced/minced prep
+    // products are left implicit and become intermediates automatically.
+    material mashed_avocado measured by mass {
+        state smooth;
+    }
 
     // Prep is knife work only: none of these steps depend on one another, so the
     // scheduler is free to run them in any order (or hand them out in parallel).
+    // `prep <verb> <ingredient> into <material>` desugars to an operation named
+    // `<verb>_<ingredient>` that inputs the ingredient and produces the material.
     process prep {
-        operation dice_onion does dice {
-            input [onion];
-            duration 2 min;
-            labor active;
-            produces diced_onion;
-        }
-        operation dice_tomatoes does dice {
-            input [tomatoes];
-            duration 3 min;
-            labor active;
-            produces diced_tomatoes;
-        }
-        operation chop_cilantro does chop {
-            input [cilantro];
-            duration 1 min;
-            labor active;
-            produces chopped_cilantro;
-        }
-        operation mince_jalapeno does mince {
-            input [jalapeno];
-            duration 2 min;
-            labor active;
-            produces minced_jalapeno;
-        }
-        operation mince_garlic does mince {
-            input [garlic];
-            duration 1 min;
-            labor active;
-            produces minced_garlic;
-        }
+        prep dice onion into diced_onion { duration 2 min; }
+        prep dice tomatoes into diced_tomatoes { duration 3 min; }
+        prep chop cilantro into chopped_cilantro { duration 1 min; }
+        prep mince jalapeno into minced_jalapeno { duration 2 min; }
+        prep mince garlic into minced_garlic { duration 1 min; }
     }
 
     // Mashing the avocados is also independent of the knife work, so it can

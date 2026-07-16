@@ -101,6 +101,7 @@ fn display_value(value: &Value) -> String {
         Value::Boolean(v) => v.to_string(),
         Value::Quantity(q) => format!("{} {}", q.value, q.unit),
         Value::List(v) => v.iter().map(display_value).collect::<Vec<_>>().join(", "),
+        Value::Range { min, max } => format!("{}\u{2013}{}", display_value(min), display_value(max)),
         Value::Object(_) => String::new(),
     }
 }

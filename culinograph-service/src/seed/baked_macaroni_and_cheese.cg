@@ -35,14 +35,16 @@ recipe baked_macaroni_and_cheese {
         allergen milk;
     }
     ingredient cheddar measured by mass {
-        name "sharp cheddar, grated";
+        name "sharp cheddar";
         quantity 4 oz;
         allergen milk;
+        state grated;
     }
     ingredient jack measured by mass {
-        name "Monterey jack, grated";
+        name "Monterey jack";
         quantity 8 oz;
         allergen milk;
+        state grated;
     }
     ingredient panko measured by mass {
         name "panko breadcrumbs";
@@ -58,7 +60,9 @@ recipe baked_macaroni_and_cheese {
     process pasta {
         operation boil does heat {
             input [macaroni];
-            duration 10 min;
+            heat high;
+            duration 8 min to 10 min;
+            until visual "al dente";
             labor monitor;
             produces cooked_macaroni;
         }
@@ -66,7 +70,9 @@ recipe baked_macaroni_and_cheese {
     process sauce {
         operation make_sauce does heat {
             input [butter, flour, mustard, paprika, half_and_half];
-            duration 12 min;
+            heat medium;
+            duration 10 min to 12 min;
+            until visual "thick enough to coat the back of a spoon";
             labor active;
             produces cheese_sauce;
         }
@@ -96,7 +102,9 @@ recipe baked_macaroni_and_cheese {
         operation bake does heat {
             input [topped_dish];
             after top;
-            duration 20 min;
+            temperature 350 f;
+            duration 25 min to 30 min;
+            until visual "golden and bubbly";
             labor passive;
         }
     }

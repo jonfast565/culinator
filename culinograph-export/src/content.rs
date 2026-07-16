@@ -63,6 +63,9 @@ pub(crate) fn display_value(value: &Value) -> String {
             .map(display_value)
             .collect::<Vec<_>>()
             .join(", "),
+        Value::Range { min, max } => {
+            format!("{}\u{2013}{}", display_value(min), display_value(max))
+        }
         Value::Object(_) => String::new(),
     }
 }

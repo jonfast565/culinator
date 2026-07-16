@@ -67,12 +67,39 @@ function inputNames(operation: UiOperation): string {
   return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
+// A temperature setpoint reads "at 350 f"; a stovetop level reads "over medium heat".
+function heatClause(operation: UiOperation): string {
+  if (operation.targetTemperature) return ` at ${operation.targetTemperature}`;
+  if (operation.heatLevel) return ` over ${humanize(operation.heatLevel)} heat`;
+  return "";
+}
+
+// Render a fixed time, an inclusive range (25 min–30 min), or an open-ended
+// "up to" ceiling.
+function durationClause(operation: UiOperation): string {
+  const min = formatDuration(operation.durationMinutes);
+  if (operation.durationMaxMinutes && operation.durationMaxMinutes !== operation.durationMinutes) {
+    const max = formatDuration(operation.durationMaxMinutes);
+    if (operation.durationMinutes <= 0) return ` for up to ${max}`;
+    return ` for ${min}–${max}`;
+  }
+  return min ? ` for ${min}` : "";
+}
+
+// Fold structured doneness cues into "…, until golden brown and it reaches 165 f internal".
+function donenessClause(operation: UiOperation): string {
+  if (!operation.doneness?.length) return "";
+  const phrases = operation.doneness.map((cue) =>
+    cue.kind === "internal_temp" ? `it reaches ${cue.value} internal` : cue.value,
+  );
+  return `, until ${phrases.join(" and ")}`;
+}
+
 function describe(operation: UiOperation): string {
   const verb = verbs[operation.action] ?? capitalize(humanize(operation.action));
   const inputs = inputNames(operation);
-  const duration = formatDuration(operation.durationMinutes);
   const sentence = inputs ? `${verb} ${inputs}` : `${verb} ${humanize(operation.symbol)}`;
-  return duration ? `${sentence} for ${duration}.` : `${sentence}.`;
+  return `${sentence}${heatClause(operation)}${durationClause(operation)}${donenessClause(operation)}.`;
 }
 
 function stepMeta(operation: UiOperation): string {
@@ -160,7 +187,9 @@ const summary = computed(() => {
       <ul v-if="ingredients.length" class="ingredient-list">
         <li v-for="ingredient in ingredients" :key="ingredient.symbol">
           <span class="qty">{{ ingredient.quantity || "—" }}</span>
-          <span class="name">{{ ingredient.name }}</span>
+          <span class="name"
+            >{{ ingredient.name }}<em v-if="ingredient.optional" class="opt"> (optional)</em></span
+          >
         </li>
       </ul>
       <p v-else class="empty">No ingredients yet.</p>
@@ -192,3 +221,10 @@ const summary = computed(() => {
     </footer>
   </section>
 </template>
+
+<style scoped>
+.opt {
+  font-style: italic;
+  opacity: 0.7;
+}
+</style>

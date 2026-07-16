@@ -283,6 +283,10 @@ impl Parser {
                     let op = self.operation("root".into())?;
                     recipe.operations.push(op);
                 }
+                "prep" => {
+                    let op = self.prep("root".into())?;
+                    recipe.operations.push(op);
+                }
                 "serving" => recipe.servings.push(self.serving()?),
                 "yield" => recipe.yields.push(self.yield_def()?),
                 "formula" => recipe.formulas.push(self.formula()?),
@@ -351,12 +355,22 @@ impl Parser {
                 _ => ResourceKind::Material,
             };
         }
-        let props = self.block_properties()?;
+        let mut props = self.block_properties()?;
+        let optional = matches!(props.remove("optional"), Some(Value::Boolean(true)));
+        let divided = matches!(props.remove("divided"), Some(Value::Boolean(true)));
+        let substitutes = match props.remove("substitutes") {
+            Some(Value::List(items)) => items,
+            Some(other) => vec![other],
+            None => vec![],
+        };
         Ok(Resource {
             id: Uuid::new_v4(),
             symbol,
             declared_type: ty,
             kind,
+            optional,
+            divided,
+            substitutes,
             properties: props,
             span: None,
         })
@@ -386,6 +400,11 @@ impl Parser {
                     p.operations.push(op.symbol.clone());
                     recipe.operations.push(op)
                 }
+                "prep" => {
+                    let op = self.prep(symbol.clone())?;
+                    p.operations.push(op.symbol.clone());
+                    recipe.operations.push(op)
+                }
                 "process" => self.process(recipe, Some(symbol.clone()))?,
                 _ => {
                     let (k, v) = self.property()?;
@@ -409,8 +428,56 @@ impl Parser {
         } else {
             TypeRef::named("Operation")
         };
-        self.take(Token::LBrace)?;
-        let mut op = Operation {
+        let mut op = self.blank_operation(symbol, ty, process);
+        self.operation_body(&mut op)?;
+        Ok(op)
+    }
+    /// Desugar `prep <verb> <ingredient> [into <output>] (; | { ... })` into a
+    /// regular operation. The operation is named `<verb>_<ingredient>` (so
+    /// downstream `after` references read naturally and match hand-written
+    /// operations), takes the ingredient as input, and produces `<output>`
+    /// (defaulting to `<ingredient>_<verb>`). The produced material is picked up
+    /// by [`register_intermediates`], so no separate `material` declaration is
+    /// required. An optional block accepts the same properties as `operation`
+    /// (duration, labor, after, additional inputs, ...).
+    fn prep(&mut self, process: String) -> Result<Operation, ParseError> {
+        self.word("prep")?;
+        let verb = self.ident()?;
+        let ingredient = self.ident()?;
+        let output = if self.peek_ident().ok() == Some("into") {
+            self.at += 1;
+            self.ident()?
+        } else {
+            format!("{ingredient}_{verb}")
+        };
+        let mut op = self.blank_operation(
+            format!("{verb}_{ingredient}"),
+            TypeRef::named(title_case(&verb)),
+            process,
+        );
+        // Prep is hands-on knife/mix work unless the block says otherwise.
+        op.labor = Some(LaborMode::Active);
+        op.bindings.push(ResourceBinding {
+            resource: ingredient,
+            role: BindingRole::Input,
+            quantity: None,
+            exclusive: false,
+        });
+        op.bindings.push(ResourceBinding {
+            resource: output,
+            role: BindingRole::Output,
+            quantity: None,
+            exclusive: false,
+        });
+        if self.peek_is(&Token::LBrace) {
+            self.operation_body(&mut op)?;
+        } else {
+            self.take(Token::Semi)?;
+        }
+        Ok(op)
+    }
+    fn blank_operation(&self, symbol: String, ty: TypeRef, process: String) -> Operation {
+        Operation {
             id: Uuid::new_v4(),
             symbol,
             declared_type: ty,
@@ -418,13 +485,21 @@ impl Parser {
             labor: None,
             duration_min_seconds: None,
             duration_max_seconds: None,
+            duration_estimated: false,
+            target_temperature: None,
+            heat_level: None,
+            doneness: vec![],
+            optional: false,
             dependencies: vec![],
             bindings: vec![],
             requirements: vec![],
             effects: vec![],
             properties: BTreeMap::new(),
             span: None,
-        };
+        }
+    }
+    fn operation_body(&mut self, op: &mut Operation) -> Result<(), ParseError> {
+        self.take(Token::LBrace)?;
         while !self.peek_is(&Token::RBrace) {
             let key = self.peek_ident()?.to_string();
             match key.as_str() {
@@ -440,13 +515,55 @@ impl Parser {
                 }
                 "after" => {
                     self.at += 1;
-                    for d in self.symbol_list()? {
+                    if self.peek_is(&Token::LBracket) {
+                        // List form is always a plain finish-start fan-in.
+                        for d in self.symbol_list()? {
+                            op.dependencies.push(Dependency {
+                                predecessor: d,
+                                kind: DependencyKind::FinishStart,
+                                minimum_lag_seconds: None,
+                                maximum_lag_seconds: None,
+                                optional: false,
+                            })
+                        }
+                    } else {
+                        // Single form may carry modifiers: a dependency kind, a
+                        // `lag <duration>`, and/or `optional`.
+                        let predecessor = self.path()?;
+                        let mut kind = DependencyKind::FinishStart;
+                        let mut minimum_lag_seconds = None;
+                        let mut optional = false;
+                        loop {
+                            match self.peek_ident().ok() {
+                                Some("start_start") => {
+                                    self.at += 1;
+                                    kind = DependencyKind::StartStart;
+                                }
+                                Some("finish_finish") => {
+                                    self.at += 1;
+                                    kind = DependencyKind::FinishFinish;
+                                }
+                                Some("start_finish") => {
+                                    self.at += 1;
+                                    kind = DependencyKind::StartFinish;
+                                }
+                                Some("lag") => {
+                                    self.at += 1;
+                                    minimum_lag_seconds = Some(self.read_duration_seconds()?);
+                                }
+                                Some("optional") => {
+                                    self.at += 1;
+                                    optional = true;
+                                }
+                                _ => break,
+                            }
+                        }
                         op.dependencies.push(Dependency {
-                            predecessor: d,
-                            kind: DependencyKind::FinishStart,
-                            minimum_lag_seconds: None,
+                            predecessor,
+                            kind,
+                            minimum_lag_seconds,
                             maximum_lag_seconds: None,
-                            optional: false,
+                            optional,
                         })
                     }
                     self.take(Token::Semi)?
@@ -461,14 +578,76 @@ impl Parser {
                         "container" => BindingRole::Container,
                         _ => BindingRole::Equipment,
                     };
-                    for r in self.symbol_list()? {
+                    if self.peek_is(&Token::LBracket) {
+                        for r in self.symbol_list()? {
+                            op.bindings.push(ResourceBinding {
+                                resource: r,
+                                role,
+                                quantity: None,
+                                exclusive: false,
+                            })
+                        }
+                    } else {
+                        // Single form may carry a per-step amount:
+                        // `input butter 6 tbsp;` (divided ingredients).
+                        let resource = self.path()?;
+                        let quantity = if matches!(self.tokens.get(self.at), Some(Token::Number(_)))
+                        {
+                            Some(self.read_quantity()?)
+                        } else {
+                            None
+                        };
                         op.bindings.push(ResourceBinding {
-                            resource: r,
+                            resource,
                             role,
-                            quantity: None,
+                            quantity,
                             exclusive: false,
                         })
                     }
+                    self.take(Token::Semi)?
+                }
+                "temperature" => {
+                    self.at += 1;
+                    op.target_temperature = Some(self.read_quantity()?);
+                    self.take(Token::Semi)?
+                }
+                "heat" => {
+                    self.at += 1;
+                    op.heat_level = Some(match self.ident()?.as_str() {
+                        "low" => HeatLevel::Low,
+                        "medium_low" => HeatLevel::MediumLow,
+                        "medium" => HeatLevel::Medium,
+                        "medium_high" => HeatLevel::MediumHigh,
+                        "high" => HeatLevel::High,
+                        other => {
+                            return Err(self.err(&format!("unknown heat level `{other}`")))
+                        }
+                    });
+                    self.take(Token::Semi)?
+                }
+                "until" => {
+                    self.at += 1;
+                    let cue = match self.ident()?.as_str() {
+                        "internal_temp" => DonenessKind::InternalTemp,
+                        "visual" => DonenessKind::Visual,
+                        "tester" => DonenessKind::Tester,
+                        "texture" => DonenessKind::Texture,
+                        "rise" => DonenessKind::Rise,
+                        other => {
+                            return Err(self.err(&format!("unknown doneness cue `{other}`")))
+                        }
+                    };
+                    // value_until_semi consumes the trailing `;`.
+                    let value = self.value_until_semi()?;
+                    op.doneness.push(DonenessCue { kind: cue, value });
+                }
+                "optional" => {
+                    self.at += 1;
+                    op.optional = if self.peek_is(&Token::Semi) {
+                        true
+                    } else {
+                        self.ident()? != "false"
+                    };
                     self.take(Token::Semi)?
                 }
                 "requires" => {
@@ -478,18 +657,28 @@ impl Parser {
                 }
                 "duration" => {
                     self.at += 1;
-                    if self.peek_ident().ok() == Some("estimated") {
+                    let estimated = self.peek_ident().ok() == Some("estimated");
+                    if estimated {
                         self.at += 1;
                     }
-                    let n = self.number()?;
-                    let unit = self.ident()?;
-                    let secs = (n * match unit.as_str() {
-                        "h" | "hr" => 3600.0,
-                        "min" => 60.0,
-                        _ => 1.0,
-                    }) as u64;
-                    op.duration_min_seconds = Some(secs);
-                    op.duration_max_seconds = Some(secs);
+                    op.duration_estimated = estimated;
+                    if self.peek_ident().ok() == Some("up") {
+                        // `duration up to N unit;` -> open-ended lower bound
+                        // (holding / make-ahead ceiling, e.g. "up to overnight").
+                        self.at += 1;
+                        self.word("to")?;
+                        op.duration_min_seconds = Some(0);
+                        op.duration_max_seconds = Some(self.read_duration_seconds()?);
+                    } else {
+                        let secs = self.read_duration_seconds()?;
+                        op.duration_min_seconds = Some(secs);
+                        if self.peek_ident().ok() == Some("to") {
+                            self.at += 1;
+                            op.duration_max_seconds = Some(self.read_duration_seconds()?);
+                        } else {
+                            op.duration_max_seconds = Some(secs);
+                        }
+                    }
                     self.take(Token::Semi)?
                 }
                 _ => {
@@ -499,7 +688,7 @@ impl Parser {
             }
         }
         self.take(Token::RBrace)?;
-        Ok(op)
+        Ok(())
     }
     fn serving(&mut self) -> Result<Serving, ParseError> {
         self.word("serving")?;
@@ -650,15 +839,28 @@ impl Parser {
             }
             Token::Number(n) => {
                 self.at += 1;
-                if let Some(Token::Ident(unit)) = self.tokens.get(self.at).cloned() {
+                // A bare `to` after the number begins a range, so don't eat it
+                // as a unit (`2 to 3 clove`).
+                let first = match self.tokens.get(self.at).cloned() {
+                    Some(Token::Ident(unit)) if unit != "to" => {
+                        self.at += 1;
+                        Value::Quantity(Quantity {
+                            value: n,
+                            dimension: dimension(&unit),
+                            unit,
+                        })
+                    }
+                    _ => Value::Number(n),
+                };
+                if self.peek_ident().ok() == Some("to") {
                     self.at += 1;
-                    Value::Quantity(Quantity {
-                        value: n,
-                        dimension: dimension(&unit),
-                        unit,
-                    })
+                    let max = self.read_range_bound()?;
+                    Value::Range {
+                        min: Box::new(first),
+                        max: Box::new(max),
+                    }
                 } else {
-                    Value::Number(n)
+                    first
                 }
             }
             Token::Ident(s) => {
@@ -814,6 +1016,37 @@ impl Parser {
             _ => Err(self.err("expected identifier")),
         }
     }
+    /// Read `<number> <unit>` into a [`Quantity`] (unit required).
+    fn read_quantity(&mut self) -> Result<Quantity, ParseError> {
+        let value = self.number()?;
+        let unit = self.ident()?;
+        Ok(Quantity {
+            value,
+            dimension: dimension(&unit),
+            unit,
+        })
+    }
+    /// Read the upper bound of a range: `<number>` with an optional unit.
+    fn read_range_bound(&mut self) -> Result<Value, ParseError> {
+        let n = self.number()?;
+        match self.tokens.get(self.at).cloned() {
+            Some(Token::Ident(unit)) => {
+                self.at += 1;
+                Ok(Value::Quantity(Quantity {
+                    value: n,
+                    dimension: dimension(&unit),
+                    unit,
+                }))
+            }
+            _ => Ok(Value::Number(n)),
+        }
+    }
+    /// Read `<number> <time-unit>` and normalize to seconds.
+    fn read_duration_seconds(&mut self) -> Result<u64, ParseError> {
+        let n = self.number()?;
+        let unit = self.ident()?;
+        Ok(duration_seconds(n, &unit))
+    }
     fn word(&mut self, w: &str) -> Result<(), ParseError> {
         let got = self.ident()?;
         if got == w {
@@ -871,6 +1104,9 @@ fn register_intermediates(recipe: &mut Recipe) {
                     symbol: binding.resource.clone(),
                     declared_type: TypeRef::named("Intermediate"),
                     kind: ResourceKind::Intermediate,
+                    optional: false,
+                    divided: false,
+                    substitutes: vec![],
                     properties: BTreeMap::new(),
                     span: None,
                 });
@@ -889,19 +1125,29 @@ fn title_case(s: &str) -> String {
 }
 fn dimension(u: &str) -> Dimension {
     match u {
-        "g" | "kg" | "mg" => Dimension::Mass,
+        "g" | "kg" | "mg" | "oz" | "lb" => Dimension::Mass,
         "ml" | "l" | "cup" | "tbsp" | "tsp" => Dimension::Volume,
         "c" | "f" => Dimension::Temperature,
         "s" | "sec" | "min" | "h" | "hr" => Dimension::Time,
-        "each" => Dimension::Count,
+        "each" | "count" | "clove" | "stick" => Dimension::Count,
         _ => Dimension::Ratio,
     }
+}
+/// Normalize `<number> <time-unit>` to whole seconds.
+fn duration_seconds(n: f64, unit: &str) -> u64 {
+    (n * match unit {
+        "h" | "hr" => 3600.0,
+        "min" => 60.0,
+        _ => 1.0,
+    }) as u64
 }
 fn quantity_grams(v: &Value) -> Option<f64> {
     match v {
         Value::Quantity(q) if q.dimension == Dimension::Mass => Some(match q.unit.as_str() {
             "kg" => q.value * 1000.0,
             "mg" => q.value / 1000.0,
+            "oz" => q.value * 28.349_523,
+            "lb" => q.value * 453.592_37,
             _ => q.value,
         }),
         _ => None,

@@ -52,6 +52,9 @@ pub enum Value {
     Symbol(Symbol),
     List(Vec<Value>),
     Object(BTreeMap<Symbol, Value>),
+    /// An inclusive range, e.g. `2 to 3 clove` or `15 min to 20 min`. Both
+    /// bounds are normally `Number` or `Quantity` values of the same dimension.
+    Range { min: Box<Value>, max: Box<Value> },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,6 +93,18 @@ pub struct Resource {
     pub symbol: Symbol,
     pub declared_type: TypeRef,
     pub kind: ResourceKind,
+    /// True when the ingredient is optional (e.g. an optional garnish, or
+    /// "plus more for serving").
+    #[serde(default)]
+    pub optional: bool,
+    /// True when a single ingredient is split across multiple steps
+    /// ("divided" / "remaining 1½ sticks"). Per-step amounts live on the
+    /// operation's `ResourceBinding.quantity`.
+    #[serde(default)]
+    pub divided: bool,
+    /// Acceptable substitutions for this ingredient (symbols or free text).
+    #[serde(default)]
+    pub substitutes: Vec<Value>,
     pub properties: BTreeMap<Symbol, Value>,
     pub span: Option<SourceSpan>,
 }
@@ -100,6 +115,42 @@ pub enum LaborMode {
     Passive,
     Monitor,
     Automated,
+}
+
+/// Stovetop / burner heat level, distinct from a numeric temperature setpoint.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum HeatLevel {
+    Low,
+    MediumLow,
+    Medium,
+    MediumHigh,
+    High,
+}
+
+/// The kind of sensory / measured signal a doneness cue is based on.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DonenessKind {
+    /// Measured internal temperature (e.g. `165 f` in the thickest part).
+    InternalTemp,
+    /// Visual appearance (e.g. "golden brown", "coats the back of a spoon").
+    Visual,
+    /// A physical test (e.g. "toothpick comes out clean").
+    Tester,
+    /// Texture / feel (e.g. "stiff peaks", "fork-tender").
+    Texture,
+    /// Rise / expansion (e.g. "doubled in size").
+    Rise,
+}
+
+/// A structured "cook until…" stopping condition on an operation. Unlike a
+/// free-text `requires` predicate, the kind is machine-readable so kitchen mode
+/// and HACCP tooling can reason about it (e.g. surface the target temperature).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct DonenessCue {
+    pub kind: DonenessKind,
+    pub value: Value,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -160,6 +211,24 @@ pub struct Operation {
     pub labor: Option<LaborMode>,
     pub duration_min_seconds: Option<u64>,
     pub duration_max_seconds: Option<u64>,
+    /// True when the duration was authored with the `estimated` keyword, i.e. a
+    /// soft guideline rather than a hard time. Ranges (`min != max`) are the
+    /// other, orthogonal way to express timing uncertainty.
+    #[serde(default)]
+    pub duration_estimated: bool,
+    /// Numeric temperature setpoint for the step (oven/oil/target temperature),
+    /// e.g. `350 f`. Distinct from `heat_level`.
+    #[serde(default)]
+    pub target_temperature: Option<Quantity>,
+    /// Stovetop heat level, e.g. `medium_high`. Distinct from a numeric setpoint.
+    #[serde(default)]
+    pub heat_level: Option<HeatLevel>,
+    /// Structured "cook until…" stopping conditions.
+    #[serde(default)]
+    pub doneness: Vec<DonenessCue>,
+    /// True when the step itself is optional (e.g. trussing a chicken).
+    #[serde(default)]
+    pub optional: bool,
     pub dependencies: Vec<Dependency>,
     pub bindings: Vec<ResourceBinding>,
     pub requirements: Vec<Predicate>,

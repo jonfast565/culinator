@@ -36,6 +36,11 @@ fn finds_unknown_dependency() {
         labor: None,
         duration_min_seconds: None,
         duration_max_seconds: None,
+        duration_estimated: false,
+        target_temperature: None,
+        heat_level: None,
+        doneness: vec![],
+        optional: false,
         dependencies: vec![Dependency {
             predecessor: "missing".into(),
             kind: DependencyKind::FinishStart,

@@ -11,6 +11,11 @@ fn operation(symbol: &str, duration: u64, after: &[&str]) -> Operation {
         labor: None,
         duration_min_seconds: Some(duration),
         duration_max_seconds: Some(duration),
+        duration_estimated: false,
+        target_temperature: None,
+        heat_level: None,
+        doneness: vec![],
+        optional: false,
         dependencies: after
             .iter()
             .map(|p| Dependency {

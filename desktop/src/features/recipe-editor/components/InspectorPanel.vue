@@ -82,9 +82,16 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
     <section v-else-if="tab === 'ingredients'" class="panel">
       <h3>Resources</h3>
       <article v-for="resource in model.resources" :key="resource.symbol" class="card">
-        <strong>{{ resource.name || resource.symbol }}</strong
+        <strong
+          >{{ resource.name || resource.symbol
+          }}<em v-if="resource.state" class="state-tag">{{ resource.state }}</em
+          ><em v-if="resource.optional" class="state-tag">optional</em
+          ><em v-if="resource.divided" class="state-tag">divided</em></strong
         ><small>{{ resource.kind }} · {{ resource.measurement || "untyped" }}</small
-        ><span v-if="resource.quantity">{{ resource.quantity }}</span>
+        ><span v-if="resource.quantity">{{ resource.quantity }}</span
+        ><small v-if="resource.substitutes?.length" class="substitutes"
+          >or {{ resource.substitutes.join(", ") }}</small
+        >
       </article>
     </section>
     <VisualAuthoringPanel
@@ -130,3 +137,20 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
     </section>
   </aside>
 </template>
+<style scoped>
+.state-tag {
+  margin-left: 0.4rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  font-style: normal;
+  font-size: 0.68rem;
+  font-weight: 600;
+  text-transform: lowercase;
+  color: #7a5a12;
+  background: #f5e6c3;
+}
+.substitutes {
+  font-style: italic;
+  opacity: 0.75;
+}
+</style>

@@ -49,14 +49,16 @@ recipe baked_macaroni_and_cheese {
         allergen milk;
     }
     ingredient cheddar measured by mass {
-        name "sharp cheddar, grated";
+        name "sharp cheddar";
         quantity 4 oz;
         allergen milk;
+        state grated;
     }
     ingredient jack measured by mass {
-        name "Monterey jack, grated";
+        name "Monterey jack";
         quantity 8 oz;
         allergen milk;
+        state grated;
     }
     ingredient panko measured by mass {
         name "panko breadcrumbs";
@@ -72,7 +74,9 @@ recipe baked_macaroni_and_cheese {
     process pasta {
         operation boil does heat {
             input [macaroni];
-            duration 10 min;
+            heat high;
+            duration 8 min to 10 min;
+            until visual "al dente";
             labor monitor;
             produces cooked_macaroni;
         }
@@ -80,7 +84,9 @@ recipe baked_macaroni_and_cheese {
     process sauce {
         operation make_sauce does heat {
             input [butter, flour, mustard, paprika, half_and_half];
-            duration 12 min;
+            heat medium;
+            duration 10 min to 12 min;
+            until visual "thick enough to coat the back of a spoon";
             labor active;
             produces cheese_sauce;
         }
@@ -110,7 +116,9 @@ recipe baked_macaroni_and_cheese {
         operation bake does heat {
             input [topped_dish];
             after top;
-            duration 20 min;
+            temperature 350 f;
+            duration 25 min to 30 min;
+            until visual "golden and bubbly";
             labor passive;
         }
     }
@@ -153,9 +161,10 @@ recipe easy_crepes {
         quantity 1 cup;
     }
     ingredient butter measured by mass {
-        name "melted butter";
+        name "unsalted butter";
         quantity 3 tbsp;
         allergen milk;
+        state melted;
     }
     ingredient salt measured by mass {
         name "kosher salt";
@@ -175,7 +184,7 @@ recipe easy_crepes {
         operation chill does rest {
             input [crepe_batter];
             after blend;
-            duration 60 min;
+            duration 1 h to 8 h;
             labor passive;
             produces rested_batter;
         }
@@ -184,7 +193,9 @@ recipe easy_crepes {
         operation cook does heat {
             input [rested_batter];
             after chill;
-            duration 2 min;
+            heat medium;
+            duration 1 min to 2 min;
+            until visual "golden at the edges";
             labor active;
         }
     }
@@ -211,10 +222,11 @@ recipe fully_loaded_guacamole {
     ingredient avocados measured by count {
         name "ripe Hass avocados";
         quantity 3 count;
+        state ripe;
     }
     ingredient lime_juice measured by volume {
         name "fresh lime juice";
-        quantity 1 tbsp;
+        quantity 1 tbsp to 2 tbsp;
     }
     ingredient salt measured by mass {
         name "kosher salt";
@@ -229,29 +241,47 @@ recipe fully_loaded_guacamole {
         quantity 0.25 tsp;
     }
     ingredient onion measured by count {
-        name "onion, diced";
+        name "medium onion";
         quantity 0.5 count;
     }
     ingredient tomatoes measured by count {
-        name "Roma tomatoes, seeded and diced";
+        name "Roma tomatoes";
         quantity 2 count;
     }
     ingredient cilantro measured by mass {
-        name "chopped cilantro";
+        name "fresh cilantro";
         quantity 1 tbsp;
+        optional true;
     }
     ingredient jalapeno measured by count {
-        name "jalapeno, minced";
-        quantity 0.5 count;
+        name "jalapeno";
+        quantity 0.5 count to 1 count;
     }
     ingredient garlic measured by count {
-        name "garlic clove, minced";
+        name "garlic clove";
         quantity 1 clove;
     }
 
-    material mashed_avocado measured by mass { }
-    material guacamole_mix measured by mass { }
+    // \`mashed_avocado\` is declared so it can carry a state; the diced/minced prep
+    // products are left implicit and become intermediates automatically.
+    material mashed_avocado measured by mass {
+        state smooth;
+    }
 
+    // Prep is knife work only: none of these steps depend on one another, so the
+    // scheduler is free to run them in any order (or hand them out in parallel).
+    // \`prep <verb> <ingredient> into <material>\` desugars to an operation named
+    // \`<verb>_<ingredient>\` that inputs the ingredient and produces the material.
+    process prep {
+        prep dice onion into diced_onion { duration 2 min; }
+        prep dice tomatoes into diced_tomatoes { duration 3 min; }
+        prep chop cilantro into chopped_cilantro { duration 1 min; }
+        prep mince jalapeno into minced_jalapeno { duration 2 min; }
+        prep mince garlic into minced_garlic { duration 1 min; }
+    }
+
+    // Mashing the avocados is also independent of the knife work, so it can
+    // overlap with prep; only \`fold\` waits on everything upstream.
     process mixing {
         operation mash does mix {
             input [avocados, lime_juice, salt, cumin, cayenne];
@@ -260,13 +290,14 @@ recipe fully_loaded_guacamole {
             produces mashed_avocado;
         }
         operation fold does mix {
-            input [mashed_avocado, onion, tomatoes, cilantro, jalapeno, garlic];
-            after mash;
+            input [mashed_avocado, diced_onion, diced_tomatoes, chopped_cilantro, minced_jalapeno, minced_garlic];
+            after [mash, dice_onion, dice_tomatoes, chop_cilantro, mince_jalapeno, mince_garlic];
             duration 2 min;
             labor active;
             produces guacamole_mix;
         }
     }
+
     process resting {
         operation rest does rest {
             input [guacamole_mix];
