@@ -1,6 +1,6 @@
 use crate::{
-    ApplicationError, HaccpMonitoringRecord, HaccpPlanDocument, HaccpPlanSummary,
-    HaccpRepository, NewHaccpMonitoringRecord, NewHaccpPlan, SaveHaccpPlanRequest,
+    ApplicationError, HaccpMonitoringRecord, HaccpPlanDocument, HaccpPlanSummary, HaccpRepository,
+    NewHaccpMonitoringRecord, NewHaccpPlan, SaveHaccpPlanRequest,
 };
 use std::sync::Arc;
 use uuid::Uuid;

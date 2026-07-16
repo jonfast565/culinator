@@ -23,8 +23,7 @@ export async function listHaccpPlans(recipeId: string): Promise<HaccpPlanSummary
 }
 
 export async function getHaccpPlan(planId: string): Promise<HaccpPlanDocument> {
-  if (hasConfiguredService())
-    return serviceRequest(`/api/v1/haccp/${encodeURIComponent(planId)}`);
+  if (hasConfiguredService()) return serviceRequest(`/api/v1/haccp/${encodeURIComponent(planId)}`);
   for (const plans of browserPlans.values()) {
     const plan = plans.find((item) => item.id === planId);
     if (plan) return structuredClone(plan);

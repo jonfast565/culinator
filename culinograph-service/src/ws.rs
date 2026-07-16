@@ -9,7 +9,6 @@ use axum::{
 use culinograph_core::{Formula, PercentageView};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::sync::Arc;
 use tokio::sync::broadcast;
 
 use crate::{
@@ -488,12 +487,10 @@ async fn dispatch_inner(
         }
         "haccp.get" => {
             let plan_id = required_string(&params, "planId")?;
-            let axum::Json(value) = routes::haccp::get(
-                axum::extract::Path(plan_id),
-                State(state.service.clone()),
-            )
-            .await
-            .map_err(to_string)?;
+            let axum::Json(value) =
+                routes::haccp::get(axum::extract::Path(plan_id), State(state.service.clone()))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "haccp.create" => {
@@ -506,10 +503,7 @@ async fn dispatch_inner(
             let (_, axum::Json(value)) = routes::haccp::create(
                 axum::extract::Path(recipe_id.clone()),
                 State(state.service.clone()),
-                axum::Json(culinograph_models::NewHaccpPlan {
-                    title,
-                    description,
-                }),
+                axum::Json(culinograph_models::NewHaccpPlan { title, description }),
             )
             .await
             .map_err(to_string)?;

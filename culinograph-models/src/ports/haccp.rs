@@ -1,6 +1,6 @@
 use crate::{
-    ApplicationError, HaccpMonitoringRecord, HaccpPlanDocument, HaccpPlanSummary, NewHaccpPlan,
-    NewHaccpMonitoringRecord, SaveHaccpPlanRequest,
+    ApplicationError, HaccpMonitoringRecord, HaccpPlanDocument, HaccpPlanSummary,
+    NewHaccpMonitoringRecord, NewHaccpPlan, SaveHaccpPlanRequest,
 };
 use uuid::Uuid;
 

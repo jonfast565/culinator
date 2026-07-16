@@ -188,7 +188,10 @@ watch(
 
     <label v-if="plans.length">
       Plan
-      <select :value="selectedPlanId ?? ''" @change="selectPlan(($event.target as HTMLSelectElement).value)">
+      <select
+        :value="selectedPlanId ?? ''"
+        @change="selectPlan(($event.target as HTMLSelectElement).value)"
+      >
         <option disabled value="">Select a plan</option>
         <option v-for="item in plans" :key="item.id" :value="item.id">
           {{ item.title }} ({{ item.status }})
@@ -247,7 +250,9 @@ watch(
               </select>
             </label>
           </div>
-          <label>Preventive measures<textarea v-model="hazard.preventiveMeasures" rows="2" /></label>
+          <label
+            >Preventive measures<textarea v-model="hazard.preventiveMeasures" rows="2" />
+          </label>
           <label class="checkbox">
             <input v-model="hazard.isCcp" type="checkbox" />
             Requires a critical control point
@@ -276,9 +281,17 @@ watch(
               </option>
             </select>
           </label>
-          <label>Critical limit<input v-model="ccp.criticalLimit" placeholder="e.g. internal temp >= 74 C" /></label>
+          <label
+            >Critical limit<input
+              v-model="ccp.criticalLimit"
+              placeholder="e.g. internal temp >= 74 C"
+          /></label>
           <label>Monitoring procedure<textarea v-model="ccp.monitoringProcedure" rows="2" /></label>
-          <label>Monitoring frequency<input v-model="ccp.monitoringFrequency" placeholder="e.g. every 30 min" /></label>
+          <label
+            >Monitoring frequency<input
+              v-model="ccp.monitoringFrequency"
+              placeholder="e.g. every 30 min"
+          /></label>
           <label>Corrective action<textarea v-model="ccp.correctiveAction" rows="2" /></label>
           <label>Verification<textarea v-model="ccp.verificationProcedure" rows="2" /></label>
           <label>Responsible party<input v-model="ccp.responsibleParty" /></label>
@@ -314,7 +327,10 @@ watch(
         >
           <strong>{{ ccpName(record.ccpId) }}</strong>
           <small>{{ record.recordedAt }}</small>
-          <span>{{ record.measuredValue }} · {{ record.withinLimit ? "within limit" : "out of limit" }}</span>
+          <span
+            >{{ record.measuredValue }} ·
+            {{ record.withinLimit ? "within limit" : "out of limit" }}</span
+          >
           <p v-if="record.notes">{{ record.notes }}</p>
         </article>
         <p v-if="!recentRecords.length" class="empty">No monitoring records yet.</p>
@@ -328,7 +344,9 @@ watch(
       </footer>
     </template>
 
-    <p v-else class="empty">Create a HACCP plan to document hazards and control points for this recipe.</p>
+    <p v-else class="empty">
+      Create a HACCP plan to document hazards and control points for this recipe.
+    </p>
   </section>
 </template>
 

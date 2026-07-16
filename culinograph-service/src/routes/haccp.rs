@@ -12,11 +12,7 @@ pub async fn list_for_recipe(
     Path(recipe_id): Path<String>,
     State(state): State<ServiceState>,
 ) -> Result<Json<Vec<culinograph_models::HaccpPlanSummary>>, ApiError> {
-    Ok(Json(
-        state
-            .haccp()
-            .list_for_recipe(parse_id(&recipe_id)?)?,
-    ))
+    Ok(Json(state.haccp().list_for_recipe(parse_id(&recipe_id)?)?))
 }
 
 pub async fn create(
@@ -56,7 +52,9 @@ pub async fn add_monitoring_record(
     State(state): State<ServiceState>,
     Json(request): Json<NewHaccpMonitoringRecord>,
 ) -> Result<(StatusCode, Json<culinograph_models::HaccpMonitoringRecord>), ApiError> {
-    let created = state.haccp().record_monitoring(parse_id(&ccp_id)?, request)?;
+    let created = state
+        .haccp()
+        .record_monitoring(parse_id(&ccp_id)?, request)?;
     Ok((StatusCode::CREATED, Json(created)))
 }
 

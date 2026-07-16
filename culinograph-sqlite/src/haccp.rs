@@ -51,13 +51,16 @@ impl HaccpRepository for SqliteCatalogRepository {
         self.with_connection(|connection| {
             save_haccp_plan(connection, &plan_id.to_string(), &input)
         })?;
-        self.get_plan(plan_id)?.ok_or_else(|| ApplicationError::not_found("HACCP plan"))
+        self.get_plan(plan_id)?
+            .ok_or_else(|| ApplicationError::not_found("HACCP plan"))
     }
 
     fn delete_plan(&self, plan_id: Uuid) -> Result<bool, ApplicationError> {
         self.with_connection(|connection| {
-            Ok(connection.execute("DELETE FROM haccp_plans WHERE id=?1", [plan_id.to_string()])?
-                > 0)
+            Ok(
+                connection.execute("DELETE FROM haccp_plans WHERE id=?1", [plan_id.to_string()])?
+                    > 0,
+            )
         })
     }
 
@@ -92,12 +95,10 @@ impl HaccpRepository for SqliteCatalogRepository {
             )?;
             Ok(())
         })?;
-        self.with_connection(|connection| {
-            load_monitoring_record(connection, &id.to_string())
-        })?
-        .ok_or_else(|| {
-            ApplicationError::Internal("created monitoring record could not be read".to_owned())
-        })
+        self.with_connection(|connection| load_monitoring_record(connection, &id.to_string()))?
+            .ok_or_else(|| {
+                ApplicationError::Internal("created monitoring record could not be read".to_owned())
+            })
     }
 }
 
@@ -244,7 +245,10 @@ fn save_haccp_plan(
     tx.commit()
 }
 
-fn load_hazards(connection: &Connection, plan_id: &str) -> Result<Vec<HaccpHazard>, rusqlite::Error> {
+fn load_hazards(
+    connection: &Connection,
+    plan_id: &str,
+) -> Result<Vec<HaccpHazard>, rusqlite::Error> {
     let mut statement = connection.prepare(
         "SELECT id, position, hazard_type, description, severity, likelihood,
                 preventive_measures, is_ccp
@@ -327,7 +331,9 @@ fn load_monitoring_record(
         .optional()
 }
 
-fn map_monitoring_record(row: &rusqlite::Row<'_>) -> Result<HaccpMonitoringRecord, rusqlite::Error> {
+fn map_monitoring_record(
+    row: &rusqlite::Row<'_>,
+) -> Result<HaccpMonitoringRecord, rusqlite::Error> {
     Ok(HaccpMonitoringRecord {
         id: parse_uuid(row.get::<_, String>(0)?)?,
         ccp_id: parse_uuid(row.get::<_, String>(1)?)?,
