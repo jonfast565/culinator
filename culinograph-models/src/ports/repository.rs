@@ -1,5 +1,6 @@
 use crate::{
-    ApplicationError, NewRecipe, NewRecipeBook, RecipeBookSummary, RecipeDocument, RecipeSummary,
+    ApplicationError, HaccpRepository, NewRecipe, NewRecipeBook, RecipeBookSummary, RecipeDocument,
+    RecipeSummary,
 };
 use culinograph_core::{Formula, FormulaResult, Recipe, RecipeBook};
 use uuid::Uuid;
@@ -50,12 +51,12 @@ pub trait FormulaRepository: Send + Sync {
 }
 
 pub trait CatalogRepository:
-    RecipeRepository + RecipeBookRepository + FormulaRepository + Send + Sync
+    RecipeRepository + RecipeBookRepository + FormulaRepository + HaccpRepository + Send + Sync
 {
 }
 
 impl<T> CatalogRepository for T where
-    T: RecipeRepository + RecipeBookRepository + FormulaRepository + Send + Sync
+    T: RecipeRepository + RecipeBookRepository + FormulaRepository + HaccpRepository + Send + Sync
 {
 }
 

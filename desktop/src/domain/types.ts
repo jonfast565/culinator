@@ -174,3 +174,67 @@ export interface RecipeSchedule {
   makespanSeconds: number;
   criticalPath: string[];
 }
+
+export type HaccpPlanStatus = "draft" | "active" | "archived";
+export type HazardType = "biological" | "chemical" | "physical";
+export type HazardSeverity = "low" | "medium" | "high" | "critical";
+export type HazardLikelihood = "unlikely" | "possible" | "likely" | "certain";
+
+export interface HaccpPlanSummary {
+  id: string;
+  recipeId: string;
+  title: string;
+  description?: string | null;
+  status: HaccpPlanStatus;
+  hazardCount: number;
+  ccpCount: number;
+  updatedAt: string;
+}
+
+export interface HaccpHazard {
+  id: string;
+  position: number;
+  hazardType: HazardType;
+  description: string;
+  severity: HazardSeverity;
+  likelihood: HazardLikelihood;
+  preventiveMeasures?: string | null;
+  isCcp: boolean;
+}
+
+export interface HaccpCcp {
+  id: string;
+  hazardId?: string | null;
+  position: number;
+  name: string;
+  operationSymbol?: string | null;
+  criticalLimit: string;
+  monitoringProcedure: string;
+  monitoringFrequency?: string | null;
+  correctiveAction: string;
+  verificationProcedure?: string | null;
+  responsibleParty?: string | null;
+}
+
+export interface HaccpMonitoringRecord {
+  id: string;
+  ccpId: string;
+  recordedAt: string;
+  measuredValue: string;
+  withinLimit: boolean;
+  correctiveActionTaken?: string | null;
+  recordedBy?: string | null;
+  notes?: string | null;
+}
+
+export interface HaccpPlanDocument {
+  id: string;
+  recipeId: string;
+  title: string;
+  description?: string | null;
+  status: HaccpPlanStatus;
+  hazards: HaccpHazard[];
+  ccps: HaccpCcp[];
+  monitoringRecords: HaccpMonitoringRecord[];
+  updatedAt: string;
+}

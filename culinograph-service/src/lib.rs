@@ -129,6 +129,20 @@ pub fn router(config: ServiceConfig) -> Router {
             "/api/v1/formulas/{formula_id}/runs",
             post(routes::formulas::calculate_and_record),
         )
+        .route(
+            "/api/v1/recipes/{recipe_id}/haccp",
+            get(routes::haccp::list_for_recipe).post(routes::haccp::create),
+        )
+        .route(
+            "/api/v1/haccp/{plan_id}",
+            get(routes::haccp::get)
+                .put(routes::haccp::save)
+                .delete(routes::haccp::delete),
+        )
+        .route(
+            "/api/v1/haccp/ccps/{ccp_id}/records",
+            post(routes::haccp::add_monitoring_record),
+        )
         .layer(middleware::from_fn_with_state(
             config.access,
             auth::require_local_client,
