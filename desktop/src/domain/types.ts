@@ -290,3 +290,42 @@ export interface RecipeTryDocument {
   operations: TryOperation[];
   observations: TryObservation[];
 }
+
+export interface NutritionSearchResult {
+  fdcId: number;
+  description: string;
+  dataType: string;
+  brandOwner?: string | null;
+  servingSize?: number | null;
+  servingSizeUnit?: string | null;
+}
+
+export interface ResourceNutritionLink {
+  recipeId: string;
+  resourceSymbol: string;
+  fdcId: number;
+  foodDescription: string;
+  linkedAt: string;
+}
+
+export interface RecipeIngredientNutrition {
+  resourceSymbol: string;
+  resourceName?: string | null;
+  massGrams?: number | null;
+  fdcId?: number | null;
+  foodDescription?: string | null;
+  linked: boolean;
+}
+
+export interface RecipeNutritionResult {
+  facts: NutritionFacts;
+  totalMassGrams: number;
+  linkedIngredientCount: number;
+  totalIngredientCount: number;
+  ingredients: RecipeIngredientNutrition[];
+  warnings: string[];
+}
+
+export interface NutritionCatalogStatus {
+  catalogAvailable: boolean;
+}

@@ -852,6 +852,7 @@ dependencies = [
  "culinograph-export",
  "culinograph-import",
  "culinograph-models",
+ "culinograph-nutrition-fdc",
  "culinograph-parser",
  "culinograph-scheduler",
  "culinograph-sqlite",

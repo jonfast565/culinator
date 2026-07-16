@@ -1,6 +1,6 @@
 use crate::{
     ApplicationError, ExecutionRepository, HaccpRepository, NewRecipe, NewRecipeBook,
-    RecipeBookSummary, RecipeDocument, RecipeSummary,
+    RecipeBookSummary, RecipeDocument, RecipeSummary, ResourceNutritionRepository,
 };
 use culinograph_core::{Formula, FormulaResult, Recipe, RecipeBook};
 use uuid::Uuid;
@@ -56,6 +56,7 @@ pub trait CatalogRepository:
     + FormulaRepository
     + HaccpRepository
     + ExecutionRepository
+    + ResourceNutritionRepository
     + Send
     + Sync
 {
@@ -67,6 +68,7 @@ impl<T> CatalogRepository for T where
         + FormulaRepository
         + HaccpRepository
         + ExecutionRepository
+        + ResourceNutritionRepository
         + Send
         + Sync
 {

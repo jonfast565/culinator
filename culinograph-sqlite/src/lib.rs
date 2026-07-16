@@ -1,5 +1,6 @@
 mod execution;
 mod haccp;
+mod nutrition;
 mod repository;
 pub use repository::SqliteCatalogRepository;
 
@@ -16,6 +17,7 @@ pub const MIGRATION_004: &str = include_str!("../../migrations/004_general_formu
 pub const MIGRATION_005: &str = include_str!("../../migrations/005_recipe_books.sql");
 pub const MIGRATION_006: &str = include_str!("../../migrations/006_haccp.sql");
 pub const MIGRATION_007: &str = include_str!("../../migrations/007_kitchen_mode.sql");
+pub const MIGRATION_008: &str = include_str!("../../migrations/008_resource_nutrition_links.sql");
 
 #[derive(Debug, Clone)]
 pub struct RecipeRecord {
@@ -58,6 +60,10 @@ pub fn migrate(connection: &Connection) -> Result<()> {
     if version < 7 {
         connection.execute_batch(MIGRATION_007)?;
         connection.pragma_update(None, "user_version", 7)?;
+    }
+    if version < 8 {
+        connection.execute_batch(MIGRATION_008)?;
+        connection.pragma_update(None, "user_version", 8)?;
     }
     Ok(())
 }
@@ -605,13 +611,14 @@ mod tests {
             .query_row(
                 "SELECT count(*) FROM sqlite_master WHERE type='table' AND name IN
              ('recipes','resources','processes','operations','operation_dependencies',
-              'servings','recipe_revisions','recipe_yields','nutrient_definitions','executions',
+              'servings','recipe_revisions','recipe_yields','nutrient_definitions',
+              'resource_nutrition_links','executions',
               'formulas','formula_ingredients','formula_runs')",
                 [],
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(count, 13);
+        assert_eq!(count, 14);
     }
 }
 #[cfg(test)]

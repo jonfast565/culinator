@@ -10,7 +10,7 @@ use axum::{
     Json, Router,
     http::{HeaderValue, Method, header},
     middleware,
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
 };
 pub use error::ApiError;
 pub use state::ServiceState;
@@ -160,6 +160,20 @@ pub fn router(config: ServiceConfig) -> Router {
         .route(
             "/api/v1/tries/{try_id}/observations",
             post(routes::kitchen::add_observation),
+        )
+        .route("/api/v1/nutrition/status", get(routes::nutrition::status))
+        .route("/api/v1/nutrition/search", get(routes::nutrition::search))
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/links",
+            get(routes::nutrition::list_links).post(routes::nutrition::link_resource),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/links/{resource_symbol}",
+            delete(routes::nutrition::unlink_resource),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/calculate",
+            post(routes::nutrition::calculate),
         )
         .layer(middleware::from_fn_with_state(
             config.access,

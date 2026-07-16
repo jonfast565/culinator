@@ -1,10 +1,11 @@
 use culinograph_application::{
     BookService, ExportService, FormulaService, HaccpService, ImportService, KitchenService,
-    NewRecipeBook, RecipeService, ScheduleService,
+    NewRecipeBook, NutritionService, RecipeService, ScheduleService,
 };
 use culinograph_export::StaticRecipeExporter;
 use culinograph_import::{JsonSettingsStore, OpenAiRecipeInterpreter, TesseractCommandOcr};
-use culinograph_models::{CatalogRepository, DocumentParser, RecipeValidator};
+use culinograph_models::{CatalogRepository, DocumentParser, NutritionCatalog, RecipeValidator};
+use culinograph_nutrition_fdc::SqliteNutritionCatalog;
 use culinograph_parser::CulinographParser;
 use culinograph_scheduler::CriticalPathScheduler;
 use culinograph_sqlite::SqliteCatalogRepository;
@@ -27,6 +28,7 @@ pub struct ServiceState {
     formulas: FormulaService,
     haccp: HaccpService,
     kitchen: KitchenService,
+    nutrition: NutritionService,
     exports: ExportService,
     imports: ImportService,
     schedules: ScheduleService,
@@ -37,6 +39,15 @@ impl ServiceState {
         db_path: PathBuf,
         settings_path: PathBuf,
     ) -> Result<Self, culinograph_application::ApplicationError> {
+        let fdc_path = db_path.with_file_name("fdc.sqlite3");
+        Self::sqlite_with_fdc(db_path, settings_path, fdc_path)
+    }
+
+    pub fn sqlite_with_fdc(
+        db_path: PathBuf,
+        settings_path: PathBuf,
+        fdc_path: PathBuf,
+    ) -> Result<Self, culinograph_application::ApplicationError> {
         let repository = Arc::new(SqliteCatalogRepository::new(db_path));
         repository.initialize()?;
         Ok(Self::with_dependencies(
@@ -44,6 +55,7 @@ impl ServiceState {
             Arc::new(CulinographParser),
             Arc::new(CulinographValidator),
             settings_path,
+            open_nutrition_catalog(fdc_path),
         ))
     }
 
@@ -52,6 +64,7 @@ impl ServiceState {
         parser: Arc<dyn DocumentParser>,
         validator: Arc<dyn RecipeValidator>,
         settings_path: PathBuf,
+        nutrition_catalog: Option<Arc<dyn NutritionCatalog>>,
     ) -> Self {
         let schedules = ScheduleService::new(parser.clone(), Arc::new(CriticalPathScheduler));
         Self {
@@ -60,6 +73,12 @@ impl ServiceState {
             formulas: FormulaService::new(repository.clone()),
             haccp: HaccpService::new(repository.clone()),
             kitchen: KitchenService::new(repository.clone(), repository.clone(), schedules.clone()),
+            nutrition: NutritionService::new(
+                repository.clone(),
+                repository.clone(),
+                parser.clone(),
+                nutrition_catalog,
+            ),
             exports: ExportService::new(repository, parser.clone(), Arc::new(StaticRecipeExporter)),
             imports: ImportService::new(
                 Arc::new(TesseractCommandOcr),
@@ -112,6 +131,10 @@ impl ServiceState {
         &self.kitchen
     }
 
+    pub fn nutrition(&self) -> &NutritionService {
+        &self.nutrition
+    }
+
     pub fn imports(&self) -> &ImportService {
         &self.imports
     }
@@ -122,6 +145,19 @@ impl ServiceState {
 
     pub fn exports(&self) -> &ExportService {
         &self.exports
+    }
+}
+
+fn open_nutrition_catalog(path: PathBuf) -> Option<Arc<dyn NutritionCatalog>> {
+    if !path.exists() {
+        return None;
+    }
+    match SqliteNutritionCatalog::open(path) {
+        Ok(catalog) => Some(Arc::new(catalog)),
+        Err(error) => {
+            eprintln!("Culinograph nutrition database could not be opened: {error}");
+            None
+        }
     }
 }
 
