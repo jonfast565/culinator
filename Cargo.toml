@@ -15,6 +15,7 @@ members = [
   "culinator-service",
   "culinator-scheduler",
   "culinator-desktop/src-tauri",
+  "xtask",
 ]
 
 [workspace.package]

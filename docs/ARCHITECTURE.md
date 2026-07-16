@@ -36,7 +36,7 @@ Production origins are exact-matched. The development service accepts origins pa
 
 ## Quality gates
 
-`make check` runs formatting, linting, tests, type checking, and the frontend production build. GitHub Actions runs Rust and frontend checks independently.
+`cargo xtask check` runs formatting, linting, tests, type checking, and the frontend production build. GitHub Actions runs Rust and frontend checks independently.
 
 ## Desktop transport
 
