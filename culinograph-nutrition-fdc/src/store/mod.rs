@@ -68,6 +68,16 @@ CREATE TRIGGER IF NOT EXISTS foods_au AFTER UPDATE ON foods BEGIN
 END;
 "#;
 
+#[derive(Debug, Clone, Copy)]
+pub struct BrandedFoodFields<'a> {
+    pub brand_owner: Option<&'a str>,
+    pub brand_name: Option<&'a str>,
+    pub gtin_upc: Option<&'a str>,
+    pub ingredients: Option<&'a str>,
+    pub serving_size: Option<f64>,
+    pub serving_size_unit: Option<&'a str>,
+}
+
 pub struct SqliteNutritionCatalog {
     connection: Mutex<Connection>,
     imported_rows: usize,
@@ -86,16 +96,19 @@ impl SqliteNutritionCatalog {
     pub fn update_branded_fields(
         &mut self,
         fdc_id: i64,
-        brand_owner: Option<&str>,
-        brand_name: Option<&str>,
-        gtin_upc: Option<&str>,
-        ingredients: Option<&str>,
-        serving_size: Option<f64>,
-        serving_size_unit: Option<&str>,
+        fields: BrandedFoodFields<'_>,
     ) -> AnyResult<()> {
         self.lock().execute(
             "UPDATE foods SET brand_owner=?2, brand_name=?3, gtin_upc=?4, ingredients=?5, serving_size=?6, serving_size_unit=?7 WHERE fdc_id=?1",
-            params![fdc_id, brand_owner, brand_name, gtin_upc, ingredients, serving_size, serving_size_unit],
+            params![
+                fdc_id,
+                fields.brand_owner,
+                fields.brand_name,
+                fields.gtin_upc,
+                fields.ingredients,
+                fields.serving_size,
+                fields.serving_size_unit
+            ],
         )?;
         Ok(())
     }
@@ -143,7 +156,7 @@ impl NutritionImportStore for SqliteNutritionCatalog {
             params![item.fdc_id,item.data_type,item.description,item.food_category_id,item.publication_date,item.brand_owner,item.brand_name,item.gtin_upc,item.ingredients,item.serving_size,item.serving_size_unit],
         ).map_err(Self::persistence)?;
         self.imported_rows += 1;
-        if self.imported_rows % 50_000 == 0 {
+        if self.imported_rows.is_multiple_of(50_000) {
             self.lock()
                 .execute_batch("PRAGMA wal_checkpoint(PASSIVE);")
                 .map_err(Self::persistence)?;

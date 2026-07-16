@@ -1,4 +1,2 @@
 #[test]
-fn module_is_linked() {
-    assert!(true);
-}
+fn module_is_linked() {}

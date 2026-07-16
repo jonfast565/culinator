@@ -1,4 +1,2 @@
 #[test]
-fn desktop_binary_test_harness_runs() {
-    assert!(true);
-}
+fn desktop_binary_test_harness_runs() {}
