@@ -1,7 +1,5 @@
 #[test]
-fn module_is_wired() {
-    assert!(true);
-}
+fn module_is_wired() {}
 
 #[test]
 fn schedule_options_have_default_duration() {

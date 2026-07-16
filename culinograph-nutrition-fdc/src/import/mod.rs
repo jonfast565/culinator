@@ -1,6 +1,6 @@
 mod source;
 
-use crate::store::SqliteNutritionCatalog;
+use crate::store::{BrandedFoodFields, SqliteNutritionCatalog};
 use anyhow::{Context, Result};
 use csv::StringRecord;
 use culinograph_models::{
@@ -95,12 +95,14 @@ fn import_branded_foods(root: &Path, store: &mut SqliteNutritionCatalog) -> Resu
     read_csv(root, "branded_food.csv", |headers, row| {
         store.update_branded_fields(
             required_i64(headers, row, "fdc_id")?,
-            optional(headers, row, "brand_owner"),
-            optional(headers, row, "brand_name"),
-            optional(headers, row, "gtin_upc"),
-            optional(headers, row, "ingredients"),
-            optional_f64(headers, row, "serving_size")?,
-            optional(headers, row, "serving_size_unit"),
+            BrandedFoodFields {
+                brand_owner: optional(headers, row, "brand_owner"),
+                brand_name: optional(headers, row, "brand_name"),
+                gtin_upc: optional(headers, row, "gtin_upc"),
+                ingredients: optional(headers, row, "ingredients"),
+                serving_size: optional_f64(headers, row, "serving_size")?,
+                serving_size_unit: optional(headers, row, "serving_size_unit"),
+            },
         )
     })
 }

@@ -32,7 +32,7 @@ impl SqliteCatalogRepository {
         self.with_connection(|_| Ok(()))
     }
 
-    fn with_connection<T>(
+    pub(crate) fn with_connection<T>(
         &self,
         operation: impl FnOnce(&mut Connection) -> Result<T, rusqlite::Error>,
     ) -> Result<T, ApplicationError> {
@@ -255,7 +255,7 @@ impl FormulaRepository for SqliteCatalogRepository {
     }
 }
 
-fn parse_uuid(value: String) -> rusqlite::Result<Uuid> {
+pub(crate) fn parse_uuid(value: String) -> rusqlite::Result<Uuid> {
     Uuid::parse_str(&value).map_err(|error| {
         rusqlite::Error::FromSqlConversionFailure(
             value.len(),
@@ -265,7 +265,7 @@ fn parse_uuid(value: String) -> rusqlite::Result<Uuid> {
     })
 }
 
-fn map_error(error: rusqlite::Error) -> ApplicationError {
+pub(crate) fn map_error(error: rusqlite::Error) -> ApplicationError {
     ApplicationError::Persistence(error.to_string())
 }
 

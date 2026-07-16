@@ -1,5 +1,6 @@
 export * from "./book-api";
 export * from "./formula-api";
+export * from "./haccp-api";
 export * from "./recipe-api";
 export * from "./validation-api";
 

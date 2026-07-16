@@ -1,4 +1,5 @@
 mod export;
+mod haccp;
 mod import;
 mod nutrition;
 mod parser;
@@ -7,6 +8,7 @@ mod scheduler;
 mod validator;
 
 pub use export::RecipeExporter;
+pub use haccp::HaccpRepository;
 pub use import::{OcrEngine, RecipeImageInterpreter, SettingsStore};
 pub use nutrition::{NutritionCatalog, NutritionImportStore};
 pub use parser::DocumentParser;

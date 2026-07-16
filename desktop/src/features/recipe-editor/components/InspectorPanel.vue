@@ -6,6 +6,7 @@ import FormulaCalculator from "../../formulas/components/FormulaCalculator.vue";
 import ExportPanel from "../../export/components/ExportPanel.vue";
 import VisualAuthoringPanel from "../../visual-authoring/components/VisualAuthoringPanel.vue";
 import GanttSchedule from "../../scheduling/components/GanttSchedule.vue";
+import HaccpPanel from "../../haccp/components/HaccpPanel.vue";
 import RecipeNarrative from "./RecipeNarrative.vue";
 const props = defineProps<{
   model: UiRecipeModel;
@@ -21,10 +22,12 @@ const tab = ref<
   | "author"
   | "timeline"
   | "formula"
+  | "haccp"
   | "export"
   | "diagnostics"
 >("narrative");
 const operations = computed(() => props.model.operations ?? []);
+const operationSymbols = computed(() => operations.value.map((item) => item.symbol));
 </script>
 <template>
   <aside class="inspector">
@@ -37,6 +40,7 @@ const operations = computed(() => props.model.operations ?? []);
           'author',
           'timeline',
           'formula',
+          'haccp',
           'export',
           'diagnostics',
         ]"
@@ -85,6 +89,11 @@ const operations = computed(() => props.model.operations ?? []);
     />
     <GanttSchedule v-else-if="tab === 'timeline'" :source="source" />
     <FormulaCalculator v-else-if="tab === 'formula' && recipeId" :recipe-id="recipeId" />
+    <HaccpPanel
+      v-else-if="tab === 'haccp' && recipeId"
+      :recipe-id="recipeId"
+      :operation-symbols="operationSymbols"
+    />
     <ExportPanel
       v-else-if="tab === 'export' && recipeId"
       :recipe-id="recipeId"

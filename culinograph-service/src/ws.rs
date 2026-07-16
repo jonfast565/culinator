@@ -9,7 +9,6 @@ use axum::{
 use culinograph_core::{Formula, PercentageView};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::sync::Arc;
 use tokio::sync::broadcast;
 
 use crate::{
@@ -474,6 +473,92 @@ async fn dispatch_inner(
             )
             .await
             .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "haccp.list" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let axum::Json(value) = routes::haccp::list_for_recipe(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "haccp.get" => {
+            let plan_id = required_string(&params, "planId")?;
+            let axum::Json(value) =
+                routes::haccp::get(axum::extract::Path(plan_id), State(state.service.clone()))
+                    .await
+                    .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "haccp.create" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let title = required_string(&params, "title")?;
+            let description = params
+                .get("description")
+                .and_then(Value::as_str)
+                .map(ToOwned::to_owned);
+            let (_, axum::Json(value)) = routes::haccp::create(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(culinograph_models::NewHaccpPlan { title, description }),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "haccp.changed".to_owned(),
+                payload: json!({"kind":"created","recipeId":recipe_id,"planId":value.id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "haccp.save" => {
+            let plan_id = required_string(&params, "planId")?;
+            let request: culinograph_models::SaveHaccpPlanRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::haccp::save(
+                axum::extract::Path(plan_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "haccp.changed".to_owned(),
+                payload: json!({"kind":"saved","planId":plan_id,"recipeId":value.recipe_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "haccp.delete" => {
+            let plan_id = required_string(&params, "planId")?;
+            routes::haccp::delete(
+                axum::extract::Path(plan_id.clone()),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "haccp.changed".to_owned(),
+                payload: json!({"kind":"deleted","planId":plan_id}),
+            });
+            Ok(Value::Null)
+        }
+        "haccp.record" => {
+            let ccp_id = required_string(&params, "ccpId")?;
+            let request: culinograph_models::NewHaccpMonitoringRecord =
+                serde_json::from_value(params).map_err(to_string)?;
+            let (_, axum::Json(value)) = routes::haccp::add_monitoring_record(
+                axum::extract::Path(ccp_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "haccp.changed".to_owned(),
+                payload: json!({"kind":"recorded","ccpId":ccp_id,"recordId":value.id}),
+            });
             serde_json::to_value(value).map_err(to_string)
         }
         "service.ping" => Ok(json!({"status":"ok"})),
