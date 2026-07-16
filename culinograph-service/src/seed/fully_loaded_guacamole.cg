@@ -27,7 +27,7 @@ recipe fully_loaded_guacamole {
     }
     ingredient cayenne measured by mass {
         name "ground cayenne";
-        quantity 0.25 tsp;
+        quantity 1 pinch;
     }
     ingredient onion measured by count {
         name "medium onion";

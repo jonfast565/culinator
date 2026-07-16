@@ -24,7 +24,7 @@ recipe baked_macaroni_and_cheese {
 
     ingredient macaroni measured by mass {
         name "elbow macaroni";
-        quantity 8 oz;
+        quantity 0.5 lb;
     }
     ingredient butter measured by mass {
         name "unsalted butter";
@@ -45,7 +45,7 @@ recipe baked_macaroni_and_cheese {
     }
     ingredient half_and_half measured by volume {
         name "half and half";
-        quantity 3 cup;
+        quantity 1.5 pint;
         allergen milk;
     }
     ingredient cheddar measured by mass {
@@ -75,7 +75,7 @@ recipe baked_macaroni_and_cheese {
         operation boil does heat {
             input [macaroni];
             heat high;
-            duration 8 min to 10 min;
+            duration 8 minutes to 10 minutes;
             until visual "al dente";
             labor monitor;
             produces cooked_macaroni;
@@ -116,8 +116,8 @@ recipe baked_macaroni_and_cheese {
         operation bake does heat {
             input [topped_dish];
             after top;
-            temperature 350 f;
-            duration 25 min to 30 min;
+            temperature 350 fahrenheit;
+            duration 25 minutes to 30 minutes;
             until visual "golden and bubbly";
             labor passive;
         }
@@ -168,7 +168,7 @@ recipe easy_crepes {
     }
     ingredient salt measured by mass {
         name "kosher salt";
-        quantity 0.25 tsp;
+        quantity 1 pinch;
     }
 
     material crepe_batter measured by volume { }
@@ -184,7 +184,7 @@ recipe easy_crepes {
         operation chill does rest {
             input [crepe_batter];
             after blend;
-            duration 1 h to 8 h;
+            duration 1 hour to 8 hours;
             labor passive;
             produces rested_batter;
         }
@@ -194,7 +194,7 @@ recipe easy_crepes {
             input [rested_batter];
             after chill;
             heat medium;
-            duration 1 min to 2 min;
+            duration 1 minute to 2 minutes;
             until visual "golden at the edges";
             labor active;
         }
@@ -238,7 +238,7 @@ recipe fully_loaded_guacamole {
     }
     ingredient cayenne measured by mass {
         name "ground cayenne";
-        quantity 0.25 tsp;
+        quantity 1 pinch;
     }
     ingredient onion measured by count {
         name "medium onion";

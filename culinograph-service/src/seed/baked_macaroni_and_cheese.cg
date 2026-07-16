@@ -10,7 +10,7 @@ recipe baked_macaroni_and_cheese {
 
     ingredient macaroni measured by mass {
         name "elbow macaroni";
-        quantity 8 oz;
+        quantity 0.5 lb;
     }
     ingredient butter measured by mass {
         name "unsalted butter";
@@ -31,7 +31,7 @@ recipe baked_macaroni_and_cheese {
     }
     ingredient half_and_half measured by volume {
         name "half and half";
-        quantity 3 cup;
+        quantity 1.5 pint;
         allergen milk;
     }
     ingredient cheddar measured by mass {
@@ -61,7 +61,7 @@ recipe baked_macaroni_and_cheese {
         operation boil does heat {
             input [macaroni];
             heat high;
-            duration 8 min to 10 min;
+            duration 8 minutes to 10 minutes;
             until visual "al dente";
             labor monitor;
             produces cooked_macaroni;
@@ -102,8 +102,8 @@ recipe baked_macaroni_and_cheese {
         operation bake does heat {
             input [topped_dish];
             after top;
-            temperature 350 f;
-            duration 25 min to 30 min;
+            temperature 350 fahrenheit;
+            duration 25 minutes to 30 minutes;
             until visual "golden and bubbly";
             labor passive;
         }
