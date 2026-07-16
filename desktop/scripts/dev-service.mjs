@@ -8,12 +8,12 @@ const service = spawn(
   [
     "run",
     "-p",
-    "culinograph-service",
+    "culinator-service",
     "--bin",
-    "culinograph-service",
+    "culinator-service",
     "--",
     "--db",
-    "../../target/culinograph-dev.sqlite3",
+    "../../target/culinator-dev.sqlite3",
     "--origin",
     "http://localhost:1420",
   ],
@@ -36,9 +36,9 @@ lines.on("line", (line) => {
       stdio: "inherit",
       env: {
         ...process.env,
-        VITE_CULINOGRAPH_API_URL: bootstrap.endpoint,
-        VITE_CULINOGRAPH_WS_URL: bootstrap.websocketUrl,
-        VITE_CULINOGRAPH_API_TOKEN: bootstrap.token,
+        VITE_CULINATOR_API_URL: bootstrap.endpoint,
+        VITE_CULINATOR_WS_URL: bootstrap.websocketUrl,
+        VITE_CULINATOR_API_TOKEN: bootstrap.token,
       },
     });
     vite.on("exit", () => service.kill("SIGTERM"));

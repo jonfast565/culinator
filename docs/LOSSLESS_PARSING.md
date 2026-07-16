@@ -1,10 +1,10 @@
 # Lossless parsing
 
-Culinograph parsing is split into two layers.
+Culinator parsing is split into two layers.
 
 ## Concrete syntax layer
 
-`culinograph_parser::LosslessDocument` tokenizes every source byte. Trivia is not discarded:
+`culinator_parser::LosslessDocument` tokenizes every source byte. Trivia is not discarded:
 
 - spaces, tabs, and newlines
 - line comments
@@ -22,7 +22,7 @@ The syntax layer can parse future or extension syntax even when the semantic lay
 The existing domain AST remains a semantic projection of supported declarations. Use:
 
 ```rust
-let parsed = culinograph_parser::parse_lossless(source)?;
+let parsed = culinator_parser::parse_lossless(source)?;
 let exact_source = parsed.syntax.source();
 let recipe_model = parsed.semantic;
 ```
@@ -34,7 +34,7 @@ Semantic parsing never acts as a formatter or serializer for existing source.
 Editors and the LSP should apply `TextEdit` values to the concrete source:
 
 ```rust
-use culinograph_parser::{TextEdit, TextRange};
+use culinator_parser::{TextEdit, TextRange};
 
 let edit = TextEdit::replace(TextRange::new(start, end), "new value");
 let updated = parsed.edit(&[edit])?;

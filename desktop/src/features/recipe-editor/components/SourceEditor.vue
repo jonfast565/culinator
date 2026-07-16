@@ -11,7 +11,7 @@ const extensions = [
       start: [
         {
           regex:
-            /\b(culinograph|book|recipe|ingredient|material|container|equipment|process|operation|yield|serving|formula|measured|by|relative|to|does|after|duration|labor|title|quantity|percentage|reference)\b/,
+            /\b(culinator|book|recipe|ingredient|material|container|equipment|process|operation|yield|serving|formula|measured|by|relative|to|does|after|duration|labor|title|quantity|percentage|reference)\b/,
           token: "keyword",
         },
         { regex: /"(?:[^\\"]|\\.)*"/, token: "string" },

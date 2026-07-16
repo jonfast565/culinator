@@ -1,19 +1,19 @@
 [workspace]
 resolver = "2"
 members = [
-  "culinograph-core",
-  "culinograph-models",
-  "culinograph-application",
-  "culinograph-nutrition-fdc",
-  "culinograph-export",
-  "culinograph-import",
-  "culinograph-parser",
-  "culinograph-validator",
-  "culinograph-sqlite",
-  "culinograph-lsp",
-  "culinograph-cli",
-  "culinograph-service",
-  "culinograph-scheduler",
+  "culinator-core",
+  "culinator-models",
+  "culinator-application",
+  "culinator-nutrition-fdc",
+  "culinator-export",
+  "culinator-import",
+  "culinator-parser",
+  "culinator-validator",
+  "culinator-sqlite",
+  "culinator-lsp",
+  "culinator-cli",
+  "culinator-service",
+  "culinator-scheduler",
   "desktop/src-tauri",
 ]
 

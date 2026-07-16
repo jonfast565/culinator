@@ -1,5 +1,5 @@
 // Sample recipes shown in a fresh library so the app is never empty on first
-// launch. These are Alton Brown recipes converted into the Culinograph DSL for
+// launch. These are Alton Brown recipes converted into the Culinator DSL for
 // demonstration; each carries a `source`/`source_url`/`attribution` credit that
 // the narrative pane surfaces. See the source links for the originals.
 export interface SeedRecipe {
@@ -12,7 +12,7 @@ export const seedRecipes: SeedRecipe[] = [
   {
     symbol: "baked_macaroni_and_cheese",
     title: "Baked Macaroni and Cheese",
-    sourceText: `culinograph 0.3;
+    sourceText: `culinator 0.3;
 
 recipe baked_macaroni_and_cheese {
     title "Baked Macaroni and Cheese";
@@ -132,7 +132,7 @@ recipe baked_macaroni_and_cheese {
   {
     symbol: "easy_crepes",
     title: "Easy Crepes",
-    sourceText: `culinograph 0.3;
+    sourceText: `culinator 0.3;
 
 recipe easy_crepes {
     title "Easy Crepes";
@@ -209,7 +209,7 @@ recipe easy_crepes {
   {
     symbol: "fully_loaded_guacamole",
     title: "Fully Loaded Guacamole",
-    sourceText: `culinograph 0.3;
+    sourceText: `culinator 0.3;
 
 recipe fully_loaded_guacamole {
     title "Fully Loaded Guacamole";

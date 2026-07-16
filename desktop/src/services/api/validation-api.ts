@@ -9,7 +9,7 @@ export async function validateRecipe(sourceText: string): Promise<ValidationResu
     });
   }
   const diagnostics: Diagnostic[] = [];
-  if (!sourceText.trimStart().startsWith("culinograph "))
+  if (!sourceText.trimStart().startsWith("culinator "))
     diagnostics.push({ severity: "error", message: "Missing protocol header." });
   if ((sourceText.match(/{/g) ?? []).length !== (sourceText.match(/}/g) ?? []).length)
     diagnostics.push({ severity: "error", message: "Unbalanced braces." });
@@ -20,7 +20,7 @@ export async function validateRecipe(sourceText: string): Promise<ValidationResu
     outline: {
       title: sourceText.match(/title\s+"([^"]+)"/)?.[1] ?? symbol.replaceAll("_", " "),
       symbol,
-      protocolVersion: sourceText.match(/culinograph\s+([^;]+);/)?.[1]?.trim() ?? "0.3",
+      protocolVersion: sourceText.match(/culinator\s+([^;]+);/)?.[1]?.trim() ?? "0.3",
       typeCount: (sourceText.match(/\btype\s+/g) ?? []).length,
       resourceCount: (
         sourceText.match(

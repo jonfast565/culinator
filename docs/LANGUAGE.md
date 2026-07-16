@@ -1,6 +1,6 @@
-# Culinograph language 0.3
+# Culinator language 0.3
 
-Culinograph uses readable declaration keywords that compile to explicit semantic types.
+Culinator uses readable declaration keywords that compile to explicit semantic types.
 
 ```cg
 ingredient flour measured by mass {
@@ -54,8 +54,8 @@ resource flour as Ingredient<Mass> { quantity 500 g; }
 A recipe book is the organizational root for a collection of recipes. It is typed as
 `RecipeBook`, has its own metadata, and contains complete recipe declarations:
 
-```culinograph
-culinograph 0.3;
+```culinator
+culinator 0.3;
 
 book family_favorites {
     title "Family Favorites";

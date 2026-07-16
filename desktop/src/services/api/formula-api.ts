@@ -6,7 +6,7 @@ import type {
 } from "../../domain/types";
 import { hasConfiguredService, serviceRequest } from "../transport/websocket-client";
 
-const formulaKey = "culinograph.demo.formulas";
+const formulaKey = "culinator.demo.formulas";
 function stored(): Formula[] {
   return JSON.parse(localStorage.getItem(formulaKey) ?? "[]") as Formula[];
 }

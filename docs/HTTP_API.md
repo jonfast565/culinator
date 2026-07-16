@@ -1,6 +1,6 @@
 # Local HTTP API
 
-The Tauri host embeds `culinograph-service` in the desktop process. It binds to `127.0.0.1:0`, receives an operating-system-selected port, and generates a new launch token.
+The Tauri host embeds `culinator-service` in the desktop process. It binds to `127.0.0.1:0`, receives an operating-system-selected port, and generates a new launch token.
 
 The WebView receives this runtime bootstrap:
 
@@ -32,7 +32,7 @@ Authorization: Bearer <per-launch-token>
 
 ## Browser development
 
-Use `npm run dev:service` from `apps/desktop`. It launches the development service, parses its JSON bootstrap, and starts Vite with `VITE_CULINOGRAPH_API_URL` and `VITE_CULINOGRAPH_API_TOKEN` set automatically.
+Use `npm run dev:service` from `apps/desktop`. It launches the development service, parses its JSON bootstrap, and starts Vite with `VITE_CULINATOR_API_URL` and `VITE_CULINATOR_API_TOKEN` set automatically.
 
 ## Recipe books
 

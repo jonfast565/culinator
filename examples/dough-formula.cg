@@ -1,4 +1,4 @@
-culinograph 0.1;
+culinator 0.1;
 
 recipe country_loaf as Recipe {
     title "Country Loaf";

@@ -12,7 +12,7 @@ export interface ServiceEvent<T = unknown> {
 
 declare global {
   interface Window {
-    __CULINOGRAPH_SERVICE__?: ServiceBootstrap;
+    __CULINATOR_SERVICE__?: ServiceBootstrap;
     __TAURI_INTERNALS__?: unknown;
   }
 }
@@ -38,7 +38,7 @@ const eventListeners = new Set<(event: ServiceEvent) => void>();
 
 export function hasConfiguredService(): boolean {
   return (
-    Boolean(import.meta.env.VITE_CULINOGRAPH_WS_URL || import.meta.env.VITE_CULINOGRAPH_API_URL) ||
+    Boolean(import.meta.env.VITE_CULINATOR_WS_URL || import.meta.env.VITE_CULINATOR_API_URL) ||
     "__TAURI_INTERNALS__" in window
   );
 }
@@ -60,11 +60,11 @@ function emitStatus(status: ConnectionStatus): void {
 }
 
 async function serviceBootstrap(): Promise<ServiceBootstrap> {
-  const configuredWs = import.meta.env.VITE_CULINOGRAPH_WS_URL as string | undefined;
-  const configuredHttp = import.meta.env.VITE_CULINOGRAPH_API_URL as string | undefined;
-  const configuredToken = import.meta.env.VITE_CULINOGRAPH_API_TOKEN as string | undefined;
+  const configuredWs = import.meta.env.VITE_CULINATOR_WS_URL as string | undefined;
+  const configuredHttp = import.meta.env.VITE_CULINATOR_API_URL as string | undefined;
+  const configuredToken = import.meta.env.VITE_CULINATOR_API_TOKEN as string | undefined;
   if (configuredWs || configuredHttp) {
-    if (!configuredToken) throw new Error("VITE_CULINOGRAPH_API_TOKEN is required");
+    if (!configuredToken) throw new Error("VITE_CULINATOR_API_TOKEN is required");
     const endpoint = (
       configuredHttp ?? configuredWs!.replace(/^ws/, "http").replace(/\/ws$/, "")
     ).replace(/\/$/, "");
@@ -75,14 +75,14 @@ async function serviceBootstrap(): Promise<ServiceBootstrap> {
     };
   }
 
-  if (window.__CULINOGRAPH_SERVICE__) return window.__CULINOGRAPH_SERVICE__;
+  if (window.__CULINATOR_SERVICE__) return window.__CULINATOR_SERVICE__;
   bootstrapPromise ??= new Promise<ServiceBootstrap>((resolve, reject) => {
     const timeout = window.setTimeout(
       () => reject(new Error("Tauri did not provide the local service bootstrap")),
       10_000,
     );
     window.addEventListener(
-      "culinograph:service-ready",
+      "culinator:service-ready",
       (event) => {
         window.clearTimeout(timeout);
         resolve((event as CustomEvent<ServiceBootstrap>).detail);
@@ -141,13 +141,13 @@ class WebSocketServiceClient {
     emitStatus(this.reconnectAttempt > 0 ? "reconnecting" : "connecting");
     return new Promise((resolve, reject) => {
       const socket = new WebSocket(this.bootstrap.websocketUrl, [
-        "culinograph.v1",
-        `culinograph.auth.${this.bootstrap.token}`,
+        "culinator.v1",
+        `culinator.auth.${this.bootstrap.token}`,
       ]);
       this.socket = socket;
       const timeout = window.setTimeout(() => {
         socket.close();
-        reject(new Error("Timed out connecting to Culinograph service"));
+        reject(new Error("Timed out connecting to Culinator service"));
       }, 10_000);
 
       socket.addEventListener(
@@ -165,7 +165,7 @@ class WebSocketServiceClient {
         "error",
         () => {
           window.clearTimeout(timeout);
-          reject(new Error("Could not connect to Culinograph service"));
+          reject(new Error("Could not connect to Culinator service"));
         },
         { once: true },
       );

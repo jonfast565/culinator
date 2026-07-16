@@ -1,18 +1,18 @@
-# Culinograph architecture
+# Culinator architecture
 
 ## Workspace boundaries
 
-- `culinograph-core`: dependency-light domain types and formula evaluation.
-- `culinograph-parser`: source text to typed AST. It does not persist or serve data.
-- `culinograph-validator`: semantic validation over the typed AST.
-- `culinograph-sqlite`: migrations and repository functions.
-- `culinograph-service`: authenticated HTTP application layer. Routes are split by domain.
-- `culinograph-cli`: thin command-line composition over parser, validator, and repository crates.
-- `culinograph-lsp`: editor protocol adapter over parser and validator.
+- `culinator-core`: dependency-light domain types and formula evaluation.
+- `culinator-parser`: source text to typed AST. It does not persist or serve data.
+- `culinator-validator`: semantic validation over the typed AST.
+- `culinator-sqlite`: migrations and repository functions.
+- `culinator-service`: authenticated HTTP application layer. Routes are split by domain.
+- `culinator-cli`: thin command-line composition over parser, validator, and repository crates.
+- `culinator-lsp`: editor protocol adapter over parser and validator.
 - `apps/desktop/src-tauri`: Tauri lifecycle host only. It starts and stops the HTTP service.
 - `apps/desktop/src`: Vue 3 presentation layer, feature composables, and typed WebSocket client.
 
-Dependencies point inward: adapters depend on domain crates, while `culinograph-core` does not depend on Tauri, Axum, SQLite, or the frontend.
+Dependencies point inward: adapters depend on domain crates, while `culinator-core` does not depend on Tauri, Axum, SQLite, or the frontend.
 
 ## Local desktop service
 

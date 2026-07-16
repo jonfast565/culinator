@@ -1,0 +1,35 @@
+[package]
+name = "culinator-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+autobins = false
+
+[[bin]]
+name = "culinator-service"
+path = "src/bin/culinator-service.rs"
+
+[dependencies]
+culinator-validator = { path = "../culinator-validator" }
+culinator-application = { path = "../culinator-application" }
+culinator-models = { path = "../culinator-models" }
+culinator-nutrition-fdc = { path = "../culinator-nutrition-fdc" }
+axum.workspace = true
+culinator-export = { path = "../culinator-export" }
+culinator-import = { path = "../culinator-import" }
+base64.workspace = true
+culinator-core = { path = "../culinator-core" }
+culinator-parser = { path = "../culinator-parser" }
+culinator-sqlite = { path = "../culinator-sqlite" }
+culinator-scheduler = { path = "../culinator-scheduler" }
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+tokio-util.workspace = true
+tower-http.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

@@ -705,35 +705,35 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52560adf09603e58c9a7ee1fe1dcb95a16927b17c127f0ac02d6e768a0e25bc1"
 
 [[package]]
-name = "culinograph-application"
+name = "culinator-application"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "serde",
  "thiserror 2.0.18",
  "uuid",
 ]
 
 [[package]]
-name = "culinograph-cli"
+name = "culinator-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
- "culinograph-core",
- "culinograph-export",
- "culinograph-models",
- "culinograph-parser",
- "culinograph-sqlite",
- "culinograph-validator",
+ "culinator-core",
+ "culinator-export",
+ "culinator-models",
+ "culinator-parser",
+ "culinator-sqlite",
+ "culinator-validator",
  "rusqlite",
  "serde_json",
  "uuid",
 ]
 
 [[package]]
-name = "culinograph-core"
+name = "culinator-core"
 version = "0.1.0"
 dependencies = [
  "serde",
@@ -741,15 +741,15 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-desktop"
+name = "culinator-desktop"
 version = "0.1.0"
 dependencies = [
  "base64 0.22.1",
- "culinograph-core",
- "culinograph-parser",
- "culinograph-service",
- "culinograph-sqlite",
- "culinograph-validator",
+ "culinator-core",
+ "culinator-parser",
+ "culinator-service",
+ "culinator-sqlite",
+ "culinator-validator",
  "rusqlite",
  "serde",
  "serde_json",
@@ -762,23 +762,23 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-export"
+name = "culinator-export"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "serde_json",
  "uuid",
  "zip 2.4.2",
 ]
 
 [[package]]
-name = "culinograph-import"
+name = "culinator-import"
 version = "0.1.0"
 dependencies = [
  "async-trait",
  "base64 0.22.1",
- "culinograph-models",
+ "culinator-models",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
@@ -786,21 +786,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-lsp"
+name = "culinator-lsp"
 version = "0.1.0"
 dependencies = [
- "culinograph-parser",
- "culinograph-validator",
+ "culinator-parser",
+ "culinator-validator",
  "tokio",
  "tower-lsp",
 ]
 
 [[package]]
-name = "culinograph-models"
+name = "culinator-models"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "culinograph-core",
+ "culinator-core",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -808,13 +808,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-nutrition-fdc"
+name = "culinator-nutrition-fdc"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "csv",
- "culinograph-models",
+ "culinator-models",
  "reqwest 0.12.28",
  "rusqlite",
  "serde",
@@ -824,41 +824,41 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-parser"
+name = "culinator-parser"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "thiserror 2.0.18",
  "uuid",
 ]
 
 [[package]]
-name = "culinograph-scheduler"
+name = "culinator-scheduler"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "serde",
  "uuid",
 ]
 
 [[package]]
-name = "culinograph-service"
+name = "culinator-service"
 version = "0.1.0"
 dependencies = [
  "axum",
  "base64 0.22.1",
- "culinograph-application",
- "culinograph-core",
- "culinograph-export",
- "culinograph-import",
- "culinograph-models",
- "culinograph-nutrition-fdc",
- "culinograph-parser",
- "culinograph-scheduler",
- "culinograph-sqlite",
- "culinograph-validator",
+ "culinator-application",
+ "culinator-core",
+ "culinator-export",
+ "culinator-import",
+ "culinator-models",
+ "culinator-nutrition-fdc",
+ "culinator-parser",
+ "culinator-scheduler",
+ "culinator-sqlite",
+ "culinator-validator",
  "rusqlite",
  "serde",
  "serde_json",
@@ -869,22 +869,22 @@ dependencies = [
 ]
 
 [[package]]
-name = "culinograph-sqlite"
+name = "culinator-sqlite"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "rusqlite",
  "serde_json",
  "uuid",
 ]
 
 [[package]]
-name = "culinograph-validator"
+name = "culinator-validator"
 version = "0.1.0"
 dependencies = [
- "culinograph-core",
- "culinograph-models",
+ "culinator-core",
+ "culinator-models",
  "serde",
  "uuid",
 ]

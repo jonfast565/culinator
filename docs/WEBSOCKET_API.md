@@ -9,10 +9,10 @@ use it for recipe or formula operations.
 - URL: `ws://127.0.0.1:<ephemeral-port>/ws`
 - Origin: exact-match against the launch allow-list
 - Subprotocols:
-  - `culinograph.v1`
-  - `culinograph.auth.<per-launch-token>`
+  - `culinator.v1`
+  - `culinator.auth.<per-launch-token>`
 
-The server selects `culinograph.v1`; the authentication protocol is only used during the handshake.
+The server selects `culinator.v1`; the authentication protocol is only used during the handshake.
 The token is generated for every Tauri launch and is never persisted.
 
 ## Request envelope
@@ -23,7 +23,7 @@ The token is generated for every Tauri launch and is never persisted.
   "method": "recipes.save",
   "params": {
     "id": "...",
-    "sourceText": "culinograph 0.2; ..."
+    "sourceText": "culinator 0.2; ..."
   }
 }
 ```

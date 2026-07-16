@@ -118,7 +118,7 @@ watch(
 
     <p v-if="!catalogAvailable" class="diagnostic warning text-sm">
       Nutrition database not found. Build <code>fdc.sqlite3</code> in the app data directory using
-      <code>culinograph-fdc-build</code>.
+      <code>culinator-fdc-build</code>.
     </p>
 
     <div class="space-y-2">

@@ -33,7 +33,7 @@ async function openViaTauri(): Promise<LoadedRecipeFile | null> {
   const selected = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: "Culinograph recipe", extensions: RECIPE_FILE_EXTENSIONS }],
+    filters: [{ name: "Culinator recipe", extensions: RECIPE_FILE_EXTENSIONS }],
   });
   if (typeof selected !== "string") return null;
   const sourceText = await invoke<string>("read_recipe_file", { path: selected });

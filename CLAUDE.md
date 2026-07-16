@@ -7,12 +7,12 @@ notes live in [AGENTS.md](./AGENTS.md) — read it before non-trivial changes.
 
 Sample recipes exist in **two** places that must match:
 
-- Rust: `culinograph-service/src/seed/*.cg`
+- Rust: `culinator-service/src/seed/*.cg`
 - Frontend: `desktop/src/services/api/seed-recipes.ts` (embedded copies)
 
 When you add or change DSL syntax, **update the seed recipes to use the new
 syntax** (where it applies) and update **both** copies. Verify with
-`cargo test -p culinograph-service` (the seed parse/schedule tests) and the
+`cargo test -p culinator-service` (the seed parse/schedule tests) and the
 frontend `npm run typecheck`.
 
 ## Other essentials

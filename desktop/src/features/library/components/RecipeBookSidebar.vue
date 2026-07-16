@@ -36,7 +36,7 @@ function recipesFor(bookId: string | null, recipes: RecipeSummary[]): RecipeSumm
   <aside class="sidebar">
     <header class="brand">
       <span class="brand-mark"><Utensils :size="19" /></span
-      ><span><strong>Culinograph</strong><small>Food production studio</small></span>
+      ><span><strong>Culinator</strong><small>Food production studio</small></span>
     </header>
     <div class="sidebar-actions">
       <button class="sidebar-action" @click="emit('createRecipe')">

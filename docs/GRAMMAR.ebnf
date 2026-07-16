@@ -1,4 +1,4 @@
-document       = "culinograph", version, ";", recipe ;
+document       = "culinator", version, ";", recipe ;
 recipe         = "recipe", identifier, [ "as", type_ref ], block ;
 block          = "{", { declaration | property }, "}" ;
 declaration    = type_decl | resource_decl | formula_decl | process_decl | operation_decl | prep_decl | yield_decl | serving_decl ;
@@ -56,7 +56,7 @@ type_ref       = identifier, [ "<", type_ref, { ",", type_ref }, ">" ] ;
 value          = string | number | percentage | quantity | range | identifier | list ;
 quantity       = number, identifier ;   (* the identifier is the unit; see below *)
 (* Units are classified into a `dimension` case-insensitively (see
-   `Dimension::from_unit` in culinograph-core). Recognized cooking units include:
+   `Dimension::from_unit` in culinator-core). Recognized cooking units include:
      mass:        g/gram(s), kg/kilogram(s), mg, oz/ounce(s), lb/pound(s), dram
      volume:      ml/cc, cl, dl, l/liter(s), cup(s), tbsp/tablespoon(s),
                   tsp/teaspoon(s), floz, pt/pint(s), qt/quart(s), gal/gallon(s),

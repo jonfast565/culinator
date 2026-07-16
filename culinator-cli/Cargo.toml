@@ -1,0 +1,21 @@
+[package]
+name = "culinator-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+culinator-export = { path = "../culinator-export" }
+culinator-models = { path = "../culinator-models" }
+culinator-core = { path = "../culinator-core" }
+culinator-parser = { path = "../culinator-parser" }
+culinator-validator = { path = "../culinator-validator" }
+culinator-sqlite = { path = "../culinator-sqlite" }
+rusqlite.workspace = true
+serde_json.workspace = true
+
+uuid.workspace = true
+
+[lints]
+workspace = true

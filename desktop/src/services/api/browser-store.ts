@@ -1,8 +1,8 @@
 import type { RecipeBookSummary, RecipeDocument } from "../../domain/types";
 import { seedRecipes } from "./seed-recipes";
 
-const recipesKey = "culinograph.demo.recipes";
-const booksKey = "culinograph.demo.books";
+const recipesKey = "culinator.demo.recipes";
+const booksKey = "culinator.demo.books";
 
 export function readBooks(): RecipeBookSummary[] {
   const stored = localStorage.getItem(booksKey);

@@ -1,5 +1,5 @@
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
-use culinograph_service::{AccessPolicy, ServiceConfig, ServiceState, bind};
+use culinator_service::{AccessPolicy, ServiceConfig, ServiceState, bind};
 use serde::Serialize;
 use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
@@ -52,7 +52,7 @@ pub fn run() {
         .setup(move |app| {
             let data_dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&data_dir)?;
-            let database_path = data_dir.join("culinograph.sqlite3");
+            let database_path = data_dir.join("culinator.sqlite3");
             let settings_path = data_dir.join("settings.json");
 
             let token = Uuid::new_v4().simple().to_string();
@@ -64,7 +64,7 @@ pub fn run() {
             ];
             let state = ServiceState::sqlite(database_path, settings_path)?;
             if let Err(error) = state.seed_if_empty() {
-                eprintln!("Culinograph sample recipes were not seeded: {error}");
+                eprintln!("Culinator sample recipes were not seeded: {error}");
             }
             let service = tauri::async_runtime::block_on(bind(
                 ServiceConfig {
@@ -87,7 +87,7 @@ pub fn run() {
             let shutdown = shutdown_for_setup.clone();
             tauri::async_runtime::spawn(async move {
                 if let Err(error) = service.serve(shutdown).await {
-                    eprintln!("Culinograph local service failed: {error}");
+                    eprintln!("Culinator local service failed: {error}");
                 }
             });
             Ok(())
@@ -103,10 +103,10 @@ pub fn run() {
                 return;
             };
             let script = format!(
-                "window.__CULINOGRAPH_SERVICE__ = {json}; window.dispatchEvent(new CustomEvent('culinograph:service-ready', {{ detail: {json} }}));"
+                "window.__CULINATOR_SERVICE__ = {json}; window.dispatchEvent(new CustomEvent('culinator:service-ready', {{ detail: {json} }}));"
             );
             if let Err(error) = webview.eval(&script) {
-                eprintln!("Could not inject Culinograph service bootstrap: {error}");
+                eprintln!("Could not inject Culinator service bootstrap: {error}");
             }
         })
         .on_window_event(move |_window, event| {
@@ -115,7 +115,7 @@ pub fn run() {
             }
         })
         .run(tauri::generate_context!())
-        .expect("error while running Culinograph");
+        .expect("error while running Culinator");
 }
 #[cfg(test)]
 mod test;

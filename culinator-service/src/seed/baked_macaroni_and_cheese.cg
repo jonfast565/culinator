@@ -1,0 +1,115 @@
+culinator 0.3;
+
+recipe baked_macaroni_and_cheese {
+    title "Baked Macaroni and Cheese";
+
+    source "Alton Brown";
+    publisher "Food Network / altonbrown.com";
+    source_url "https://altonbrown.com/recipes/baked-macaroni-and-cheese/";
+    attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
+
+    ingredient macaroni measured by mass {
+        name "elbow macaroni";
+        quantity 0.5 lb;
+    }
+    ingredient butter measured by mass {
+        name "unsalted butter";
+        quantity 6 tbsp;
+        allergen milk;
+    }
+    ingredient flour measured by mass {
+        name "all-purpose flour";
+        quantity 3 tbsp;
+    }
+    ingredient mustard measured by mass {
+        name "ground mustard";
+        quantity 1 tbsp;
+    }
+    ingredient paprika measured by mass {
+        name "paprika";
+        quantity 1 tsp;
+    }
+    ingredient half_and_half measured by volume {
+        name "half and half";
+        quantity 1.5 pint;
+        allergen milk;
+    }
+    ingredient cheddar measured by mass {
+        name "sharp cheddar";
+        quantity 4 oz;
+        allergen milk;
+        state grated;
+    }
+    ingredient jack measured by mass {
+        name "Monterey jack";
+        quantity 8 oz;
+        allergen milk;
+        state grated;
+    }
+    ingredient panko measured by mass {
+        name "panko breadcrumbs";
+        quantity 1 cup;
+    }
+
+    material cooked_macaroni measured by mass { }
+    material cheese_sauce measured by mass { }
+    material sauce_mix measured by mass { }
+    material assembled_dish measured by mass { }
+    material topped_dish measured by mass { }
+
+    process pasta {
+        operation boil does heat {
+            input [macaroni];
+            heat high;
+            duration 8 minutes to 10 minutes;
+            until visual "al dente";
+            labor monitor;
+            produces cooked_macaroni;
+        }
+    }
+    process sauce {
+        operation make_sauce does heat {
+            input [butter, flour, mustard, paprika, half_and_half];
+            heat medium;
+            duration 10 min to 12 min;
+            until visual "thick enough to coat the back of a spoon";
+            labor active;
+            produces cheese_sauce;
+        }
+        operation stir_in_cheese does mix {
+            input [cheese_sauce, cheddar, jack];
+            after make_sauce;
+            duration 2 min;
+            labor active;
+            produces sauce_mix;
+        }
+    }
+    process assembly {
+        operation combine does mix {
+            input [sauce_mix, cooked_macaroni];
+            after [stir_in_cheese, boil];
+            duration 2 min;
+            labor active;
+            produces assembled_dish;
+        }
+        operation top does mix {
+            input [assembled_dish, panko];
+            after combine;
+            duration 2 min;
+            labor active;
+            produces topped_dish;
+        }
+        operation bake does heat {
+            input [topped_dish];
+            after top;
+            temperature 350 fahrenheit;
+            duration 25 minutes to 30 minutes;
+            until visual "golden and bubbly";
+            labor passive;
+        }
+    }
+
+    yield servings measured by mass {
+        mass 1400 g;
+    }
+}

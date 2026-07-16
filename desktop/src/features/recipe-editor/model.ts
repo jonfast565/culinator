@@ -79,7 +79,7 @@ const DURATION_UNIT_MINUTES: Record<string, number> = {
   weeks: 10080,
 };
 // Alternation of every recognized time unit, longest-first so e.g. "minutes"
-// matches before "min". Mirrors `time_unit_seconds` in culinograph-core.
+// matches before "min". Mirrors `time_unit_seconds` in culinator-core.
 const DURATION_UNIT_PATTERN = Object.keys(DURATION_UNIT_MINUTES)
   .sort((a, b) => b.length - a.length)
   .join("|");

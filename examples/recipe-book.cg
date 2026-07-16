@@ -1,4 +1,4 @@
-culinograph 0.3;
+culinator 0.3;
 
 book family_favorites as RecipeBook {
     title "Family Favorites";

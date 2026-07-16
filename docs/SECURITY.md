@@ -9,7 +9,7 @@ This design reduces accidental access from unrelated browser pages. It is not in
 ## WebSocket authentication
 
 The GUI authenticates the WebSocket handshake with two offered subprotocols: the stable
-`culinograph.v1` protocol and a per-launch `culinograph.auth.<token>` value. The server exact-matches
+`culinator.v1` protocol and a per-launch `culinator.auth.<token>` value. The server exact-matches
 the request Origin and compares the token in constant time before upgrading. It selects only the
 stable protocol in the response. The socket binds to loopback on an ephemeral port and the token is
 never persisted.

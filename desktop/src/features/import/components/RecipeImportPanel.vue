@@ -80,7 +80,7 @@ async function translate() {
         <div>
           <h2 class="text-xl font-semibold">Import photographed recipe</h2>
           <p class="text-sm text-slate-500">
-            Take photos or upload recipe pages, then convert them to validated Culinograph DSL.
+            Take photos or upload recipe pages, then convert them to validated Culinator DSL.
           </p>
         </div>
         <button @click="emit('close')"><X /></button>
@@ -144,7 +144,7 @@ async function translate() {
             @click="translate"
           >
             <LoaderCircle v-if="busy" class="animate-spin" :size="18" />{{
-              busy ? "Reading and translating…" : "Convert to Culinograph"
+              busy ? "Reading and translating…" : "Convert to Culinator"
             }}
           </button>
           <p v-if="error" class="rounded bg-red-50 p-3 text-sm text-red-700">{{ error }}</p>

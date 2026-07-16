@@ -1,0 +1,13 @@
+[package]
+name = "culinator-lsp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+[dependencies]
+culinator-parser = { path = "../culinator-parser" }
+culinator-validator = { path = "../culinator-validator" }
+tokio.workspace = true
+tower-lsp.workspace = true
+
+[lints]
+workspace = true

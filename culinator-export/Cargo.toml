@@ -1,0 +1,16 @@
+[package]
+name = "culinator-export"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+culinator-core = { path = "../culinator-core" }
+culinator-models = { path = "../culinator-models" }
+serde_json.workspace = true
+zip.workspace = true
+uuid.workspace = true
+
+[lints]
+workspace = true

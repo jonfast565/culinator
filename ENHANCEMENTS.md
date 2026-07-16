@@ -1,4 +1,4 @@
-# Culinograph Enhancements Roadmap
+# Culinator Enhancements Roadmap
 
 This document collects intentionally deferred capabilities that can be added without changing the core dependency direction:
 
@@ -11,7 +11,7 @@ New functionality should normally enter through an application-layer interface a
 ## 1. OCR and AI recipe-book import
 
 ### Goal
-Import photographs, scans, PDFs, and complete recipe books, recover text and layout, then convert the result into valid Culinograph DSL.
+Import photographs, scans, PDFs, and complete recipe books, recover text and layout, then convert the result into valid Culinator DSL.
 
 ### Proposed application ports
 

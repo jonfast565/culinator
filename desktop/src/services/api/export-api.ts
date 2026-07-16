@@ -5,7 +5,7 @@ export async function exportRecipe(
   options: RecipeExportOptions,
 ): Promise<RecipeExportResponse> {
   if (!hasConfiguredService())
-    throw new Error("Recipe export requires the local Culinograph service");
+    throw new Error("Recipe export requires the local Culinator service");
   return serviceRpc<RecipeExportResponse>("recipes.export", { id: recipeId, options });
 }
 

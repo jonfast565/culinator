@@ -1,7 +1,7 @@
 ## 0.1.1 - In-process HTTP service
 
 - Replaced Tauri command invocation with a versioned Axum JSON API.
-- Added `culinograph-service` as a reusable in-process service crate.
+- Added `culinator-service` as a reusable in-process service crate.
 - Added startup retry, health endpoint, graceful cancellation, and configurable frontend base URL.
 - Kept browser-only localStorage fallback for standalone UI development.
 
@@ -61,7 +61,7 @@
 
 ## Unified recipe export
 
-- Added `culinograph-export` with static HTML, Recipe JSON-LD, SVG Nutrition Facts, manifest, and ZIP bundle generation.
+- Added `culinator-export` with static HTML, Recipe JSON-LD, SVG Nutrition Facts, manifest, and ZIP bundle generation.
 - Added `RecipeExporter` port and application `ExportService`.
 - Added authenticated HTTP and WebSocket export endpoints.
 - Added CLI `export` command and Vue export panel.
@@ -70,7 +70,7 @@
 
 - Added camera/image recipe import in Vue.
 - Added replaceable OCR, AI interpreter, and settings interfaces.
-- Added optional local Tesseract OCR and OpenAI Responses API conversion to validated Culinograph DSL.
+- Added optional local Tesseract OCR and OpenAI Responses API conversion to validated Culinator DSL.
 - Added authenticated WebSocket RPC methods for import settings and translation.
 
 ## Lossless parser scaffold
@@ -81,6 +81,6 @@
 
 ## Visual authoring and scheduling
 - Added source-preserving Vue visual authoring for titles and operations.
-- Added `culinograph-scheduler` and the replaceable `RecipeScheduler` port.
+- Added `culinator-scheduler` and the replaceable `RecipeScheduler` port.
 - Added dependency/resource-aware schedule generation and WebSocket RPC.
 - Replaced the timeline placeholder with an interactive Gantt view and critical-path highlighting.

@@ -1,37 +1,37 @@
-# Agent notes — Culinograph
+# Agent notes — Culinator
 
 Working notes for future coding sessions. Keep this current when you learn
 something non-obvious. `CLAUDE.md` links here.
 
 ## Architecture at a glance
 
-- **Rust workspace** — the domain lives in `culinograph-core` / `culinograph-models`;
-  services in `culinograph-application`; concrete adapters in `culinograph-parser`,
-  `culinograph-scheduler`, `culinograph-export`, `culinograph-import`; the
-  WebSocket/SQLite server in `culinograph-service`; CLI in `culinograph-cli`.
+- **Rust workspace** — the domain lives in `culinator-core` / `culinator-models`;
+  services in `culinator-application`; concrete adapters in `culinator-parser`,
+  `culinator-scheduler`, `culinator-export`, `culinator-import`; the
+  WebSocket/SQLite server in `culinator-service`; CLI in `culinator-cli`.
 - **Desktop app** — `desktop/` is a Tauri + Vue 3 (`<script setup lang="ts">`) frontend
-  that talks to `culinograph-service` over WebSocket. Tests: `npm run typecheck`,
+  that talks to `culinator-service` over WebSocket. Tests: `npm run typecheck`,
   `npm run lint` (zero warnings), `npm run format:check`.
 - **Recipe DSL** — a small `.cg` language. Grammar reference: `docs/GRAMMAR.ebnf`.
 
 ## Two things that must stay in sync (easy to forget)
 
-1. **Two parsers.** The Rust semantic parser (`culinograph-parser/src/semantic.rs`)
+1. **Two parsers.** The Rust semantic parser (`culinator-parser/src/semantic.rs`)
    is the source of truth for validation, scheduling, export. The frontend has a
    *separate* regex parser (`desktop/src/features/recipe-editor/model.ts`,
    `parseUiModel`) that drives the editor UI (outline, ingredients, visual
    workflow graph). Any DSL syntax change usually needs to land in **both**, and
    they should desugar identically.
 2. **Two seed copies.** Sample recipes exist as Rust `.cg` files in
-   `culinograph-service/src/seed/*.cg` (loaded via `include_str!` in
-   `culinograph-service/src/state.rs`) *and* as embedded template strings in
+   `culinator-service/src/seed/*.cg` (loaded via `include_str!` in
+   `culinator-service/src/state.rs`) *and* as embedded template strings in
    `desktop/src/services/api/seed-recipes.ts`. Update both; they had already
    drifted once (frontend guac baked prep into ingredient names). When new
    syntax lands, migrate the seeds to use it (user preference).
 
 ## DSL specifics worth remembering
 
-- **Scheduling uses only explicit `after` dependencies** (`culinograph-scheduler`).
+- **Scheduling uses only explicit `after` dependencies** (`culinator-scheduler`).
   Data flow (`produces` → `input`) does **not** create ordering — bindings only
   drive equipment/labor/container resource conflicts. So any sugar that emits an
   operation must produce a *predictable* operation symbol that downstream `after`

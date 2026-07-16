@@ -1,6 +1,6 @@
 # Unified recipe export
 
-Culinograph exports one ZIP containing a static recipe webpage and its matching nutrition label.
+Culinator exports one ZIP containing a static recipe webpage and its matching nutrition label.
 
 Files:
 - `index.html`: responsive standalone recipe page with embedded Nutrition Facts SVG and Recipe JSON-LD.
@@ -13,7 +13,7 @@ The nutrition label generator is suitable for planning and mockups. Regulatory u
 
 CLI:
 ```bash
-culinograph export recipe.cg recipe-export.zip
+culinator export recipe.cg recipe-export.zip
 ```
 
 WebSocket RPC: `recipes.export` with `{ id, options }`.

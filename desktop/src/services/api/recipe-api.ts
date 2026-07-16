@@ -30,7 +30,7 @@ export async function createRecipe(bookId?: string | null): Promise<RecipeDocume
     title: "Untitled Recipe",
     protocolVersion: "0.3",
     updatedAt: new Date().toISOString(),
-    sourceText: `culinograph 0.3;\n\nrecipe new_recipe {\n    title "Untitled Recipe";\n}\n`,
+    sourceText: `culinator 0.3;\n\nrecipe new_recipe {\n    title "Untitled Recipe";\n}\n`,
   };
   writeRecipes([recipe, ...readRecipes()]);
   return recipe;
