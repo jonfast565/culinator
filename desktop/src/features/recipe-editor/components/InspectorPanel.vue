@@ -7,6 +7,7 @@ import ExportPanel from "../../export/components/ExportPanel.vue";
 import VisualAuthoringPanel from "../../visual-authoring/components/VisualAuthoringPanel.vue";
 import GanttSchedule from "../../scheduling/components/GanttSchedule.vue";
 import HaccpPanel from "../../haccp/components/HaccpPanel.vue";
+import KitchenModePanel from "../../kitchen-mode/components/KitchenModePanel.vue";
 import RecipeNarrative from "./RecipeNarrative.vue";
 const props = defineProps<{
   model: UiRecipeModel;
@@ -23,6 +24,7 @@ const tab = ref<
   | "timeline"
   | "formula"
   | "haccp"
+  | "kitchen"
   | "export"
   | "diagnostics"
 >("narrative");
@@ -41,6 +43,7 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
           'timeline',
           'formula',
           'haccp',
+          'kitchen',
           'export',
           'diagnostics',
         ]"
@@ -93,6 +96,11 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
       v-else-if="tab === 'haccp' && recipeId"
       :recipe-id="recipeId"
       :operation-symbols="operationSymbols"
+    />
+    <KitchenModePanel
+      v-else-if="tab === 'kitchen' && recipeId"
+      :recipe-id="recipeId"
+      :operations="operations"
     />
     <ExportPanel
       v-else-if="tab === 'export' && recipeId"

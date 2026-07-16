@@ -143,6 +143,24 @@ pub fn router(config: ServiceConfig) -> Router {
             "/api/v1/haccp/ccps/{ccp_id}/records",
             post(routes::haccp::add_monitoring_record),
         )
+        .route(
+            "/api/v1/recipes/{recipe_id}/tries",
+            get(routes::kitchen::list_for_recipe).post(routes::kitchen::start),
+        )
+        .route(
+            "/api/v1/tries/{try_id}",
+            get(routes::kitchen::get)
+                .put(routes::kitchen::update)
+                .delete(routes::kitchen::delete),
+        )
+        .route(
+            "/api/v1/tries/{try_id}/operations/{operation_id}",
+            put(routes::kitchen::update_operation),
+        )
+        .route(
+            "/api/v1/tries/{try_id}/observations",
+            post(routes::kitchen::add_observation),
+        )
         .layer(middleware::from_fn_with_state(
             config.access,
             auth::require_local_client,

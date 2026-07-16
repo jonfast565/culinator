@@ -5,11 +5,13 @@
 //! depend on it without creating a dependency on the application crate.
 
 pub mod error;
+pub mod execution;
 pub mod haccp;
 pub mod models;
 pub mod ports;
 
 pub use error::ApplicationError;
+pub use execution::*;
 pub use haccp::*;
 pub use models::*;
 pub use ports::*;

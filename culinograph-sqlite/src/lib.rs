@@ -1,3 +1,4 @@
+mod execution;
 mod haccp;
 mod repository;
 pub use repository::SqliteCatalogRepository;
@@ -14,6 +15,7 @@ pub const MIGRATION_003: &str = include_str!("../../migrations/003_formulas.sql"
 pub const MIGRATION_004: &str = include_str!("../../migrations/004_general_formula.sql");
 pub const MIGRATION_005: &str = include_str!("../../migrations/005_recipe_books.sql");
 pub const MIGRATION_006: &str = include_str!("../../migrations/006_haccp.sql");
+pub const MIGRATION_007: &str = include_str!("../../migrations/007_kitchen_mode.sql");
 
 #[derive(Debug, Clone)]
 pub struct RecipeRecord {
@@ -52,6 +54,10 @@ pub fn migrate(connection: &Connection) -> Result<()> {
     if version < 6 {
         connection.execute_batch(MIGRATION_006)?;
         connection.pragma_update(None, "user_version", 6)?;
+    }
+    if version < 7 {
+        connection.execute_batch(MIGRATION_007)?;
+        connection.pragma_update(None, "user_version", 7)?;
     }
     Ok(())
 }
