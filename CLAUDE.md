@@ -8,7 +8,7 @@ notes live in [AGENTS.md](./AGENTS.md) — read it before non-trivial changes.
 Sample recipes exist in **two** places that must match:
 
 - Rust: `culinator-service/src/seed/*.cg`
-- Frontend: `desktop/src/services/api/seed-recipes.ts` (embedded copies)
+- Frontend: `culinator-desktop/src/services/api/seed-recipes.ts` (embedded copies)
 
 When you add or change DSL syntax, **update the seed recipes to use the new
 syntax** (where it applies) and update **both** copies. Verify with

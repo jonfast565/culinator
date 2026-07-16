@@ -9,8 +9,8 @@
 - `culinator-service`: authenticated HTTP application layer. Routes are split by domain.
 - `culinator-cli`: thin command-line composition over parser, validator, and repository crates.
 - `culinator-lsp`: editor protocol adapter over parser and validator.
-- `apps/desktop/src-tauri`: Tauri lifecycle host only. It starts and stops the HTTP service.
-- `apps/desktop/src`: Vue 3 presentation layer, feature composables, and typed WebSocket client.
+- `culinator-desktop/src-tauri`: Tauri lifecycle host only. It starts and stops the HTTP service.
+- `culinator-desktop/src`: Vue 3 presentation layer, feature composables, and typed WebSocket client.
 
 Dependencies point inward: adapters depend on domain crates, while `culinator-core` does not depend on Tauri, Axum, SQLite, or the frontend.
 
@@ -40,7 +40,7 @@ Production origins are exact-matched. The development service accepts origins pa
 
 ## Desktop transport
 
-The Vue WebView maintains one authenticated WebSocket to the embedded Axum service. Request/response correlation, server events, reconnection, and lifecycle management live in `apps/desktop/src/services/transport/websocket-client.ts`.
+The Vue WebView maintains one authenticated WebSocket to the embedded Axum service. Request/response correlation, server events, reconnection, and lifecycle management live in `culinator-desktop/src/services/transport/websocket-client.ts`.
 
 ## Recipe-book aggregate
 

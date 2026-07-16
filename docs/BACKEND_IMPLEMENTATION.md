@@ -12,7 +12,7 @@ The backend is organized around dependency inversion.
 - `culinator-service`: Axum HTTP/WebSocket delivery layer composed from application services.
 - `culinator-cli`: command-line delivery layer.
 - `culinator-lsp`: language-server delivery layer using parser and validation services.
-- `apps/desktop/src-tauri`: Tauri composition root and lifecycle host for the in-process service.
+- `culinator-desktop/src-tauri`: Tauri composition root and lifecycle host for the in-process service.
 
 ## Interface boundaries
 

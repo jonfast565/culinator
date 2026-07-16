@@ -32,7 +32,7 @@ Authorization: Bearer <per-launch-token>
 
 ## Browser development
 
-Use `npm run dev:service` from `apps/desktop`. It launches the development service, parses its JSON bootstrap, and starts Vite with `VITE_CULINATOR_API_URL` and `VITE_CULINATOR_API_TOKEN` set automatically.
+Use `npm run dev:service` from `culinator-desktop`. It launches the development service, parses its JSON bootstrap, and starts Vite with `VITE_CULINATOR_API_URL` and `VITE_CULINATOR_API_TOKEN` set automatically.
 
 ## Recipe books
 

@@ -9,7 +9,7 @@ something non-obvious. `CLAUDE.md` links here.
   services in `culinator-application`; concrete adapters in `culinator-parser`,
   `culinator-scheduler`, `culinator-export`, `culinator-import`; the
   WebSocket/SQLite server in `culinator-service`; CLI in `culinator-cli`.
-- **Desktop app** — `desktop/` is a Tauri + Vue 3 (`<script setup lang="ts">`) frontend
+- **Desktop app** — `culinator-desktop/` is a Tauri + Vue 3 (`<script setup lang="ts">`) frontend
   that talks to `culinator-service` over WebSocket. Tests: `npm run typecheck`,
   `npm run lint` (zero warnings), `npm run format:check`.
 - **Recipe DSL** — a small `.cg` language. Grammar reference: `docs/GRAMMAR.ebnf`.
@@ -18,14 +18,14 @@ something non-obvious. `CLAUDE.md` links here.
 
 1. **Two parsers.** The Rust semantic parser (`culinator-parser/src/semantic.rs`)
    is the source of truth for validation, scheduling, export. The frontend has a
-   *separate* regex parser (`desktop/src/features/recipe-editor/model.ts`,
+   *separate* regex parser (`culinator-desktop/src/features/recipe-editor/model.ts`,
    `parseUiModel`) that drives the editor UI (outline, ingredients, visual
    workflow graph). Any DSL syntax change usually needs to land in **both**, and
    they should desugar identically.
 2. **Two seed copies.** Sample recipes exist as Rust `.cg` files in
    `culinator-service/src/seed/*.cg` (loaded via `include_str!` in
    `culinator-service/src/state.rs`) *and* as embedded template strings in
-   `desktop/src/services/api/seed-recipes.ts`. Update both; they had already
+   `culinator-desktop/src/services/api/seed-recipes.ts`. Update both; they had already
    drifted once (frontend guac baked prep into ingredient names). When new
    syntax lands, migrate the seeds to use it (user preference).
 
@@ -52,7 +52,7 @@ something non-obvious. `CLAUDE.md` links here.
 
 ## Visual workflow graph
 
-`desktop/src/features/visual-authoring/components/VisualAuthoringPanel.vue` renders a
+`culinator-desktop/src/features/visual-authoring/components/VisualAuthoringPanel.vue` renders a
 layered DAG (HTML nodes over an SVG edge layer): operation + resource nodes, solid
 arrows for data flow, dashed for `after`, longest-path layering into "stages" with a
 per-stage concurrency read (active hands vs. unattended), labor-colored nodes, and

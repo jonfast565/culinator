@@ -14,7 +14,7 @@ members = [
   "culinator-cli",
   "culinator-service",
   "culinator-scheduler",
-  "desktop/src-tauri",
+  "culinator-desktop/src-tauri",
 ]
 
 [workspace.package]
