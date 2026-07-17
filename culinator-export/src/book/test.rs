@@ -47,6 +47,8 @@ fn exports_zip_bundle_with_book_formats() {
             heat_level: None,
             doneness: vec![],
             optional: false,
+            repeat: None,
+            notes: vec![],
             dependencies: vec![],
             bindings: vec![],
             requirements: vec![],

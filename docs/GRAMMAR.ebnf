@@ -18,6 +18,13 @@ resource_decl  = resource_kind, identifier, [ "as", type_ref ], [ measurement ],
      `optional true;`            - ingredient is optional (garnish, "plus more")
      `divided true;`             - one ingredient split across steps
      `substitutes [a, b];`       - acceptable substitutions
+     `to_taste true;`            - open-ended "to taste" amount (a base
+                                   `quantity` may still be declared)
+     `size "medium";`            - qualitative size grade for a count-measured
+                                   ingredient ("2 small Roma tomatoes")
+     `variant "sweet";`          - variant-group label; ingredients sharing a
+                                   label form one mutually-exclusive set
+     `note "seeded first";`      - free-text handling note (repeatable)
    A `quantity` may be a range, e.g. `quantity 2 to 3 clove;` (see `value`). *)
 resource_kind  = "ingredient" | "material" | "container" | "equipment" | "environment" | "labor" ;
 measurement    = "measured", "by", dimension ;
@@ -30,7 +37,7 @@ operation_decl = "operation", identifier, ( [ "as", type_ref ] | [ "does", ident
 op_block       = "{", { op_field | property }, "}" ;
 op_field       = labor_field | after_field | binding_field | requires_field
                | duration_field | temperature_field | heat_field | until_field
-               | optional_field ;
+               | optional_field | repeat_field | note_field ;
 labor_field    = "labor", ( "active" | "passive" | "monitor" | "automated" ), ";" ;
 after_field    = "after", ( "[", identifier, { ",", identifier }, "]"
                           | identifier, { dep_modifier } ), ";" ;
@@ -51,6 +58,13 @@ heat_field     = "heat", ( "low" | "medium_low" | "medium" | "medium_high" | "hi
    others take a descriptive string (or symbol). *)
 until_field    = "until", ( "internal_temp" | "visual" | "tester" | "texture" | "rise" ), value, ";" ;
 optional_field = "optional", [ ( "true" | "false" ) ], ";" ;
+(* Batching. The step's `duration` describes ONE repetition; the effective
+   wall-clock cost the scheduler uses is `duration * repeat` (e.g. cooking
+   crepes one at a time: `duration 45 seconds to 90 seconds; repeat 11;`). *)
+repeat_field   = "repeat", number, ";" ;
+(* Free-text technique note carrying method detail no structured field captures
+   ("do not rinse the pasta", "press wrap onto the surface"). Repeatable. *)
+note_field     = "note", string, ";" ;
 (* An operation may also carry a generic `photo "<handle-or-url>";` property (a
    per-step image: an uploaded asset handle or an external URL), parsed via the
    generic `property` path like any unrecognized operation field. *)

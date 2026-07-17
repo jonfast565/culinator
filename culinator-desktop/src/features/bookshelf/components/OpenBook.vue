@@ -117,7 +117,12 @@ function handleSearchSelect(recipeId: string): void {
     <div v-if="searchOpen && useServiceSearch && book" class="search-popover">
       <div class="search-popover-head">
         <strong>Search this book</strong>
-        <button type="button" class="icon-btn" aria-label="Close search" @click="searchOpen = false">
+        <button
+          type="button"
+          class="icon-btn"
+          aria-label="Close search"
+          @click="searchOpen = false"
+        >
           <X :size="16" />
         </button>
       </div>

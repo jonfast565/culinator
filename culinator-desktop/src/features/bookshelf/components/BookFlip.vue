@@ -36,11 +36,7 @@ defineExpose({ leafCount: () => props.leaves.length });
   <div class="book-flip-wrap">
     <div v-if="flip.failed.value" ref="fallbackRef" class="flip-fallback">
       <div v-for="leaf in leaves" :key="leaf.key" class="fallback-page">
-        <BookLeafView
-          :leaf="leaf"
-          @open-recipe="openRecipe"
-          @flip-to="fallbackFlipTo"
-        />
+        <BookLeafView :leaf="leaf" @open-recipe="openRecipe" @flip-to="fallbackFlipTo" />
       </div>
     </div>
 
@@ -59,7 +55,9 @@ defineExpose({ leafCount: () => props.leaves.length });
       <button class="flip-arrow" title="Previous page" @click="flip.prev()">
         <ChevronLeft :size="20" />
       </button>
-      <span class="page-indicator">{{ flip.currentPage.value + 1 }} / {{ flip.pageCount.value }}</span>
+      <span class="page-indicator"
+        >{{ flip.currentPage.value + 1 }} / {{ flip.pageCount.value }}</span
+      >
       <button class="flip-arrow" title="Next page" @click="flip.next()">
         <ChevronRight :size="20" />
       </button>

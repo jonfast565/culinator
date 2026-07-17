@@ -20,9 +20,7 @@ export function sortOperationsForDisplay(ops: UiOperation[]): UiOperation[] {
         operation.after.every((dependency) => !symbols.has(dependency) || placed.has(dependency)),
     );
     if (!ready.length) {
-      const remaining = ops
-        .filter((operation) => !placed.has(operation.symbol))
-        .sort(sourceOrder);
+      const remaining = ops.filter((operation) => !placed.has(operation.symbol)).sort(sourceOrder);
       result.push(...remaining);
       break;
     }

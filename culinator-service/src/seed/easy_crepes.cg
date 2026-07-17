@@ -10,8 +10,9 @@ recipe easy_crepes {
     attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
 
     ingredient eggs measured by count {
-        name "large eggs";
+        name "eggs";
         quantity 2 count;
+        size "large";
         allergen egg;
     }
     ingredient milk measured by volume {
@@ -23,27 +24,60 @@ recipe easy_crepes {
         name "water";
         quantity 0.5 cup;
     }
-    ingredient flour measured by mass {
+    // Spoon and cup measures are volume, not mass.
+    ingredient flour measured by volume {
         name "all-purpose flour";
         quantity 1 cup;
     }
-    ingredient butter measured by mass {
+    ingredient butter measured by volume {
         name "unsalted butter";
         quantity 3 tbsp;
         allergen milk;
         state melted;
+        note "melted and cooled";
     }
-    ingredient salt measured by mass {
+    ingredient salt measured by volume {
         name "kosher salt";
-        quantity 1 pinch;
+        quantity 0.25 tsp;
     }
+    // "Plus additional for the pan": a distinct, open-ended use, so it is its
+    // own optional ingredient rather than folded into the batter butter.
+    ingredient pan_butter measured by volume {
+        name "butter for the pan";
+        optional true;
+        note "for greasing the pan between crepes";
+    }
+    // Two mutually-exclusive finishes. Ingredients sharing a `variant` label
+    // form one alternative set; neither is part of the base batter.
+    ingredient herbs measured by volume {
+        name "fresh herbs";
+        quantity 0.25 cup;
+        variant "savory";
+        note "finely chopped";
+    }
+    ingredient sugar measured by volume {
+        name "sugar";
+        quantity 2 tbsp;
+        variant "sweet";
+    }
+    ingredient vanilla measured by volume {
+        name "vanilla extract";
+        quantity 1 tsp;
+        variant "sweet";
+    }
+
+    equipment blender { name "blender"; }
+    equipment pan { name "10-inch nonstick pan"; }
 
     material crepe_batter measured by volume { }
     material rested_batter measured by volume { }
+    material cooked_crepes measured by count { }
 
     process batter {
         operation blend does mix {
             input [eggs, milk, water, flour, butter, salt];
+            tool blender;
+            note "pulse for 10 seconds until smooth";
             duration 1 min;
             labor active;
             produces crepe_batter;
@@ -51,23 +85,42 @@ recipe easy_crepes {
         operation chill does rest {
             input [crepe_batter];
             after blend;
-            duration 1 hour to 8 hours;
+            note "refrigerate to let the bubbles subside; batter keeps up to 48 hours";
+            duration 1 hour;
             labor passive;
             produces rested_batter;
         }
     }
     process cooking {
+        // One `cook` step stands in for all ~11 crepes: `repeat` tells the
+        // scheduler the duration is per crepe, so the batch cost is counted.
         operation cook does heat {
             input [rested_batter];
+            input pan_butter;
             after chill;
+            tool pan;
             heat medium;
-            duration 1 minute to 2 minutes;
-            until visual "golden at the edges";
+            duration 45 seconds to 90 seconds;
+            repeat 11;
+            until visual "edges begin to lift";
+            note "pour a scant 1/4 cup and swirl to coat; flip and cook about 30 seconds more; butter the pan between crepes";
             labor active;
+            produces cooked_crepes;
+        }
+    }
+    process storing {
+        // Make-ahead holding: an open-ended ceiling via `up to`.
+        operation store does rest {
+            input [cooked_crepes];
+            after cook;
+            note "cool flat, then stack separated by parchment; refrigerate several days or freeze up to 1 month";
+            duration up to 30 day;
+            labor passive;
+            optional true;
         }
     }
 
     yield crepes measured by count {
-        amount 11 count;
+        amount 10 count to 12 count;
     }
 }

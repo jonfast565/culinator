@@ -358,6 +358,15 @@ impl Parser {
         let mut props = self.block_properties()?;
         let optional = matches!(props.remove("optional"), Some(Value::Boolean(true)));
         let divided = matches!(props.remove("divided"), Some(Value::Boolean(true)));
+        let to_taste = matches!(props.remove("to_taste"), Some(Value::Boolean(true)));
+        let size = props.remove("size").as_ref().and_then(value_text);
+        let variant = props.remove("variant").as_ref().and_then(value_text);
+        let notes = props
+            .remove("note")
+            .as_ref()
+            .and_then(value_text)
+            .into_iter()
+            .collect();
         let substitutes = match props.remove("substitutes") {
             Some(Value::List(items)) => items,
             Some(other) => vec![other],
@@ -371,6 +380,10 @@ impl Parser {
             optional,
             divided,
             substitutes,
+            to_taste,
+            size,
+            variant,
+            notes,
             properties: props,
             span: None,
         })
@@ -490,6 +503,8 @@ impl Parser {
             heat_level: None,
             doneness: vec![],
             optional: false,
+            repeat: None,
+            notes: vec![],
             dependencies: vec![],
             bindings: vec![],
             requirements: vec![],
@@ -650,6 +665,21 @@ impl Parser {
                     self.at += 1;
                     let text = self.until_semi();
                     op.requirements.push(Predicate { source: text });
+                }
+                "repeat" => {
+                    // Batching: the operation's `duration` is per-repetition and
+                    // the effective cost is `duration * repeat` (see the
+                    // scheduler). Lets a single "cook, repeat with remaining
+                    // batter" step account for all N passes.
+                    self.at += 1;
+                    op.repeat = Some(self.number()?.max(0.0) as u32);
+                    self.take(Token::Semi)?
+                }
+                "note" => {
+                    // First-class technique note; repeatable within one op.
+                    self.at += 1;
+                    op.notes.push(self.string()?);
+                    self.take(Token::Semi)?
                 }
                 "duration" => {
                     self.at += 1;
@@ -1103,6 +1133,10 @@ fn register_intermediates(recipe: &mut Recipe) {
                     optional: false,
                     divided: false,
                     substitutes: vec![],
+                    to_taste: false,
+                    size: None,
+                    variant: None,
+                    notes: vec![],
                     properties: BTreeMap::new(),
                     span: None,
                 });

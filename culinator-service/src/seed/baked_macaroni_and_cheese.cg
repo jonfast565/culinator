@@ -11,28 +11,36 @@ recipe baked_macaroni_and_cheese {
 
     ingredient macaroni measured by mass {
         name "elbow macaroni";
-        quantity 0.5 lb;
+        quantity 8 oz;
     }
-    ingredient butter measured by mass {
+    // "1 tablespoon plus 1/2 teaspoon kosher salt, divided": one ingredient
+    // split across steps. Per-step amounts ride the operation bindings, so no
+    // single top-level quantity is declared.
+    ingredient salt measured by volume {
+        name "kosher salt";
+        divided true;
+    }
+    // Butter is also divided: 3 tbsp for the roux, 3 tbsp melted for the panko.
+    ingredient butter measured by volume {
         name "unsalted butter";
-        quantity 6 tbsp;
+        divided true;
         allergen milk;
     }
-    ingredient flour measured by mass {
+    ingredient flour measured by volume {
         name "all-purpose flour";
         quantity 3 tbsp;
     }
-    ingredient mustard measured by mass {
+    ingredient mustard measured by volume {
         name "ground mustard";
         quantity 1 tbsp;
     }
-    ingredient paprika measured by mass {
-        name "paprika";
+    ingredient paprika measured by volume {
+        name "smoked or regular paprika";
         quantity 1 tsp;
     }
     ingredient half_and_half measured by volume {
         name "half and half";
-        quantity 1.5 pint;
+        quantity 3 cup;
         allergen milk;
     }
     ingredient cheddar measured by mass {
@@ -41,76 +49,181 @@ recipe baked_macaroni_and_cheese {
         allergen milk;
         state grated;
     }
+    // Monterey jack is divided: 5 oz into the sauce, 3 oz over the top.
     ingredient jack measured by mass {
         name "Monterey jack";
         quantity 8 oz;
         allergen milk;
         state grated;
+        divided true;
     }
-    ingredient panko measured by mass {
+    ingredient pepper measured by volume {
+        name "freshly ground black pepper";
+        quantity 0.5 tsp;
+    }
+    ingredient panko measured by volume {
         name "panko breadcrumbs";
         quantity 1 cup;
     }
 
+    // Separate vessels: boiling the pasta and building the sauce can overlap
+    // because they never share a pot.
+    container casserole { name "4-quart casserole or souffle dish"; }
+    container pot { name "4-quart pot"; }
+    container saucepan { name "3-quart saucepan"; }
+    equipment colander { name "colander"; }
+
     material cooked_macaroni measured by mass { }
+    material roux measured by mass { }
+    material spiced_roux measured by mass { }
+    material thickened_base measured by mass { }
     material cheese_sauce measured by mass { }
     material sauce_mix measured by mass { }
     material assembled_dish measured by mass { }
     material topped_dish measured by mass { }
 
+    // The oven preheat is ~15 unattended minutes that overlaps the prep, and
+    // greasing the dish is a real (if quick) step the source calls for.
+    process setup {
+        operation preheat does heat {
+            target casserole;
+            temperature 350 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation grease does coat {
+            container casserole;
+            note "grease the dish (butter or nonstick spray) and set aside";
+            duration 1 min;
+            labor active;
+            produces greased_dish;
+        }
+    }
+
     process pasta {
         operation boil does heat {
-            input [macaroni];
+            input macaroni;
+            input salt 1 tbsp;
+            container pot;
             heat high;
-            duration 8 minutes to 10 minutes;
+            duration 9 minutes to 10 minutes;
             until visual "al dente";
+            note "barely cover with cold water; bring just to a boil, stirring occasionally";
             labor monitor;
+            produces boiled_macaroni;
+        }
+        operation drain does strain {
+            input [boiled_macaroni];
+            after boil;
+            equipment colander;
+            note "do not rinse";
+            duration 1 min;
+            labor active;
             produces cooked_macaroni;
         }
     }
+
+    // The roux is split into stages because heat, labor, and the doneness cue
+    // change at each one (pale blond -> aromatic -> slightly thickened).
     process sauce {
-        operation make_sauce does heat {
-            input [butter, flour, mustard, paprika, half_and_half];
+        operation melt_butter does heat {
+            input butter 3 tbsp;
+            container saucepan;
             heat medium;
-            duration 10 min to 12 min;
-            until visual "thick enough to coat the back of a spoon";
+            duration 1 min to 2 min;
+            labor active;
+            produces melted_butter;
+        }
+        operation make_roux does heat {
+            input [melted_butter, flour];
+            after melt_butter;
+            container saucepan;
+            heat medium;
+            duration 3 min;
+            until visual "pale blond";
+            labor active;
+            produces roux;
+        }
+        operation bloom_spices does heat {
+            input [roux, mustard, paprika];
+            after make_roux;
+            container saucepan;
+            heat medium;
+            duration 1 min;
+            until visual "aromatic";
+            labor active;
+            produces spiced_roux;
+        }
+        operation build_base does heat {
+            input [spiced_roux, half_and_half];
+            after bloom_spices;
+            container saucepan;
+            heat medium_high;
+            duration 7 min to 8 min;
+            until texture "slightly thickened, coats the back of a spoon";
+            labor monitor;
+            produces thickened_base;
+        }
+        operation stir_in_cheese does mix {
+            input [thickened_base, cheddar, pepper];
+            input jack 5 oz;
+            input salt 0.5 tsp;
+            after build_base;
+            note "off the heat, stir until the cheese melts";
+            duration 2 min;
             labor active;
             produces cheese_sauce;
         }
-        operation stir_in_cheese does mix {
-            input [cheese_sauce, cheddar, jack];
-            after make_sauce;
+    }
+
+    process assembly {
+        operation combine does mix {
+            input [cheese_sauce, cooked_macaroni];
+            after [stir_in_cheese, drain];
+            container saucepan;
             duration 2 min;
             labor active;
             produces sauce_mix;
         }
-    }
-    process assembly {
-        operation combine does mix {
-            input [sauce_mix, cooked_macaroni];
-            after [stir_in_cheese, boil];
-            duration 2 min;
+        operation transfer does move {
+            input [sauce_mix];
+            after [combine, grease];
+            container casserole;
+            duration 1 min;
             labor active;
             produces assembled_dish;
         }
         operation top does mix {
             input [assembled_dish, panko];
-            after combine;
+            input jack 3 oz;
+            input butter 3 tbsp;
+            after transfer;
+            container casserole;
+            note "melt the remaining butter and toss it with the panko, then distribute evenly over the top";
             duration 2 min;
             labor active;
             produces topped_dish;
         }
         operation bake does heat {
             input [topped_dish];
-            after top;
+            after [top, preheat];
+            container casserole;
             temperature 350 fahrenheit;
-            duration 25 minutes to 30 minutes;
-            until visual "golden and bubbly";
+            duration 15 minutes to 20 minutes;
+            until visual "golden on top";
+            labor passive;
+            produces baked_dish;
+        }
+        operation cool does rest {
+            input [baked_dish];
+            after bake;
+            note "cool 5 minutes before serving";
+            duration 5 min;
             labor passive;
         }
     }
 
-    yield servings measured by mass {
-        mass 1400 g;
+    yield servings measured by count {
+        amount 6 count;
     }
 }

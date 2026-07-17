@@ -9,60 +9,79 @@ recipe fully_loaded_guacamole {
     source_url "https://altonbrown.com/recipes/fully-loaded-guacamole/";
     attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
 
+    // Size grades and handling notes that a bare `count` would drop are carried
+    // on the ingredient (`size`, `note`) instead of being smuggled into `name`.
     ingredient avocados measured by count {
-        name "ripe Hass avocados";
+        name "Hass avocados";
         quantity 3 count;
         state ripe;
     }
+    // Spoon measures classify as `volume` (see Dimension::from_unit); declaring
+    // them `measured by mass` would contradict the unit.
     ingredient lime_juice measured by volume {
-        name "fresh lime juice";
-        quantity 1 tbsp to 2 tbsp;
+        name "freshly squeezed lime juice";
+        quantity 1 tbsp;
     }
-    ingredient salt measured by mass {
+    ingredient salt measured by volume {
         name "kosher salt";
         quantity 0.5 tsp;
     }
-    ingredient cumin measured by mass {
+    ingredient cumin measured by volume {
         name "ground cumin";
         quantity 0.5 tsp;
     }
-    ingredient cayenne measured by mass {
-        name "ground cayenne";
-        quantity 1 pinch;
+    // "1/4 tsp, plus more to taste": the base amount is fixed, the rest is the
+    // cook's call — `to_taste` keeps that open-ended intent.
+    ingredient cayenne measured by volume {
+        name "ground cayenne pepper";
+        quantity 0.25 tsp;
+        to_taste true;
     }
     ingredient onion measured by count {
-        name "medium onion";
+        name "onion";
         quantity 0.5 count;
+        size "medium";
     }
     ingredient tomatoes measured by count {
         name "Roma tomatoes";
         quantity 2 count;
+        size "small";
+        note "seeded before dicing";
     }
-    ingredient cilantro measured by mass {
+    ingredient cilantro measured by volume {
         name "fresh cilantro";
         quantity 1 tbsp;
-        optional true;
+        note "measured after chopping";
     }
     ingredient jalapeno measured by count {
         name "jalapeno";
-        quantity 0.5 count to 1 count;
+        quantity 0.5 count;
     }
     ingredient garlic measured by count {
         name "garlic clove";
         quantity 1 clove;
     }
 
-    // `mashed_avocado` is declared so it can carry a state; the diced/minced prep
-    // products are left implicit and become intermediates automatically.
+    // Equipment and containers the source names, so the scheduler can see that
+    // the mash and the knife work contend for the cook's hands but not vessels.
+    equipment masher { name "potato masher"; }
+    container mixing_bowl { name "large mixing bowl"; }
+    container plastic_wrap { name "plastic wrap"; }
+
+    // `avocado_pulp` and `mashed_avocado` are declared so they can carry a
+    // state/note; the diced/minced prep products stay implicit intermediates.
+    material avocado_pulp measured by count { }
     material mashed_avocado measured by mass {
-        state smooth;
+        state chunky;
     }
 
-    // Prep is knife work only: none of these steps depend on one another, so the
-    // scheduler is free to run them in any order (or hand them out in parallel).
-    // `prep <verb> <ingredient> into <material>` desugars to an operation named
-    // `<verb>_<ingredient>` that inputs the ingredient and produces the material.
+    // Halving, pitting, and peeling is real knife work, not a free adjective on
+    // the ingredient line — it becomes an operation with a duration.
     process prep {
+        prep pit avocados into avocado_pulp {
+            note "halve, pit, and peel";
+            duration 3 min;
+        }
         prep dice onion into diced_onion { duration 2 min; }
         prep dice tomatoes into diced_tomatoes { duration 3 min; }
         prep chop cilantro into chopped_cilantro { duration 1 min; }
@@ -70,11 +89,14 @@ recipe fully_loaded_guacamole {
         prep mince garlic into minced_garlic { duration 1 min; }
     }
 
-    // Mashing the avocados is also independent of the knife work, so it can
-    // overlap with prep; only `fold` waits on everything upstream.
+    // Mashing overlaps with the knife work; only `fold` waits on everything.
     process mixing {
         operation mash does mix {
-            input [avocados, lime_juice, salt, cumin, cayenne];
+            input [avocado_pulp, lime_juice, salt, cumin, cayenne];
+            after pit_avocados;
+            tool masher;
+            container mixing_bowl;
+            note "toss the avocado with lime juice first, then mash, leaving some larger chunks for texture";
             duration 3 min;
             labor active;
             produces mashed_avocado;
@@ -82,6 +104,7 @@ recipe fully_loaded_guacamole {
         operation fold does mix {
             input [mashed_avocado, diced_onion, diced_tomatoes, chopped_cilantro, minced_jalapeno, minced_garlic];
             after [mash, dice_onion, dice_tomatoes, chop_cilantro, mince_jalapeno, mince_garlic];
+            container mixing_bowl;
             duration 2 min;
             labor active;
             produces guacamole_mix;
@@ -92,6 +115,8 @@ recipe fully_loaded_guacamole {
         operation rest does rest {
             input [guacamole_mix];
             after fold;
+            container plastic_wrap;
+            note "press plastic wrap directly onto the surface and rest at room temperature";
             duration 120 min;
             labor passive;
         }

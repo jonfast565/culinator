@@ -13,6 +13,11 @@ something non-obvious. `CLAUDE.md` links here.
   that talks to `culinator-service` over WebSocket. Tests: `npm run typecheck`,
   `npm run lint` (zero warnings), `npm run format:check`.
 - **Recipe DSL** — a small `.cg` language. Grammar reference: `docs/GRAMMAR.ebnf`.
+- **Prose→DSL conversion rules** — `docs/AI_RECIPE_CONVERSION.md` (what nuance
+  must survive: prep descriptors, `divided`, equipment, doneness cues,
+  `to_taste`/`size`/`variant`/`note`/`repeat`). The seed recipes were rewritten
+  to follow these; that doc's "seed bug" call-outs are worked before/after
+  examples.
 
 ## Two things that must stay in sync (easy to forget)
 
@@ -49,6 +54,16 @@ something non-obvious. `CLAUDE.md` links here.
   in Rust with no special handling; `parseUiModel` lifts it to `UiResource.state`
   and the UI shows a badge. Type-system `states` on `TypeDeclaration` exist but are
   currently unused; a future state machine could formalize this.
+- **Prose-nuance fields are typed (not generic properties)** — unlike `state`,
+  these get real fields in both parsers and models: on a resource `to_taste`,
+  `size`, `variant`, and `notes` (from repeatable `note "…";`); on an operation
+  `repeat` and `notes`. `repeat` is the only one with scheduling weight — the
+  scheduler treats `duration` as per-repetition and counts `duration × repeat`
+  (`culinator-scheduler/src/lib.rs::duration_seconds`). Adding a field to
+  `Resource`/`Operation` means updating every struct literal in
+  `culinator-parser/src/semantic.rs` **and** the test literals in
+  `culinator-scheduler`, `culinator-export`, `culinator-sqlite`, `culinator-models`,
+  `culinator-validator`.
 
 ## Visual workflow graph
 

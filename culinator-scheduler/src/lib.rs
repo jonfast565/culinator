@@ -134,11 +134,14 @@ pub fn schedule_recipe(
 }
 
 fn duration_seconds(operation: &Operation, fallback: u64) -> u64 {
-    operation
+    let per_repetition = operation
         .duration_max_seconds
         .or(operation.duration_min_seconds)
         .unwrap_or(fallback)
-        .max(1)
+        .max(1);
+    // `repeat` batches the step: the authored duration is per pass, so the
+    // wall-clock cost is `duration * repeat` (e.g. cooking crepes one at a time).
+    per_repetition.saturating_mul(operation.repeat.unwrap_or(1).max(1) as u64)
 }
 fn last_segment(value: &str) -> &str {
     value.rsplit('.').next().unwrap_or(value)

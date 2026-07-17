@@ -16,6 +16,8 @@ fn operation(symbol: &str, duration: u64, after: &[&str]) -> Operation {
         heat_level: None,
         doneness: vec![],
         optional: false,
+        repeat: None,
+        notes: vec![],
         dependencies: after
             .iter()
             .map(|p| Dependency {

@@ -21,7 +21,21 @@ pub(crate) fn extract(recipe: &Recipe) -> RecipeContent {
                 .get("name")
                 .map(display_value)
                 .unwrap_or_else(|| resource.symbol.replace('_', " "));
-            format!("{quantity} {name}").trim().to_owned()
+            // Reassemble the prose line, folding in the structured nuance that a
+            // bare "quantity name" would drop: size grade, handling notes, and
+            // the open-ended "plus more to taste".
+            let size = resource.size.as_deref().unwrap_or("");
+            let mut line = format!("{quantity} {size} {name}")
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" ");
+            for note in &resource.notes {
+                line.push_str(&format!(", {note}"));
+            }
+            if resource.to_taste {
+                line.push_str(", plus more to taste");
+            }
+            line
         })
         .collect();
     let instructions = recipe
@@ -34,16 +48,23 @@ pub(crate) fn extract(recipe: &Recipe) -> RecipeContent {
                 .filter(|binding| binding.role == BindingRole::Input)
                 .map(|binding| binding.resource.replace('_', " "))
                 .collect::<Vec<_>>();
-            let detail = operation
+            let mut detail = operation
                 .properties
                 .get("description")
                 .map(display_value)
                 .unwrap_or_else(|| operation.symbol.replace('_', " "));
-            if inputs.is_empty() {
+            if let Some(repeat) = operation.repeat {
+                detail.push_str(&format!(" (repeat {repeat}\u{00d7})"));
+            }
+            let mut line = if inputs.is_empty() {
                 detail
             } else {
                 format!("{detail}: {}", inputs.join(", "))
+            };
+            for note in &operation.notes {
+                line.push_str(&format!(". {note}"));
             }
+            line
         })
         .collect();
     RecipeContent {

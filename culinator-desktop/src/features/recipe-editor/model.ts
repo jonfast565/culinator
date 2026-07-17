@@ -16,6 +16,14 @@ export interface UiResource {
   divided?: boolean;
   /** Acceptable substitutions, verbatim from the DSL. */
   substitutes?: string[];
+  /** "To taste" / "plus more to taste": a base quantity may still be given. */
+  toTaste?: boolean;
+  /** Size grade for count-measured ingredients ("small", "medium", "large"). */
+  size?: string;
+  /** Variant-group label; ingredients sharing a label are mutually exclusive. */
+  variant?: string;
+  /** Free-text handling notes ("seeded and diced", "measured after chopping"). */
+  notes?: string[];
   range?: SourceRange;
 }
 export interface UiProcess {
@@ -46,6 +54,10 @@ export interface UiOperation {
   doneness?: UiDonenessCue[];
   /** Per-step image: an asset handle or an external URL, from `photo "…";`. */
   photo?: string;
+  /** Batching count: the duration is per-repetition, total is `duration × repeat`. */
+  repeat?: number;
+  /** Free-text technique notes ("do not rinse", "press wrap on the surface"). */
+  notes?: string[];
   range?: SourceRange;
 }
 export interface UiRecipeModel {
@@ -107,6 +119,12 @@ function parseDuration(body: string): { min: number; max?: number } {
   const min = unitToMinutes(range[1], range[2]);
   return range[3] ? { min, max: unitToMinutes(range[3], range[4]) } : { min };
 }
+/** Parse repeatable `note "…";` statements from a resource or operation body.
+ *  Mirrors the Rust parser, which collects notes into a typed list. */
+function parseNotes(body: string): string[] | undefined {
+  const notes = [...body.matchAll(/\bnote\s+"([^"]+)"\s*;/g)].map((match) => match[1]);
+  return notes.length ? notes : undefined;
+}
 /** Parse structured `until <kind> <value>;` doneness cues from an operation body. */
 function parseDoneness(body: string): UiDonenessCue[] {
   const cues: UiDonenessCue[] = [];
@@ -138,6 +156,16 @@ export function parseUiModel(source: string): UiRecipeModel {
         .find(Boolean),
       optional: /\boptional\s+true\s*;/.test(body) || undefined,
       divided: /\bdivided\s+true\s*;/.test(body) || undefined,
+      toTaste: /\bto_taste\s+true\s*;/.test(body) || undefined,
+      size: body
+        .match(/\bsize\s+(?:"([^"]+)"|([A-Za-z_]\w*))\s*;/)
+        ?.slice(1)
+        .find(Boolean),
+      variant: body
+        .match(/\bvariant\s+(?:"([^"]+)"|([A-Za-z_]\w*))\s*;/)
+        ?.slice(1)
+        .find(Boolean),
+      notes: parseNotes(body),
       substitutes: body
         .match(/\bsubstitutes\s+(?:\[([^\]]+)\]|([\w.]+))\s*;/)
         ?.slice(1)
@@ -191,6 +219,7 @@ export function parseUiModel(source: string): UiRecipeModel {
       .find(Boolean);
     const produces = body.match(/\bproduces\s+([\w.]+)\s*;/)?.[1];
     const temperatureMatch = body.match(/\btemperature\s+([\d.]+)\s*([A-Za-z]+)\s*;/);
+    const repeatMatch = body.match(/\brepeat\s+(\d+)\s*;/);
     const doneness = parseDoneness(body);
     operations.push({
       inputs:
@@ -209,6 +238,8 @@ export function parseUiModel(source: string): UiRecipeModel {
       heatLevel: body.match(/\bheat\s+(low|medium_low|medium|medium_high|high)\s*;/)?.[1],
       doneness: doneness.length ? doneness : undefined,
       photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
+      repeat: repeatMatch ? Number(repeatMatch[1]) : undefined,
+      notes: parseNotes(body),
       range: {
         start: lineOffsets[operationStartLine],
         end: lineOffsets[index] + lines[index].length,
@@ -226,6 +257,7 @@ export function parseUiModel(source: string): UiRecipeModel {
     const producedSymbol = output ?? `${ingredient}_${verb}`;
     const body = tail.startsWith("{") ? tail : "";
     const duration = parseDuration(body);
+    const repeatMatch = body.match(/\brepeat\s+(\d+)\s*;/);
     const afterText = body
       .match(/\bafter\s+(?:\[([^\]]+)\]|([\w.]+))[^;]*;/)
       ?.slice(1)
@@ -250,6 +282,8 @@ export function parseUiModel(source: string): UiRecipeModel {
       labor: body.match(/labor\s+(\w+)/)?.[1] ?? "active",
       after: afterText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
       photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
+      repeat: repeatMatch ? Number(repeatMatch[1]) : undefined,
+      notes: parseNotes(body),
       range: { start: match.index ?? 0, end: (match.index ?? 0) + full.length },
     });
   }

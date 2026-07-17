@@ -218,6 +218,25 @@ pub struct Resource {
     /// Acceptable substitutions for this ingredient (symbols or free text).
     #[serde(default)]
     pub substitutes: Vec<Value>,
+    /// True when the amount is "to taste" / "plus more to taste": a base
+    /// `quantity` may still be declared, but the cook adjusts the rest. Keeps
+    /// the open-ended seasoning intent that a fixed quantity would drop.
+    #[serde(default)]
+    pub to_taste: bool,
+    /// Qualitative size grade for count-measured ingredients ("small",
+    /// "medium", "large"), e.g. "2 small Roma tomatoes". A bare `count` cannot
+    /// carry this; keeping it structured lets scaling math reason about it.
+    #[serde(default)]
+    pub size: Option<String>,
+    /// Variant-group label. Ingredients that share a label form one
+    /// mutually-exclusive set of alternatives (e.g. "sweet" vs. "savory"
+    /// crepes). Ingredients with no label are always included.
+    #[serde(default)]
+    pub variant: Option<String>,
+    /// Free-text technique / handling notes ("seed before dicing", "measured
+    /// after chopping") that would otherwise be lost from a prose line.
+    #[serde(default)]
+    pub notes: Vec<String>,
     pub properties: BTreeMap<Symbol, Value>,
     pub span: Option<SourceSpan>,
 }
@@ -342,6 +361,16 @@ pub struct Operation {
     /// True when the step itself is optional (e.g. trussing a chicken).
     #[serde(default)]
     pub optional: bool,
+    /// Number of times the step is repeated (batching, e.g. cooking crepes one
+    /// at a time). The `duration_*` fields describe a *single* repetition; the
+    /// effective wall-clock cost is `duration * repeat`. `None` means one pass.
+    #[serde(default)]
+    pub repeat: Option<u32>,
+    /// Free-text technique notes that carry method detail a structured field
+    /// cannot ("press plastic wrap directly on the surface", "do not rinse the
+    /// pasta", "leave some larger chunks for texture").
+    #[serde(default)]
+    pub notes: Vec<String>,
     pub dependencies: Vec<Dependency>,
     pub bindings: Vec<ResourceBinding>,
     pub requirements: Vec<Predicate>,

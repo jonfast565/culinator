@@ -41,6 +41,8 @@ fn finds_unknown_dependency() {
         heat_level: None,
         doneness: vec![],
         optional: false,
+        repeat: None,
+        notes: vec![],
         dependencies: vec![Dependency {
             predecessor: "missing".into(),
             kind: DependencyKind::FinishStart,
