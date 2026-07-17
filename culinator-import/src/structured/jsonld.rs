@@ -23,10 +23,9 @@ fn find_recipe(value: &Value) -> Option<&Value> {
             return Some(recipe);
         }
     }
-    value.as_object().and_then(|map| {
-        map.values()
-            .find_map(|entry| if is_recipe(entry) { Some(entry) } else { None })
-    })
+    value
+        .as_object()
+        .and_then(|map| map.values().find(|entry| is_recipe(entry)))
 }
 
 fn is_recipe(value: &Value) -> bool {

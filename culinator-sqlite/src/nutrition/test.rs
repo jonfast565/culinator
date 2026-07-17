@@ -1,4 +1,6 @@
-use culinator_models::{NutritionFacts, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest};
+use culinator_models::{
+    NutritionFacts, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+};
 use rusqlite::Connection;
 use uuid::Uuid;
 
@@ -50,7 +52,10 @@ fn recipe_nutrition_override_round_trips() {
         .execute(
             "INSERT INTO recipe_nutrition (recipe_id, manual_override, facts_json)
              VALUES (?1, 1, ?2)",
-            rusqlite::params![recipe_id.to_string(), serde_json::to_string(&facts).unwrap()],
+            rusqlite::params![
+                recipe_id.to_string(),
+                serde_json::to_string(&facts).unwrap()
+            ],
         )
         .unwrap();
 

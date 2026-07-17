@@ -273,7 +273,7 @@ const INGREDIENT_STOP_WORDS: &[&str] = &[
 pub fn normalize_ingredient_name(name: &str) -> String {
     name.to_lowercase()
         .split(|character: char| !character.is_alphanumeric())
-        .filter(|word| !word.is_empty() && !INGREDIENT_STOP_WORDS.contains(&word))
+        .filter(|word| !word.is_empty() && !INGREDIENT_STOP_WORDS.contains(word))
         .collect::<Vec<_>>()
         .join(" ")
 }
@@ -357,10 +357,7 @@ pub fn string_similarity(left: &str, right: &str) -> f64 {
     trigram_score.max(token_overlap_score(&left, &right))
 }
 
-pub fn rank_fuzzy_matches(
-    query: &str,
-    results: &[NutritionSearchResult],
-) -> Vec<FuzzyFoodMatch> {
+pub fn rank_fuzzy_matches(query: &str, results: &[NutritionSearchResult]) -> Vec<FuzzyFoodMatch> {
     let mut ranked: Vec<FuzzyFoodMatch> = results
         .iter()
         .map(|result| FuzzyFoodMatch {

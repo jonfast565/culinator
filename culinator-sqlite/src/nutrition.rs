@@ -151,9 +151,7 @@ impl ResourceNutritionRepository for SqliteCatalogRepository {
                 &recipe_id.to_string(),
                 &input.resource_symbol,
             )?
-            .ok_or_else(|| {
-                rusqlite::Error::InvalidQuery
-            })
+            .ok_or_else(|| rusqlite::Error::InvalidQuery)
         })
     }
 

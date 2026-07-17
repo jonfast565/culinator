@@ -41,9 +41,7 @@ pub async fn get_state(
     Path(recipe_id): Path<String>,
     State(state): State<ServiceState>,
 ) -> Result<Json<culinator_models::RecipeNutritionState>, ApiError> {
-    Ok(Json(
-        state.nutrition().get_state(parse_id(&recipe_id)?)?,
-    ))
+    Ok(Json(state.nutrition().get_state(parse_id(&recipe_id)?)?))
 }
 
 pub async fn save_recipe_nutrition(

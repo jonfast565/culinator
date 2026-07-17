@@ -220,9 +220,8 @@ fn recipe_xhtml(recipe: &Recipe, options: &BookExportOptions, label_svg: &str) -
         .map(|item| format!("<li>{}</li>", escape(item)))
         .collect::<String>();
     let nutrition = if options.include_nutrition && !label_svg.is_empty() {
-        format!(
-            "<h2>Nutrition Facts</h2><img src=\"../nutrition-facts.svg\" alt=\"Nutrition Facts\"/>"
-        )
+        "<h2>Nutrition Facts</h2><img src=\"../nutrition-facts.svg\" alt=\"Nutrition Facts\"/>"
+            .to_string()
     } else {
         String::new()
     };

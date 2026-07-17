@@ -85,7 +85,7 @@ fn volume_to_ml_factor(unit: &str) -> Option<f64> {
         "cup" | "cups" => 236.588_236_5,
         "pt" | "pint" | "pints" => 473.176_473,
         "qt" | "quart" | "quarts" => 946.352_946,
-        "gal" | "gallon" | "gallons" => 3785.411_784,
+        "gal" | "gallon" | "gallons" => 3_785.411_784,
         "dash" | "dashes" => 0.616_115_086_789_1,
         "pinch" | "pinches" => 0.308_057_543_394_5,
         "smidgen" | "smidgens" => 0.078_862_745_098_0,

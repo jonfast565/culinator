@@ -857,12 +857,10 @@ async fn dispatch_inner(
         "nutrition.fuzzyMatch" => {
             let request: culinator_models::FuzzyMatchRequest =
                 serde_json::from_value(params).map_err(to_string)?;
-            let axum::Json(value) = routes::nutrition::fuzzy_match(
-                State(state.service.clone()),
-                axum::Json(request),
-            )
-            .await
-            .map_err(to_string)?;
+            let axum::Json(value) =
+                routes::nutrition::fuzzy_match(State(state.service.clone()), axum::Json(request))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "images.list" => {

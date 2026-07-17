@@ -1,6 +1,7 @@
 use crate::{
-    ApplicationError, IngredientManualNutrition, LinkResourceNutritionRequest, RecipeNutritionState,
-    ResourceNutritionLink, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+    ApplicationError, IngredientManualNutrition, LinkResourceNutritionRequest,
+    RecipeNutritionState, ResourceNutritionLink, SaveIngredientManualNutritionRequest,
+    SaveRecipeNutritionRequest,
 };
 use uuid::Uuid;
 
