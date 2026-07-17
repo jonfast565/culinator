@@ -63,9 +63,11 @@ API keys should be stored in the operating-system credential store, not directly
 
 ## 2. Nutrition database and Nutrition Facts labels
 
+**Status (2026-07):** MVP workflow shipped — FDC catalog search, fuzzy ingredient auto-link, per-recipe FDC links (`resource_nutrition_links`), per-ingredient manual facts and recipe-level manual override (`recipe_nutrition`, `resource_nutrition_manual`), calculate/aggregate from linked + manual sources, and saveable nutrition tab in the editor (`NutritionPanel`). Export panel still supports ad-hoc label edits at export time. Remaining: cooking-loss/retention models, jurisdiction rounding, dedicated label renderers, book export wiring to saved facts.
+
 - Pluggable nutrient-data providers.
 - USDA FoodData Central adapter and immutable nutrition snapshots.
-- Ingredient matching and manual override workflow.
+- Ingredient matching and manual override workflow. *(partial — fuzzy match + manual entry shipped)*
 - Edible portion, preparation loss, cooking loss, moisture loss, and nutrient-retention models.
 - Jurisdiction-specific label policies and rounding rules.
 - US Nutrition Facts, EU nutrition declaration, and custom analytical reports.

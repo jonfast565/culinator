@@ -3,7 +3,10 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
 };
-use culinator_models::{CalculateRecipeNutritionRequest, LinkResourceNutritionRequest};
+use culinator_models::{
+    AutoLinkRequest, CalculateRecipeNutritionRequest, FuzzyMatchRequest,
+    LinkResourceNutritionRequest, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -25,6 +28,68 @@ pub async fn search(
     State(state): State<ServiceState>,
 ) -> Result<Json<Vec<culinator_models::NutritionSearchResult>>, ApiError> {
     Ok(Json(state.nutrition().search_foods(&query.q, query.limit)?))
+}
+
+pub async fn fuzzy_match(
+    State(state): State<ServiceState>,
+    Json(request): Json<FuzzyMatchRequest>,
+) -> Result<Json<Vec<culinator_models::FuzzyFoodMatch>>, ApiError> {
+    Ok(Json(state.nutrition().fuzzy_match(request)?))
+}
+
+pub async fn get_state(
+    Path(recipe_id): Path<String>,
+    State(state): State<ServiceState>,
+) -> Result<Json<culinator_models::RecipeNutritionState>, ApiError> {
+    Ok(Json(
+        state.nutrition().get_state(parse_id(&recipe_id)?)?,
+    ))
+}
+
+pub async fn save_recipe_nutrition(
+    Path(recipe_id): Path<String>,
+    State(state): State<ServiceState>,
+    Json(request): Json<SaveRecipeNutritionRequest>,
+) -> Result<Json<culinator_models::RecipeNutritionState>, ApiError> {
+    Ok(Json(
+        state
+            .nutrition()
+            .save_recipe_nutrition(parse_id(&recipe_id)?, request)?,
+    ))
+}
+
+pub async fn save_manual_ingredient(
+    Path(recipe_id): Path<String>,
+    State(state): State<ServiceState>,
+    Json(request): Json<SaveIngredientManualNutritionRequest>,
+) -> Result<Json<culinator_models::IngredientManualNutrition>, ApiError> {
+    Ok(Json(
+        state
+            .nutrition()
+            .save_manual_ingredient(parse_id(&recipe_id)?, request)?,
+    ))
+}
+
+pub async fn delete_manual_ingredient(
+    Path((recipe_id, resource_symbol)): Path<(String, String)>,
+    State(state): State<ServiceState>,
+) -> Result<StatusCode, ApiError> {
+    state
+        .nutrition()
+        .delete_manual_ingredient(parse_id(&recipe_id)?, &resource_symbol)?;
+    Ok(StatusCode::NO_CONTENT)
+}
+
+pub async fn auto_link(
+    Path(recipe_id): Path<String>,
+    State(state): State<ServiceState>,
+    Json(request): Json<AutoLinkRequest>,
+) -> Result<Json<culinator_models::AutoLinkResult>, ApiError> {
+    Ok(Json(
+        state
+            .nutrition()
+            .auto_link(parse_id(&recipe_id)?, request)?,
+    ))
 }
 
 pub async fn list_links(

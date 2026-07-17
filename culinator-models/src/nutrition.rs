@@ -1,6 +1,6 @@
 use culinator_core::{Resource, ResourceKind, Serving, Value};
 use serde::{Deserialize, Serialize};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::models::{FoodNutrientRecord, NutritionFacts, NutritionSearchResult};
 
@@ -47,6 +47,88 @@ pub struct RecipeIngredientNutrition {
     pub fdc_id: Option<i64>,
     pub food_description: Option<String>,
     pub linked: bool,
+    pub manual: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngredientManualNutrition {
+    pub recipe_id: uuid::Uuid,
+    pub resource_symbol: String,
+    pub facts_per_100g: NutritionFacts,
+    pub updated_at: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveRecipeNutritionRequest {
+    pub manual_override: bool,
+    pub facts: Option<NutritionFacts>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveIngredientManualNutritionRequest {
+    pub resource_symbol: String,
+    pub facts_per_100g: NutritionFacts,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RecipeNutritionState {
+    pub recipe_id: uuid::Uuid,
+    pub links: Vec<ResourceNutritionLink>,
+    pub manual_ingredients: Vec<IngredientManualNutrition>,
+    pub manual_override: bool,
+    pub manual_facts: Option<NutritionFacts>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FuzzyFoodMatch {
+    pub result: NutritionSearchResult,
+    pub score: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FuzzyMatchRequest {
+    pub query: String,
+    #[serde(default = "default_fuzzy_limit")]
+    pub limit: usize,
+}
+
+fn default_fuzzy_limit() -> usize {
+    5
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoLinkRequest {
+    #[serde(default = "default_min_score")]
+    pub min_score: f64,
+    #[serde(default)]
+    pub dry_run: bool,
+}
+
+fn default_min_score() -> f64 {
+    0.45
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct IngredientMatchSuggestion {
+    pub resource_symbol: String,
+    pub resource_name: Option<String>,
+    pub best_match: Option<FuzzyFoodMatch>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct AutoLinkResult {
+    pub linked: Vec<ResourceNutritionLink>,
+    pub skipped: Vec<String>,
+    pub suggestions: Vec<IngredientMatchSuggestion>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -66,6 +148,8 @@ pub struct RecipeNutritionResult {
     pub total_ingredient_count: usize,
     pub ingredients: Vec<RecipeIngredientNutrition>,
     pub warnings: Vec<String>,
+    pub manual_override: bool,
+    pub calculated: bool,
 }
 
 pub fn resource_mass_grams(resource: &Resource) -> Option<f64> {
@@ -178,6 +262,154 @@ fn optional_nutrient(totals: &BTreeMap<i64, f64>, nutrient_id: i64, servings: f6
         .get(&nutrient_id)
         .copied()
         .map(|value| value / servings)
+}
+
+const INGREDIENT_STOP_WORDS: &[&str] = &[
+    "fresh", "diced", "chopped", "minced", "ripe", "large", "small", "medium", "organic", "raw",
+    "cooked", "hass", "whole", "ground", "grated", "sliced", "peeled", "seeded", "boneless",
+    "skinless", "unsalted", "salted", "extra", "virgin", "finely", "roughly", "about", "optional",
+];
+
+pub fn normalize_ingredient_name(name: &str) -> String {
+    name.to_lowercase()
+        .split(|character: char| !character.is_alphanumeric())
+        .filter(|word| !word.is_empty() && !INGREDIENT_STOP_WORDS.contains(&word))
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+pub fn fts_query_from_ingredient(name: &str) -> String {
+    let normalized = name.to_lowercase();
+    let words: Vec<&str> = normalized
+        .split(|character: char| !character.is_alphanumeric())
+        .filter(|word| word.len() > 2 && !INGREDIENT_STOP_WORDS.contains(word))
+        .collect();
+    if words.is_empty() {
+        name.split(|character: char| character.is_whitespace())
+            .filter(|word| !word.is_empty())
+            .collect::<Vec<_>>()
+            .join(" OR ")
+    } else {
+        words.join(" OR ")
+    }
+}
+
+fn trigrams(value: &str) -> BTreeSet<String> {
+    let normalized = value.to_lowercase();
+    let chars: Vec<char> = format!("  {normalized} ").chars().collect();
+    if chars.len() < 3 {
+        return BTreeSet::from([normalized]);
+    }
+    chars
+        .windows(3)
+        .map(|window| window.iter().collect::<String>())
+        .collect()
+}
+
+fn tokens_match(left: &str, right: &str) -> bool {
+    if left == right {
+        return true;
+    }
+    let left_stem = left.trim_end_matches('s');
+    let right_stem = right.trim_end_matches('s');
+    if left_stem.len() >= 3 && left_stem == right_stem {
+        return true;
+    }
+    let shorter = left.len().min(right.len());
+    if shorter >= 4 && (left.starts_with(right) || right.starts_with(left)) {
+        return true;
+    }
+    false
+}
+
+fn token_overlap_score(left: &str, right: &str) -> f64 {
+    let left_tokens: Vec<&str> = left.split_whitespace().collect();
+    let right_tokens: Vec<&str> = right.split_whitespace().collect();
+    if left_tokens.is_empty() {
+        return 0.0;
+    }
+    let matches = left_tokens
+        .iter()
+        .filter(|token| right_tokens.iter().any(|other| tokens_match(token, other)))
+        .count();
+    matches as f64 / left_tokens.len() as f64
+}
+
+pub fn string_similarity(left: &str, right: &str) -> f64 {
+    let left = normalize_ingredient_name(left);
+    let right = normalize_ingredient_name(right);
+    if left == right {
+        return 1.0;
+    }
+    let left_trigrams = trigrams(&left);
+    let right_trigrams = trigrams(&right);
+    let trigram_score = if left_trigrams.is_empty() && right_trigrams.is_empty() {
+        1.0
+    } else {
+        let intersection = left_trigrams.intersection(&right_trigrams).count();
+        let union = left_trigrams.union(&right_trigrams).count();
+        if union == 0 {
+            1.0
+        } else {
+            intersection as f64 / union as f64
+        }
+    };
+    trigram_score.max(token_overlap_score(&left, &right))
+}
+
+pub fn rank_fuzzy_matches(
+    query: &str,
+    results: &[NutritionSearchResult],
+) -> Vec<FuzzyFoodMatch> {
+    let mut ranked: Vec<FuzzyFoodMatch> = results
+        .iter()
+        .map(|result| FuzzyFoodMatch {
+            score: string_similarity(query, &result.description),
+            result: result.clone(),
+        })
+        .collect();
+    ranked.sort_by(|left, right| {
+        right
+            .score
+            .partial_cmp(&left.score)
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    ranked
+}
+
+pub fn manual_facts_to_nutrients(facts: &NutritionFacts) -> Vec<FoodNutrientRecord> {
+    let pairs = [
+        (FDC_ENERGY_KCAL, facts.calories),
+        (FDC_PROTEIN, facts.protein_grams),
+        (FDC_TOTAL_FAT, facts.total_fat_grams),
+        (FDC_SATURATED_FAT, facts.saturated_fat_grams),
+        (FDC_TRANS_FAT, facts.trans_fat_grams),
+        (FDC_CHOLESTEROL, facts.cholesterol_milligrams),
+        (FDC_SODIUM, facts.sodium_milligrams),
+        (FDC_CARBOHYDRATE, facts.total_carbohydrate_grams),
+        (FDC_FIBER, facts.dietary_fiber_grams),
+        (FDC_TOTAL_SUGARS, facts.total_sugars_grams),
+        (FDC_ADDED_SUGARS, facts.added_sugars_grams),
+        (FDC_VITAMIN_D, facts.vitamin_d_micrograms.unwrap_or(0.0)),
+        (FDC_CALCIUM, facts.calcium_milligrams.unwrap_or(0.0)),
+        (FDC_IRON, facts.iron_milligrams.unwrap_or(0.0)),
+        (FDC_POTASSIUM, facts.potassium_milligrams.unwrap_or(0.0)),
+    ];
+    pairs
+        .into_iter()
+        .filter(|(_, amount)| *amount > 0.0)
+        .map(|(nutrient_id, amount)| FoodNutrientRecord {
+            id: None,
+            fdc_id: 0,
+            nutrient_id,
+            amount: Some(amount),
+            data_points: None,
+            derivation_id: None,
+            min: None,
+            max: None,
+            median: None,
+        })
+        .collect()
 }
 
 pub fn search_result_label(result: &NutritionSearchResult) -> String {

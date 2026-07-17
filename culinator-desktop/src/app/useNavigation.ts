@@ -6,7 +6,7 @@ import { ref } from "vue";
 //   book    → an open book: flip through / search its recipes
 //   reading → a recipe as a full-screen book page
 //   editing → the source + inspector workspace
-export type AppView = "shelf" | "book" | "reading" | "editing";
+export type AppView = "shelf" | "book" | "reading" | "editing" | "measures";
 
 export function useNavigation() {
   const view = ref<AppView>("shelf");
@@ -29,6 +29,9 @@ export function useNavigation() {
   function toggleEdit(): void {
     view.value = view.value === "editing" ? "reading" : "editing";
   }
+  function measures(): void {
+    view.value = "measures";
+  }
 
-  return { view, bookId, shelf, openBook, read, edit, toggleEdit };
+  return { view, bookId, shelf, openBook, read, edit, toggleEdit, measures };
 }

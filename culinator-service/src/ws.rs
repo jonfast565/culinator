@@ -778,6 +778,93 @@ async fn dispatch_inner(
             .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
+        "nutrition.getState" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let axum::Json(value) = routes::nutrition::get_state(
+                axum::extract::Path(recipe_id),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.saveRecipe" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinator_models::SaveRecipeNutritionRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::nutrition::save_recipe_nutrition(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"recipeSaved","recipeId":recipe_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.saveIngredientManual" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinator_models::SaveIngredientManualNutritionRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::nutrition::save_manual_ingredient(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"manualSaved","recipeId":recipe_id,"resourceSymbol":request.resource_symbol}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.deleteIngredientManual" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let resource_symbol = required_string(&params, "resourceSymbol")?;
+            routes::nutrition::delete_manual_ingredient(
+                axum::extract::Path((recipe_id.clone(), resource_symbol.clone())),
+                State(state.service.clone()),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"manualDeleted","recipeId":recipe_id,"resourceSymbol":resource_symbol}),
+            });
+            Ok(Value::Null)
+        }
+        "nutrition.autoLink" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let request: culinator_models::AutoLinkRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::nutrition::auto_link(
+                axum::extract::Path(recipe_id.clone()),
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "nutrition.changed".to_owned(),
+                payload: json!({"kind":"autoLinked","recipeId":recipe_id}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "nutrition.fuzzyMatch" => {
+            let request: culinator_models::FuzzyMatchRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::nutrition::fuzzy_match(
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         "images.list" => {
             let recipe_id = required_string(&params, "recipeId")?;
             let id = uuid::Uuid::parse_str(&recipe_id).map_err(to_string)?;

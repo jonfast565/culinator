@@ -1,4 +1,7 @@
-use crate::{ApplicationError, LinkResourceNutritionRequest, ResourceNutritionLink};
+use crate::{
+    ApplicationError, IngredientManualNutrition, LinkResourceNutritionRequest, RecipeNutritionState,
+    ResourceNutritionLink, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+};
 use uuid::Uuid;
 
 pub trait ResourceNutritionRepository: Send + Sync {
@@ -21,6 +24,34 @@ pub trait ResourceNutritionRepository: Send + Sync {
     ) -> Result<ResourceNutritionLink, ApplicationError>;
 
     fn unlink_resource(
+        &self,
+        recipe_id: Uuid,
+        resource_symbol: &str,
+    ) -> Result<bool, ApplicationError>;
+
+    fn get_recipe_nutrition(
+        &self,
+        recipe_id: Uuid,
+    ) -> Result<RecipeNutritionState, ApplicationError>;
+
+    fn save_recipe_nutrition(
+        &self,
+        recipe_id: Uuid,
+        input: SaveRecipeNutritionRequest,
+    ) -> Result<RecipeNutritionState, ApplicationError>;
+
+    fn list_manual_ingredient_nutrition(
+        &self,
+        recipe_id: Uuid,
+    ) -> Result<Vec<IngredientManualNutrition>, ApplicationError>;
+
+    fn save_manual_ingredient_nutrition(
+        &self,
+        recipe_id: Uuid,
+        input: SaveIngredientManualNutritionRequest,
+    ) -> Result<IngredientManualNutrition, ApplicationError>;
+
+    fn delete_manual_ingredient_nutrition(
         &self,
         recipe_id: Uuid,
         resource_symbol: &str,

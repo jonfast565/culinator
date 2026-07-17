@@ -1,6 +1,15 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { Plus, ScanLine, FileUp, Pencil, Trash2, UtensilsCrossed, Files } from "lucide-vue-next";
+import {
+  Plus,
+  ScanLine,
+  FileUp,
+  Pencil,
+  Trash2,
+  UtensilsCrossed,
+  Files,
+  Ruler,
+} from "lucide-vue-next";
 import type { RecipeBookSummary, RecipeSummary } from "../../../domain/types";
 import RecipeSearchPanel from "../../search/components/RecipeSearchPanel.vue";
 
@@ -17,6 +26,7 @@ const emit = defineEmits<{
   (event: "import-file"): void;
   (event: "rename-book", book: RecipeBookSummary): void;
   (event: "delete-book", book: RecipeBookSummary): void;
+  (event: "open-measures"): void;
 }>();
 
 const showSearch = ref(false);
@@ -43,6 +53,7 @@ function clothFor(id: string): string {
         </span>
       </div>
       <div class="shelf-actions">
+        <button @click="emit('open-measures')"><Ruler :size="15" /> Measures</button>
         <button @click="showSearch = !showSearch">Search library</button>
         <button @click="emit('create-recipe')"><Plus :size="15" /> New recipe</button>
         <button @click="emit('import-recipe')"><ScanLine :size="15" /> Scan</button>

@@ -1,13 +1,14 @@
 <script setup lang="ts">
 /* global PointerEvent, HTMLElement */
 import { computed, onBeforeUnmount, provide, ref } from "vue";
-import { Trash2, Database, Pencil, BookOpen, ChevronLeft, Scale } from "lucide-vue-next";
+import { Trash2, Database, Pencil, BookOpen, ChevronLeft, Scale, Ruler } from "lucide-vue-next";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
 import EditDrawer from "../features/recipe-editor/components/EditDrawer.vue";
 import { useRecipeEditor } from "../features/recipe-editor/composables/useRecipeEditor";
 import RecipePage from "../features/reading/components/RecipePage.vue";
 import Bookshelf from "../features/bookshelf/components/Bookshelf.vue";
 import OpenBook from "../features/bookshelf/components/OpenBook.vue";
+import MeasuresView from "../features/units/components/MeasuresView.vue";
 import RecipeImportPanel from "../features/import/components/RecipeImportPanel.vue";
 import ConnectionBadge from "../shared/components/ConnectionBadge.vue";
 import { useNavigation } from "./useNavigation";
@@ -134,6 +135,24 @@ function quickOperation(): void {
     `    process preparation {\n        operation new_operation does mix {\n            duration 5 min;\n            labor active;\n        }\n    }`,
   );
 }
+async function convertRecipeUnits(): Promise<void> {
+  if (!library.selectedRecipe.value) return;
+  const target = unitDisplay.unitSystem.value === "metric" ? "metric" : "US customary";
+  if (
+    !window.confirm(
+      `Convert convertible ingredient quantities and step temperatures in this recipe to ${target} units? Count-based measures (cloves, sticks, etc.) will stay unchanged.`,
+    )
+  ) {
+    return;
+  }
+  const converted = await unitDisplay.convertRecipeSource(editor.source.value, editor.model.value);
+  if (converted === editor.source.value) {
+    window.alert("No convertible quantities were found to update.");
+    return;
+  }
+  editor.source.value = converted;
+  await save();
+}
 </script>
 
 <template>
@@ -151,7 +170,10 @@ function quickOperation(): void {
       @import-file="importFromFile"
       @rename-book="renameBook"
       @delete-book="deleteBook"
+      @open-measures="nav.measures()"
     />
+
+    <MeasuresView v-else-if="nav.view.value === 'measures'" @back="nav.shelf()" />
 
     <!-- An open book: flip through / search its recipes -->
     <OpenBook
@@ -188,6 +210,14 @@ function quickOperation(): void {
           >
             <Scale :size="15" />
             {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+          </button>
+          <button
+            class="ghost"
+            title="Rewrite convertible quantities in the recipe source"
+            @click="convertRecipeUnits"
+          >
+            <Ruler :size="15" />
+            Convert units
           </button>
           <button class="danger" title="Delete recipe" @click="remove">
             <Trash2 :size="15" />
@@ -226,6 +256,14 @@ function quickOperation(): void {
           >
             <Scale :size="15" />
             {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+          </button>
+          <button
+            class="ghost"
+            title="Rewrite convertible quantities in the recipe source"
+            @click="convertRecipeUnits"
+          >
+            <Ruler :size="15" />
+            Convert units
           </button>
         </div>
       </header>

@@ -432,6 +432,49 @@ export interface RecipeIngredientNutrition {
   fdcId?: number | null;
   foodDescription?: string | null;
   linked: boolean;
+  manual: boolean;
+}
+
+export interface IngredientManualNutrition {
+  recipeId: string;
+  resourceSymbol: string;
+  factsPer100g: NutritionFacts;
+  updatedAt: string;
+}
+
+export interface RecipeNutritionState {
+  recipeId: string;
+  links: ResourceNutritionLink[];
+  manualIngredients: IngredientManualNutrition[];
+  manualOverride: boolean;
+  manualFacts?: NutritionFacts | null;
+}
+
+export interface SaveRecipeNutritionRequest {
+  manualOverride: boolean;
+  facts?: NutritionFacts | null;
+}
+
+export interface SaveIngredientManualNutritionRequest {
+  resourceSymbol: string;
+  factsPer100g: NutritionFacts;
+}
+
+export interface FuzzyFoodMatch {
+  result: NutritionSearchResult;
+  score: number;
+}
+
+export interface AutoLinkResult {
+  linked: ResourceNutritionLink[];
+  skipped: string[];
+  suggestions: IngredientMatchSuggestion[];
+}
+
+export interface IngredientMatchSuggestion {
+  resourceSymbol: string;
+  resourceName?: string | null;
+  bestMatch?: FuzzyFoodMatch | null;
 }
 
 export interface RecipeNutritionResult {
@@ -441,6 +484,8 @@ export interface RecipeNutritionResult {
   totalIngredientCount: number;
   ingredients: RecipeIngredientNutrition[];
   warnings: string[];
+  manualOverride: boolean;
+  calculated: boolean;
 }
 
 export interface NutritionCatalogStatus {

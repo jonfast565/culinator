@@ -3,7 +3,40 @@
 // would drop comments/formatting/unknown constructs) we patch the specific
 // property span, or insert a new property near the top of the recipe block.
 
-import type { SourceRange } from "./model";
+import type { SourceRange, UiOperation, UiResource } from "./model";
+
+interface SourcePatch {
+  start: number;
+  end: number;
+  replacement: string;
+}
+
+function applyPatches(source: string, patches: SourcePatch[]): string {
+  const ordered = [...patches].sort((left, right) => right.start - left.start);
+  let result = source;
+  for (const patch of ordered) {
+    result = `${result.slice(0, patch.start)}${patch.replacement}${result.slice(patch.end)}`;
+  }
+  return result;
+}
+
+function quantityPatchInSpan(
+  source: string,
+  spanStart: number,
+  spanEnd: number,
+  newQuantity: string,
+  propertyPattern: RegExp,
+): SourcePatch | null {
+  const span = source.slice(spanStart, spanEnd);
+  const match = propertyPattern.exec(span);
+  if (!match || match.index == null) return null;
+  const start = spanStart + match.index;
+  return {
+    start,
+    end: start + match[0].length,
+    replacement: `${match[1]} ${newQuantity};`,
+  };
+}
 
 function sanitize(value: string): string {
   // The DSL has no string escaping, so keep values quote-safe and single-line.
@@ -96,4 +129,54 @@ export function setOperationPhoto(source: string, range: SourceRange, value: str
     return before + span + after;
   }
   return source;
+}
+
+const QUANTITY_PROPERTY = /\b(quantity|mass|amount)\s+([^;]+)\s*;/;
+const TEMPERATURE_PROPERTY = /\btemperature\s+([\d.]+)\s+([A-Za-z_]+)\s*;/;
+
+/**
+ * Rewrite convertible ingredient quantities and step temperatures in place.
+ * Patches are applied from the end of the file forward so byte ranges stay valid.
+ */
+export async function convertRecipeQuantitiesInSource(
+  source: string,
+  ingredients: UiResource[],
+  operations: UiOperation[],
+  convertQuantity: (text: string) => Promise<string | null>,
+): Promise<string> {
+  const patches: SourcePatch[] = [];
+
+  for (const ingredient of ingredients) {
+    if (!ingredient.quantity || !ingredient.range) continue;
+    const converted = await convertQuantity(ingredient.quantity);
+    if (!converted || converted === ingredient.quantity) continue;
+    const patch = quantityPatchInSpan(
+      source,
+      ingredient.range.start,
+      ingredient.range.end,
+      converted,
+      QUANTITY_PROPERTY,
+    );
+    if (patch) patches.push(patch);
+  }
+
+  for (const operation of operations) {
+    if (!operation.targetTemperature || !operation.range) continue;
+    const converted = await convertQuantity(operation.targetTemperature);
+    if (!converted || converted === operation.targetTemperature) continue;
+    const span = source.slice(operation.range.start, operation.range.end);
+    const match = TEMPERATURE_PROPERTY.exec(span);
+    if (!match || match.index == null) continue;
+    const parts = converted.match(/^([\d./]+)\s+([A-Za-z_]+)$/);
+    if (!parts) continue;
+    const start = operation.range.start + match.index;
+    patches.push({
+      start,
+      end: start + match[0].length,
+      replacement: `temperature ${parts[1]} ${parts[2]};`,
+    });
+  }
+
+  if (!patches.length) return source;
+  return applyPatches(source, patches);
 }

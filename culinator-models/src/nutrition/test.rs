@@ -1,6 +1,8 @@
 use crate::{
-    FDC_ENERGY_KCAL, FDC_PROTEIN, FoodNutrientRecord, aggregate_nutrients, default_serving_context,
-    ingredient_resources, nutrients_to_facts, resource_mass_grams, value_mass_grams,
+    FDC_ENERGY_KCAL, FDC_PROTEIN, FoodNutrientRecord, NutritionSearchResult, aggregate_nutrients,
+    default_serving_context, fts_query_from_ingredient, ingredient_resources,
+    manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches, resource_mass_grams,
+    string_similarity, value_mass_grams,
 };
 use culinator_core::{Dimension, Resource, ResourceKind, Value};
 use std::collections::BTreeMap;
@@ -58,6 +60,57 @@ fn nutrients_to_facts_divides_by_servings() {
     assert_eq!(facts.calories, 200.0);
     assert_eq!(facts.protein_grams, 10.0);
     assert_eq!(facts.servings_per_container, 2.0);
+}
+
+#[test]
+fn string_similarity_prefers_close_names() {
+    let score = string_similarity("Hass avocado", "Avocados, raw, all commercial varieties");
+    assert!(score > 0.2);
+    assert!(string_similarity("avocado", "avocado") > 0.99);
+}
+
+#[test]
+fn fts_query_strips_prep_words() {
+    let query = fts_query_from_ingredient("Hass avocado, diced");
+    assert!(query.contains("avocado"));
+    assert!(!query.contains("diced"));
+}
+
+#[test]
+fn manual_facts_to_nutrients_maps_macros() {
+    let facts = nutrients_to_facts(
+        &BTreeMap::from([(FDC_PROTEIN, 20.0)]),
+        100.0,
+        1.0,
+        "100 g",
+        Some(100.0),
+    );
+    let nutrients = manual_facts_to_nutrients(&facts);
+    assert!(nutrients.iter().any(|item| item.nutrient_id == FDC_PROTEIN));
+}
+
+#[test]
+fn rank_fuzzy_matches_orders_by_score() {
+    let results = vec![
+        NutritionSearchResult {
+            fdc_id: 1,
+            description: "Avocados, raw".to_owned(),
+            data_type: "Foundation".to_owned(),
+            brand_owner: None,
+            serving_size: None,
+            serving_size_unit: None,
+        },
+        NutritionSearchResult {
+            fdc_id: 2,
+            description: "White bread".to_owned(),
+            data_type: "Foundation".to_owned(),
+            brand_owner: None,
+            serving_size: None,
+            serving_size_unit: None,
+        },
+    ];
+    let ranked = rank_fuzzy_matches("avocado", &results);
+    assert_eq!(ranked.first().unwrap().result.fdc_id, 1);
 }
 
 #[test]

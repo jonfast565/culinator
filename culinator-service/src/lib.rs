@@ -180,6 +180,26 @@ pub fn router(config: ServiceConfig) -> Router {
         .route("/api/v1/nutrition/status", get(routes::nutrition::status))
         .route("/api/v1/nutrition/search", get(routes::nutrition::search))
         .route(
+            "/api/v1/nutrition/fuzzy-match",
+            post(routes::nutrition::fuzzy_match),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition",
+            get(routes::nutrition::get_state).put(routes::nutrition::save_recipe_nutrition),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/auto-link",
+            post(routes::nutrition::auto_link),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/manual",
+            post(routes::nutrition::save_manual_ingredient),
+        )
+        .route(
+            "/api/v1/recipes/{recipe_id}/nutrition/manual/{resource_symbol}",
+            delete(routes::nutrition::delete_manual_ingredient),
+        )
+        .route(
             "/api/v1/recipes/{recipe_id}/nutrition/links",
             get(routes::nutrition::list_links).post(routes::nutrition::link_resource),
         )

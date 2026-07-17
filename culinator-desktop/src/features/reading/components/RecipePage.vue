@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, inject, ref, toRef, watch } from "vue";
 import { Clock } from "lucide-vue-next";
-import type { UiRecipeModel } from "../../recipe-editor/model";
+import type { UiOperation, UiRecipeModel } from "../../recipe-editor/model";
 import { useRecipeNarrative } from "../../recipe-editor/narrative";
-import { UNIT_DISPLAY_KEY } from "../../units/composables/useUnitDisplay";
+import {
+  formatOperationTemperature,
+  UNIT_DISPLAY_KEY,
+} from "../../units/composables/useUnitDisplay";
 import RecipeImage from "./RecipeImage.vue";
 
 const props = defineProps<{ model: UiRecipeModel; recipeId?: string }>();
@@ -15,6 +18,7 @@ const { ingredients, operations, rows, summary, describe, stepTime, stepMeta } =
 );
 
 const formattedQuantities = ref<Record<string, string>>({});
+const formattedTemperatures = ref<Record<string, string>>({});
 
 watch(
   [ingredients, () => units?.unitSystem.value],
@@ -34,8 +38,37 @@ watch(
   { immediate: true },
 );
 
+watch(
+  [operations, () => units?.unitSystem.value],
+  async () => {
+    if (!units) {
+      formattedTemperatures.value = {};
+      return;
+    }
+    const map: Record<string, string> = {};
+    await Promise.all(
+      operations.value.map(async (operation) => {
+        if (!operation.targetTemperature) return;
+        map[operation.symbol] = await formatOperationTemperature(
+          operation.targetTemperature,
+          units.unitSystem.value,
+        );
+      }),
+    );
+    formattedTemperatures.value = map;
+  },
+  { immediate: true },
+);
+
 function displayQuantity(symbol: string, fallback?: string): string {
   return formattedQuantities.value[symbol] || fallback || "—";
+}
+
+function describeStep(operation: UiOperation): string {
+  const base = describe(operation);
+  const formatted = formattedTemperatures.value[operation.symbol];
+  if (!formatted || !operation.targetTemperature) return base;
+  return base.replace(operation.targetTemperature, formatted);
 }
 
 const hasSteps = computed(() => operations.value.length > 0);
@@ -74,7 +107,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
           <div v-else class="step">
             <span class="step-number">{{ row.number }}</span>
             <div class="step-body">
-              <p class="step-text">{{ describe(row.operation!) }}</p>
+              <p class="step-text">{{ describeStep(row.operation!) }}</p>
               <small v-if="stepMeta(row.operation!)" class="step-meta">{{
                 stepMeta(row.operation!)
               }}</small>

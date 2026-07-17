@@ -1,8 +1,11 @@
 use crate::{
-    ApplicationError, CalculateRecipeNutritionRequest, DocumentParser,
+    ApplicationError, AutoLinkRequest, AutoLinkResult, CalculateRecipeNutritionRequest,
+    DocumentParser, FuzzyFoodMatch, FuzzyMatchRequest, IngredientMatchSuggestion,
     LinkResourceNutritionRequest, NutritionCatalog, RecipeIngredientNutrition,
-    RecipeNutritionResult, RecipeRepository, ResourceNutritionRepository, aggregate_nutrients,
-    default_serving_context, ingredient_resources, nutrients_to_facts, resource_mass_grams,
+    RecipeNutritionResult, RecipeNutritionState, RecipeRepository, ResourceNutritionRepository,
+    SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest, aggregate_nutrients,
+    default_serving_context, fts_query_from_ingredient, ingredient_resources,
+    manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches, resource_mass_grams,
     search_result_label,
 };
 use std::collections::HashMap;
@@ -50,6 +53,65 @@ impl NutritionService {
         catalog.search_foods(query, limit.clamp(1, 50))
     }
 
+    pub fn fuzzy_match(
+        &self,
+        request: FuzzyMatchRequest,
+    ) -> Result<Vec<FuzzyFoodMatch>, ApplicationError> {
+        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        if request.query.trim().is_empty() {
+            return Err(ApplicationError::InvalidInput(
+                "search query cannot be empty".to_owned(),
+            ));
+        }
+        let fts_query = fts_query_from_ingredient(&request.query);
+        let results = catalog.search_foods(&fts_query, request.limit.clamp(1, 50).max(10))?;
+        Ok(rank_fuzzy_matches(&request.query, &results)
+            .into_iter()
+            .take(request.limit.clamp(1, 50))
+            .collect())
+    }
+
+    pub fn get_state(&self, recipe_id: Uuid) -> Result<RecipeNutritionState, ApplicationError> {
+        self.nutrition.get_recipe_nutrition(recipe_id)
+    }
+
+    pub fn save_recipe_nutrition(
+        &self,
+        recipe_id: Uuid,
+        input: SaveRecipeNutritionRequest,
+    ) -> Result<RecipeNutritionState, ApplicationError> {
+        if input.manual_override && input.facts.is_none() {
+            return Err(ApplicationError::InvalidInput(
+                "manual override requires nutrition facts".to_owned(),
+            ));
+        }
+        self.nutrition.save_recipe_nutrition(recipe_id, input)
+    }
+
+    pub fn save_manual_ingredient(
+        &self,
+        recipe_id: Uuid,
+        input: SaveIngredientManualNutritionRequest,
+    ) -> Result<crate::IngredientManualNutrition, ApplicationError> {
+        self.nutrition
+            .save_manual_ingredient_nutrition(recipe_id, input)
+    }
+
+    pub fn delete_manual_ingredient(
+        &self,
+        recipe_id: Uuid,
+        resource_symbol: &str,
+    ) -> Result<(), ApplicationError> {
+        if self
+            .nutrition
+            .delete_manual_ingredient_nutrition(recipe_id, resource_symbol)?
+        {
+            Ok(())
+        } else {
+            Err(ApplicationError::not_found("manual ingredient nutrition"))
+        }
+    }
+
     pub fn list_links(
         &self,
         recipe_id: Uuid,
@@ -94,22 +156,111 @@ impl NutritionService {
         }
     }
 
+    pub fn auto_link(
+        &self,
+        recipe_id: Uuid,
+        request: AutoLinkRequest,
+    ) -> Result<AutoLinkResult, ApplicationError> {
+        self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        let document = self
+            .recipes
+            .get_recipe(recipe_id)?
+            .ok_or_else(|| ApplicationError::not_found("recipe"))?;
+        let recipe = self.parser.parse_recipe(&document.source_text)?;
+        let existing: HashMap<String, crate::ResourceNutritionLink> = self
+            .nutrition
+            .list_links_for_recipe(recipe_id)?
+            .into_iter()
+            .map(|link| (link.resource_symbol.clone(), link))
+            .collect();
+
+        let mut linked = Vec::new();
+        let mut skipped = Vec::new();
+        let mut suggestions = Vec::new();
+
+        for resource in ingredient_resources(&recipe) {
+            if existing.contains_key(&resource.symbol) {
+                skipped.push(resource.symbol.clone());
+                continue;
+            }
+            let resource_name = resource_display_name(resource);
+            let query = resource_name
+                .clone()
+                .unwrap_or_else(|| resource.symbol.clone());
+            let matches = self.fuzzy_match(FuzzyMatchRequest {
+                query: query.clone(),
+                limit: 3,
+            })?;
+            let best = matches.into_iter().next();
+            suggestions.push(IngredientMatchSuggestion {
+                resource_symbol: resource.symbol.clone(),
+                resource_name: resource_name.clone(),
+                best_match: best.clone(),
+            });
+            if request.dry_run {
+                continue;
+            }
+            if let Some(best_match) = best.filter(|item| item.score >= request.min_score) {
+                let link = self.nutrition.link_resource(
+                    recipe_id,
+                    LinkResourceNutritionRequest {
+                        resource_symbol: resource.symbol.clone(),
+                        fdc_id: best_match.result.fdc_id,
+                    },
+                    search_result_label(&best_match.result),
+                )?;
+                linked.push(link);
+            } else {
+                skipped.push(resource.symbol.clone());
+            }
+        }
+
+        Ok(AutoLinkResult {
+            linked,
+            skipped,
+            suggestions,
+        })
+    }
+
     pub fn calculate(
         &self,
         recipe_id: Uuid,
         request: CalculateRecipeNutritionRequest,
     ) -> Result<RecipeNutritionResult, ApplicationError> {
+        let state = self.nutrition.get_recipe_nutrition(recipe_id)?;
+        if state.manual_override {
+            let facts = state.manual_facts.clone().ok_or_else(|| {
+                ApplicationError::InvalidInput(
+                    "recipe manual override is enabled but no facts are saved".to_owned(),
+                )
+            })?;
+            return Ok(RecipeNutritionResult {
+                facts,
+                total_mass_grams: 0.0,
+                linked_ingredient_count: 0,
+                total_ingredient_count: 0,
+                ingredients: vec![],
+                warnings: vec!["Using saved recipe-level manual nutrition override.".to_owned()],
+                manual_override: true,
+                calculated: false,
+            });
+        }
+
         let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
         let document = self
             .recipes
             .get_recipe(recipe_id)?
             .ok_or_else(|| ApplicationError::not_found("recipe"))?;
         let recipe = self.parser.parse_recipe(&document.source_text)?;
-        let links: HashMap<String, crate::ResourceNutritionLink> = self
-            .nutrition
-            .list_links_for_recipe(recipe_id)?
+        let links: HashMap<String, crate::ResourceNutritionLink> = state
+            .links
             .into_iter()
             .map(|link| (link.resource_symbol.clone(), link))
+            .collect();
+        let manual: HashMap<String, crate::IngredientManualNutrition> = state
+            .manual_ingredients
+            .into_iter()
+            .map(|entry| (entry.resource_symbol.clone(), entry))
             .collect();
 
         let mut warnings = Vec::new();
@@ -117,21 +268,17 @@ impl NutritionService {
         let mut nutrient_inputs = Vec::new();
         let mut total_mass_grams = 0.0;
         let mut linked_count = 0usize;
+        let mut sourced_count = 0usize;
 
         for resource in ingredient_resources(&recipe) {
             let mass_grams = resource_mass_grams(resource);
             let link = links.get(&resource.symbol);
-            let resource_name = resource
-                .properties
-                .get("name")
-                .and_then(|value| match value {
-                    culinator_core::Value::Text(text) | culinator_core::Value::Symbol(text) => {
-                        Some(text.clone())
-                    }
-                    _ => None,
-                });
+            let manual_entry = manual.get(&resource.symbol);
+            let resource_name = resource_display_name(resource);
+            let has_fdc = link.is_some();
+            let has_manual = manual_entry.is_some();
 
-            if link.is_some() {
+            if has_fdc || has_manual {
                 linked_count += 1;
             }
 
@@ -142,17 +289,32 @@ impl NutritionService {
                 ));
             }
 
-            if link.is_none() {
+            if !has_fdc && !has_manual {
                 warnings.push(format!(
-                    "{} is not linked to a food database entry",
+                    "{} is not linked to a food database entry or manual facts",
                     resource.symbol
                 ));
             }
 
-            if let (Some(mass), Some(link)) = (mass_grams, link) {
-                let nutrients = catalog.nutrients_for_food(link.fdc_id)?;
-                total_mass_grams += mass;
-                nutrient_inputs.push((mass, nutrients));
+            if let Some(mass) = mass_grams {
+                if let Some(link) = link {
+                    let nutrients = catalog.nutrients_for_food(link.fdc_id)?;
+                    total_mass_grams += mass;
+                    nutrient_inputs.push((mass, nutrients));
+                    sourced_count += 1;
+                } else if let Some(manual_entry) = manual_entry {
+                    let nutrients = manual_facts_to_nutrients(&manual_entry.facts_per_100g);
+                    if nutrients.is_empty() {
+                        warnings.push(format!(
+                            "{} has manual nutrition entry but no nutrient values",
+                            resource.symbol
+                        ));
+                    } else {
+                        total_mass_grams += mass;
+                        nutrient_inputs.push((mass, nutrients));
+                        sourced_count += 1;
+                    }
+                }
             }
 
             ingredient_rows.push(RecipeIngredientNutrition {
@@ -161,14 +323,14 @@ impl NutritionService {
                 mass_grams,
                 fdc_id: link.map(|value| value.fdc_id),
                 food_description: link.map(|value| value.food_description.clone()),
-                linked: link.is_some(),
+                linked: has_fdc,
+                manual: has_manual,
             });
         }
 
-        if linked_count == 0 {
+        if sourced_count == 0 {
             return Err(ApplicationError::InvalidInput(
-                "link at least one ingredient to the nutrition database before calculating"
-                    .to_owned(),
+                "link ingredients or enter manual nutrition facts before calculating".to_owned(),
             ));
         }
 
@@ -196,6 +358,8 @@ impl NutritionService {
             total_ingredient_count: ingredient_rows.len(),
             ingredients: ingredient_rows,
             warnings,
+            manual_override: false,
+            calculated: true,
         })
     }
 
@@ -205,6 +369,18 @@ impl NutritionService {
                 .to_owned(),
         )
     }
+}
+
+fn resource_display_name(resource: &culinator_core::Resource) -> Option<String> {
+    resource
+        .properties
+        .get("name")
+        .and_then(|value| match value {
+            culinator_core::Value::Text(text) | culinator_core::Value::Symbol(text) => {
+                Some(text.clone())
+            }
+            _ => None,
+        })
 }
 
 #[cfg(test)]
