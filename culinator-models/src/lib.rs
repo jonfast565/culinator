@@ -7,6 +7,7 @@
 pub mod error;
 pub mod execution;
 pub mod haccp;
+pub mod image;
 pub mod models;
 pub mod nutrition;
 pub mod ports;
@@ -14,6 +15,7 @@ pub mod ports;
 pub use error::ApplicationError;
 pub use execution::*;
 pub use haccp::*;
+pub use image::*;
 pub use models::*;
 pub use nutrition::*;
 pub use ports::*;

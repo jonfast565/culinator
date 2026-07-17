@@ -108,8 +108,16 @@ pub fn router(config: ServiceConfig) -> Router {
         )
         .route("/api/v1/import/translate", post(routes::imports::translate))
         .route(
+            "/api/v1/import/structured",
+            post(routes::imports::import_structured),
+        )
+        .route(
             "/api/v1/recipes/{id}/export",
             post(routes::exports::export_recipe),
+        )
+        .route(
+            "/api/v1/books/{id}/export",
+            post(routes::exports::export_book),
         )
         .route(
             "/api/v1/formulas/calculate",
@@ -128,6 +136,14 @@ pub fn router(config: ServiceConfig) -> Router {
         .route(
             "/api/v1/formulas/{formula_id}/runs",
             post(routes::formulas::calculate_and_record),
+        )
+        .route(
+            "/api/v1/formulas/preferment",
+            post(routes::formulas::preferment),
+        )
+        .route(
+            "/api/v1/formulas/dough-temp",
+            post(routes::formulas::dough_temp),
         )
         .route(
             "/api/v1/recipes/{recipe_id}/haccp",

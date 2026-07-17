@@ -1,4 +1,8 @@
-import type { RecipeExportOptions, RecipeExportResponse } from "../../domain/types";
+import type {
+  RecipeExportOptions,
+  RecipeExportResponse,
+  BookExportOptions,
+} from "../../domain/types";
 import { hasConfiguredService, serviceRpc } from "../transport/websocket-client";
 export async function exportRecipe(
   recipeId: string,
@@ -7,6 +11,17 @@ export async function exportRecipe(
   if (!hasConfiguredService())
     throw new Error("Recipe export requires the local Culinator service");
   return serviceRpc<RecipeExportResponse>("recipes.export", { id: recipeId, options });
+}
+
+export async function exportBook(
+  bookId: string,
+  options: BookExportOptions,
+): Promise<RecipeExportResponse> {
+  if (!hasConfiguredService()) throw new Error("Book export requires the local Culinator service");
+  return serviceRpc<RecipeExportResponse>("books.export", {
+    id: bookId,
+    options,
+  } as Record<string, unknown>);
 }
 
 function isTauri(): boolean {

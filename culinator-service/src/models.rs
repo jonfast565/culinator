@@ -209,6 +209,19 @@ pub struct ExportRecipeRequest {
     pub options: RecipeExportOptions,
 }
 
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ExportBookRequest {
+    pub options: culinator_models::BookExportOptions,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StructuredImportRequest {
+    pub format: culinator_models::StructuredInputFormat,
+    pub content: String,
+}
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ExportRecipeResponse {

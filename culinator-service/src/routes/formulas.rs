@@ -2,7 +2,8 @@ use axum::{
     Json,
     extract::{Path, State},
 };
-use culinator_core::{Formula, FormulaResult, PercentageConversion};
+use culinator_core::{Formula, FormulaIngredient, FormulaResult, PercentageConversion};
+use culinator_models::{DoughTempRequest, DoughTempResponse, PrefermentBuildRequest};
 use uuid::Uuid;
 
 use crate::{
@@ -66,6 +67,20 @@ pub async fn calculate_and_record(
         parse_id(&formula_id)?,
         request.target_mass_grams,
     )?))
+}
+
+pub async fn preferment(
+    State(state): State<ServiceState>,
+    Json(request): Json<PrefermentBuildRequest>,
+) -> Result<Json<Vec<FormulaIngredient>>, ApiError> {
+    Ok(Json(state.formulas().build_preferment(request)?))
+}
+
+pub async fn dough_temp(
+    State(state): State<ServiceState>,
+    Json(request): Json<DoughTempRequest>,
+) -> Result<Json<DoughTempResponse>, ApiError> {
+    Ok(Json(state.formulas().dough_temp(request)?))
 }
 
 fn parse_id(value: &str) -> Result<Uuid, ApiError> {

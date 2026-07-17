@@ -2,6 +2,7 @@ culinator 0.3;
 
 recipe baked_macaroni_and_cheese {
     title "Baked Macaroni and Cheese";
+    section "Mains";
 
     source "Alton Brown";
     publisher "Food Network / altonbrown.com";

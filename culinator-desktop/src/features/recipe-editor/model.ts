@@ -44,6 +44,8 @@ export interface UiOperation {
   heatLevel?: string;
   /** Structured doneness cues. */
   doneness?: UiDonenessCue[];
+  /** Per-step image: an asset handle or an external URL, from `photo "…";`. */
+  photo?: string;
   range?: SourceRange;
 }
 export interface UiRecipeModel {
@@ -55,6 +57,10 @@ export interface UiRecipeModel {
   source?: string;
   sourceUrl?: string;
   attribution?: string;
+  /** The book section (chapter) this recipe belongs to, from `section "…";`. */
+  section?: string;
+  /** Cover image: an asset handle or an external URL, from `image "…";`. */
+  coverImage?: string;
 }
 
 const DURATION_UNIT_MINUTES: Record<string, number> = {
@@ -202,6 +208,7 @@ export function parseUiModel(source: string): UiRecipeModel {
         : undefined,
       heatLevel: body.match(/\bheat\s+(low|medium_low|medium|medium_high|high)\s*;/)?.[1],
       doneness: doneness.length ? doneness : undefined,
+      photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
       range: {
         start: lineOffsets[operationStartLine],
         end: lineOffsets[index] + lines[index].length,
@@ -242,6 +249,7 @@ export function parseUiModel(source: string): UiRecipeModel {
       durationMaxMinutes: duration.max,
       labor: body.match(/labor\s+(\w+)/)?.[1] ?? "active",
       after: afterText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
+      photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
       range: { start: match.index ?? 0, end: (match.index ?? 0) + full.length },
     });
   }
@@ -263,6 +271,8 @@ export function parseUiModel(source: string): UiRecipeModel {
   const source_ = source.match(/\bsource\s+"([^"]+)"\s*;/)?.[1];
   const sourceUrl = source.match(/\bsource_url\s+"([^"]+)"\s*;/)?.[1];
   const attribution = source.match(/\battribution\s+"([^"]+)"\s*;/)?.[1];
+  const section = source.match(/\bsection\s+"([^"]+)"\s*;/)?.[1];
+  const coverImage = source.match(/\bimage\s+"([^"]+)"\s*;/)?.[1];
   return {
     title,
     symbol,
@@ -272,5 +282,7 @@ export function parseUiModel(source: string): UiRecipeModel {
     source: source_,
     sourceUrl,
     attribution,
+    section,
+    coverImage,
   };
 }

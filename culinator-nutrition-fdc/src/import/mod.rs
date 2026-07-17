@@ -3,9 +3,7 @@ mod source;
 use crate::store::{BrandedFoodFields, SqliteNutritionCatalog};
 use anyhow::{Context, Result};
 use csv::StringRecord;
-use culinator_models::{
-    FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionImportStore,
-};
+use culinator_models::{FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionImportStore};
 use source::PreparedDataset;
 use std::path::{Path, PathBuf};
 

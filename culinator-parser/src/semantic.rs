@@ -619,9 +619,7 @@ impl Parser {
                         "medium" => HeatLevel::Medium,
                         "medium_high" => HeatLevel::MediumHigh,
                         "high" => HeatLevel::High,
-                        other => {
-                            return Err(self.err(&format!("unknown heat level `{other}`")))
-                        }
+                        other => return Err(self.err(&format!("unknown heat level `{other}`"))),
                     });
                     self.take(Token::Semi)?
                 }
@@ -633,9 +631,7 @@ impl Parser {
                         "tester" => DonenessKind::Tester,
                         "texture" => DonenessKind::Texture,
                         "rise" => DonenessKind::Rise,
-                        other => {
-                            return Err(self.err(&format!("unknown doneness cue `{other}`")))
-                        }
+                        other => return Err(self.err(&format!("unknown doneness cue `{other}`"))),
                     };
                     // value_until_semi consumes the trailing `;`.
                     let value = self.value_until_semi()?;

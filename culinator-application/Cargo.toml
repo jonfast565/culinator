@@ -6,6 +6,7 @@ license.workspace = true
 
 [dependencies]
 culinator-models = { path = "../culinator-models" }
+culinator-secrets = { path = "../culinator-secrets" }
 culinator-core = { path = "../culinator-core" }
 serde.workspace = true
 thiserror.workspace = true

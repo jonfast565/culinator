@@ -1,3 +1,4 @@
+mod book;
 mod content;
 mod csv;
 mod epub;
@@ -6,6 +7,8 @@ mod label;
 mod manifest;
 mod markdown;
 mod plain_text;
+
+pub use book::StaticRecipeBookExporter;
 
 use culinator_core::Recipe;
 use culinator_models::{

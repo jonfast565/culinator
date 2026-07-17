@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn round_trip_preserves_comments_whitespace_and_unknown_tokens() {
-    let source =
-        "culinator 0.3;\n/* heading */\nrecipe x {\n  // note\n  custom café @value;\n}\n";
+    let source = "culinator 0.3;\n/* heading */\nrecipe x {\n  // note\n  custom café @value;\n}\n";
     let document = LosslessDocument::parse(source).expect("lossless parse");
     assert_eq!(document.round_trip(), source);
     assert_eq!(document.root().text(), source);

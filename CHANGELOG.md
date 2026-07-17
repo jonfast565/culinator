@@ -5,6 +5,16 @@
 - Added startup retry, health endpoint, graceful cancellation, and configurable frontend base URL.
 - Kept browser-only localStorage fallback for standalone UI development.
 
+## 0.2.0 - Roadmap remainders (search, units, formulas, book export, structured import, secrets)
+
+- **Search:** FTS5 index, structured filters, `search.query` RPC, CLI + desktop search UI.
+- **Units:** Dimensional conversion/formatting core module, `UnitService`, converter widget.
+- **Formulas:** Preferment builders, extended bakery metrics, dough-temperature calculator.
+- **Book export:** EPUB, print HTML, and static-site zip via `books.export`.
+- **Structured import:** JSON-LD / JSON / YAML → `.cg` draft review flow.
+- **Secrets:** `culinator-secrets` keychain + encrypted-file store; API keys migrated out of settings JSON.
+- **Startup:** Desktop init progress screen (`service.initialize`) with catalog + starter nutrition seeding.
+
 # Changelog
 
 ## 0.3 scaffold

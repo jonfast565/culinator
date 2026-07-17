@@ -64,10 +64,7 @@ impl ParsedDocument {
 pub struct CulinatorParser;
 
 impl culinator_models::DocumentParser for CulinatorParser {
-    fn parse_document(
-        &self,
-        source: &str,
-    ) -> Result<Document, culinator_models::ApplicationError> {
+    fn parse_document(&self, source: &str) -> Result<Document, culinator_models::ApplicationError> {
         parse_document(source)
             .map_err(|error| culinator_models::ApplicationError::Parse(error.to_string()))
     }

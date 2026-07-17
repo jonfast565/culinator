@@ -1,6 +1,7 @@
 use crate::{
     ApplicationError, ExecutionRepository, HaccpRepository, NewRecipe, NewRecipeBook,
-    RecipeBookSummary, RecipeDocument, RecipeSummary, ResourceNutritionRepository,
+    RecipeBookSummary, RecipeDocument, RecipeImageRepository, RecipeSearch, RecipeSummary,
+    ResourceNutritionRepository,
 };
 use culinator_core::{Formula, FormulaResult, Recipe, RecipeBook};
 use uuid::Uuid;
@@ -57,6 +58,8 @@ pub trait CatalogRepository:
     + HaccpRepository
     + ExecutionRepository
     + ResourceNutritionRepository
+    + RecipeImageRepository
+    + RecipeSearch
     + Send
     + Sync
 {
@@ -69,6 +72,8 @@ impl<T> CatalogRepository for T where
         + HaccpRepository
         + ExecutionRepository
         + ResourceNutritionRepository
+        + RecipeImageRepository
+        + RecipeSearch
         + Send
         + Sync
 {

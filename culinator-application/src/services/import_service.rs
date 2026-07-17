@@ -1,39 +1,103 @@
 use culinator_models::{
-    ApplicationError, DocumentParser, ImportSettings, OcrEngine, RecipeImageInterpreter,
-    RecipeImportRequest, RecipeImportResult, RecipeValidator, SettingsStore,
+    ApplicationError, DocumentParser, ImportDraft, ImportSettings, OcrEngine, PublicImportSettings,
+    RecipeImageInterpreter, RecipeImportRequest, RecipeImportResult, RecipeValidator, SecretStore,
+    SettingsStore, StructuredInput, StructuredRecipeImporter,
 };
+use culinator_secrets::{KeyringSecretStore, OPENAI_API_KEY};
 use std::sync::Arc;
 
 #[derive(Clone)]
 pub struct ImportService {
     ocr: Arc<dyn OcrEngine>,
     interpreter: Arc<dyn RecipeImageInterpreter>,
+    structured: Arc<dyn StructuredRecipeImporter>,
     settings: Arc<dyn SettingsStore>,
+    secrets: Arc<dyn SecretStore>,
     parser: Arc<dyn DocumentParser>,
     validator: Arc<dyn RecipeValidator>,
 }
+
 impl ImportService {
     pub fn new(
         ocr: Arc<dyn OcrEngine>,
         interpreter: Arc<dyn RecipeImageInterpreter>,
+        structured: Arc<dyn StructuredRecipeImporter>,
         settings: Arc<dyn SettingsStore>,
+        secrets: Arc<dyn SecretStore>,
         parser: Arc<dyn DocumentParser>,
         validator: Arc<dyn RecipeValidator>,
     ) -> Self {
         Self {
             ocr,
             interpreter,
+            structured,
             settings,
+            secrets,
             parser,
             validator,
         }
     }
+
     pub fn settings(&self) -> Result<ImportSettings, ApplicationError> {
-        self.settings.load_import_settings()
+        let mut settings = self.settings.load_import_settings()?;
+        settings.openai_api_key = self.secrets.get_secret(OPENAI_API_KEY)?.unwrap_or_default();
+        Ok(settings)
     }
+
+    pub fn public_settings(&self) -> Result<PublicImportSettings, ApplicationError> {
+        let settings = self.settings.load_import_settings()?;
+        let api_key_configured = self
+            .secrets
+            .get_secret(OPENAI_API_KEY)?
+            .is_some_and(|key| !key.trim().is_empty());
+        Ok(PublicImportSettings::from_settings(
+            &settings,
+            api_key_configured,
+            Some(if KeyringSecretStore::is_available() {
+                "keychain".to_owned()
+            } else {
+                "encrypted file".to_owned()
+            }),
+        ))
+    }
+
     pub fn save_settings(&self, value: &ImportSettings) -> Result<(), ApplicationError> {
-        self.settings.save_import_settings(value)
+        let key = value.openai_api_key.trim();
+        if key.is_empty() {
+            self.secrets.delete_secret(OPENAI_API_KEY)?;
+        } else {
+            self.secrets.set_secret(OPENAI_API_KEY, key)?;
+        }
+        let mut stored = value.clone();
+        stored.openai_api_key.clear();
+        self.settings.save_import_settings(&stored)
     }
+
+    pub fn import_structured(
+        &self,
+        input: StructuredInput,
+    ) -> Result<ImportDraft, ApplicationError> {
+        let mut draft = self.structured.import(input)?;
+        match self.parser.parse_recipe(&draft.source_text) {
+            Ok(recipe) => {
+                draft.title = recipe.title.clone();
+                let diagnostics = self.validator.validate(&recipe);
+                draft.warnings.extend(
+                    diagnostics
+                        .into_iter()
+                        .filter(|diagnostic| {
+                            diagnostic.severity == culinator_models::DiagnosticSeverity::Warning
+                        })
+                        .map(|diagnostic| diagnostic.message),
+                );
+                Ok(draft)
+            }
+            Err(error) => Err(ApplicationError::InvalidInput(format!(
+                "structured import produced invalid DSL: {error}"
+            ))),
+        }
+    }
+
     pub async fn translate(
         &self,
         request: RecipeImportRequest,
@@ -97,5 +161,6 @@ impl ImportService {
         })
     }
 }
+
 #[cfg(test)]
 mod test;

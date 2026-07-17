@@ -83,6 +83,8 @@ pub trait NutritionLabelRenderer { /* jurisdiction-specific output */ }
 
 ## 3. Recipe-book generation and publishing
 
+**Status (2026-07):** Shipped book-level EPUB, print-ready HTML, and static-site export via `RecipeBookExporter` / `books.export` RPC and desktop “Export book” UI. Native PDF rendering remains out of scope (print-to-PDF via browser).
+
 - Book-level title pages, introductions, sections, indexes, and table of contents.
 - Recipe ordering, categories, tags, cross-references, and reusable introductory text.
 - Multiple layout templates for print, EPUB, HTML, PDF, and web publishing.
@@ -141,6 +143,8 @@ pub trait SensorStream { /* typed observations */ }
 
 ## 7. Formula and scaling enhancements
 
+**Status (2026-07):** Shipped preferment builders (poolish/biga/levain/sponge/soaker/tangzhong), extended bakery metrics (salt/fat/sugar/effective hydration), and desired-dough-temperature water calculation in core + formulas UI.
+
 - Arbitrary reference groups beyond flour.
 - Multiple simultaneous bases.
 - Piece count, pan area, pan volume, concentration, molarity-like food ratios, and serving-relative formulas.
@@ -153,6 +157,8 @@ pub trait SensorStream { /* typed observations */ }
 - Formula inheritance and version comparison.
 
 ## 8. Unit and physical-property system
+
+**Status (2026-07):** Shipped dimensional conversion/formatting in `culinator-core` units module, `UnitService`, `units.convert` / `units.format` RPC, and a desktop unit converter widget.
 
 - Full dimensional-analysis library.
 - Locale-aware unit formatting.
@@ -230,6 +236,8 @@ pub trait SensorStream { /* typed observations */ }
 
 ## 15. Search and discovery
 
+**Status (2026-07):** Shipped FTS5 recipe search with structured filters (allergens, active time, hydration), `search.query` RPC, CLI search command, and shelf/book search UI.
+
 - Full-text search across recipes, books, ingredients, techniques, and notes.
 - Typed queries such as hydration range, allergen exclusions, equipment requirements, or maximum active time.
 - Similar-recipe detection.
@@ -257,6 +265,8 @@ pub trait SensorStream { /* typed observations */ }
 
 ## 18. Import/export ecosystem
 
+**Status (2026-07):** Shipped schema.org JSON-LD / JSON / YAML structured import, book static-site export, and existing recipe-level formats. Common recipe-manager formats and calendar export remain future work.
+
 - JSON and YAML intermediate representation.
 - Schema.org Recipe import/export.
 - Common recipe-manager formats.
@@ -275,6 +285,8 @@ pub trait SensorStream { /* typed observations */ }
 - Dashboards for production trends and bottlenecks.
 
 ## 20. Security and privacy enhancements
+
+**Status (2026-07):** Shipped OS keychain + encrypted-file fallback for API keys via `culinator-secrets`; import settings no longer persist plaintext keys.
 
 - OS keychain integration.
 - Encrypted local secrets.

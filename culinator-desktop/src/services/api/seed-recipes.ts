@@ -16,6 +16,7 @@ export const seedRecipes: SeedRecipe[] = [
 
 recipe baked_macaroni_and_cheese {
     title "Baked Macaroni and Cheese";
+    section "Mains";
 
     source "Alton Brown";
     publisher "Food Network / altonbrown.com";
@@ -136,6 +137,7 @@ recipe baked_macaroni_and_cheese {
 
 recipe easy_crepes {
     title "Easy Crepes";
+    section "Breakfast";
 
     source "Alton Brown";
     publisher "Food Network / altonbrown.com";
@@ -213,6 +215,7 @@ recipe easy_crepes {
 
 recipe fully_loaded_guacamole {
     title "Fully Loaded Guacamole";
+    section "Starters";
 
     source "Alton Brown";
     publisher "Food Network / altonbrown.com";

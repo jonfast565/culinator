@@ -1,0 +1,22 @@
+[package]
+name = "culinator-secrets"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+culinator-models = { path = "../culinator-models" }
+base64.workspace = true
+chacha20poly1305.workspace = true
+keyring.workspace = true
+rand.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -79,12 +79,7 @@ pub(crate) fn render(
     Ok(format!(
         r#"<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{title}</title><script type="application/ld+json">{json_ld}</script><style>{css}</style></head><body><main><header><p class="eyebrow">{site}</p><h1>{title}</h1><p>{description}</p></header><div class="grid"><article><section><h2>Ingredients</h2><ul>{ingredients}</ul></section><section><h2>Method</h2><ol>{instructions}</ol></section></article><aside>{label}</aside></div></main></body></html>"#,
         title = escape(&recipe.title),
-        site = escape(
-            options
-                .site_title
-                .as_deref()
-                .unwrap_or("Culinator Recipe")
-        ),
+        site = escape(options.site_title.as_deref().unwrap_or("Culinator Recipe")),
         description = escape(options.description.as_deref().unwrap_or("")),
         ingredients = ingredient_html,
         instructions = instruction_html,
@@ -101,7 +96,9 @@ fn display_value(value: &Value) -> String {
         Value::Boolean(v) => v.to_string(),
         Value::Quantity(q) => format!("{} {}", q.value, q.unit),
         Value::List(v) => v.iter().map(display_value).collect::<Vec<_>>().join(", "),
-        Value::Range { min, max } => format!("{}\u{2013}{}", display_value(min), display_value(max)),
+        Value::Range { min, max } => {
+            format!("{}\u{2013}{}", display_value(min), display_value(max))
+        }
         Value::Object(_) => String::new(),
     }
 }

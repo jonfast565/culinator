@@ -91,6 +91,10 @@ export interface FormulaResult {
   total_mass_grams: number;
   hydration_percent: number;
   prefermented_flour_percent: number;
+  salt_percent?: number;
+  fat_percent?: number;
+  sugar_percent?: number;
+  effective_hydration_percent?: number;
   lines: FormulaLineResult[];
 }
 
@@ -139,11 +143,124 @@ export interface RecipeExportResponse {
   files: string[];
 }
 
+export interface UploadRecipeImageRequest {
+  /** Omit to have the server (or browser store) generate a stable handle. */
+  handle?: string;
+  role: string;
+  operationSymbol?: string | null;
+  mediaType: string;
+  fileName?: string | null;
+  dataBase64: string;
+}
+
+export interface InitReport {
+  catalogReady: boolean;
+  recipesSeeded: boolean;
+  nutritionReady: boolean;
+  nutritionStarter: boolean;
+  recipeCount: number;
+}
+
+export interface RangeF64 {
+  min?: number | null;
+  max?: number | null;
+}
+
+export interface SearchQuery {
+  text?: string | null;
+  bookId?: string | null;
+  excludeAllergens?: string[];
+  maxActiveMinutes?: number | null;
+  hydration?: RangeF64 | null;
+  limit?: number;
+}
+
+export interface SearchHit {
+  recipeId: string;
+  bookId?: string | null;
+  title: string;
+  snippet: string;
+  score: number;
+}
+
+export type BookExportFormat = "epub" | "print_html" | "web";
+export type UnitSystem = "metric" | "us_customary";
+export type Locale = "en_us" | "en_gb";
+
+export interface BookExportOptions {
+  formats: BookExportFormat[];
+  title?: string | null;
+  author?: string | null;
+  description?: string | null;
+  coverImage?: string | null;
+  unitSystem?: UnitSystem;
+  includeNutrition?: boolean;
+  toc?: boolean;
+  sectionDividers?: boolean;
+}
+
+export type StructuredInputFormat = "json_ld" | "json" | "yaml";
+
+export interface StructuredInput {
+  format: StructuredInputFormat;
+  content: string;
+}
+
+export interface ImportDraft {
+  title: string;
+  sourceText: string;
+  warnings: string[];
+}
+
+export interface PrefermentBuildRequest {
+  kind: string;
+  flourPct: number;
+  hydration: number;
+  inoculation?: number;
+  stage?: string;
+}
+
+export interface DoughTempRequest {
+  desiredDoughTemp: number;
+  frictionFactor: number;
+  flourTemp: number;
+  roomTemp: number;
+  prefermentTemp?: number | null;
+}
+
+export interface DoughTempResponse {
+  waterTemp: number;
+}
+
+export interface UnitConvertRequest {
+  value: number;
+  fromUnit: string;
+  toUnit: string;
+}
+
+export interface UnitConvertResponse {
+  value: number;
+  unit: string;
+  dimension: string;
+}
+
+export interface UnitFormatRequest {
+  value: number;
+  unit: string;
+  unitSystem?: UnitSystem;
+  locale?: Locale;
+}
+
+export interface UnitFormatResponse {
+  formatted: string;
+}
+
 export interface PublicImportSettings {
   apiKeyConfigured: boolean;
   openaiModel: string;
   useLocalOcr: boolean;
   tesseractCommand: string;
+  secretStoreBackend?: string | null;
 }
 export interface RecipeImageInput {
   fileName: string;
@@ -328,4 +445,32 @@ export interface RecipeNutritionResult {
 
 export interface NutritionCatalogStatus {
   catalogAvailable: boolean;
+}
+
+export interface RecipeImageAsset {
+  id: string;
+  recipeId: string;
+  handle: string;
+  /** 'cover' for the recipe hero, 'step' for a per-operation photo. */
+  role: string;
+  operationSymbol?: string | null;
+  mediaType: string;
+  fileName?: string | null;
+  byteSize: number;
+  createdAt: string;
+}
+
+export interface RecipeImageData {
+  asset: RecipeImageAsset;
+  dataBase64: string;
+}
+
+export interface UploadRecipeImageRequest {
+  /** Omit to have the server (or browser store) generate a stable handle. */
+  handle?: string;
+  role: string;
+  operationSymbol?: string | null;
+  mediaType: string;
+  fileName?: string | null;
+  dataBase64: string;
 }

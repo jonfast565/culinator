@@ -14,6 +14,7 @@ members = [
   "culinator-cli",
   "culinator-service",
   "culinator-scheduler",
+  "culinator-secrets",
   "culinator-desktop/src-tauri",
   "xtask",
 ]
@@ -45,6 +46,11 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 async-trait = "0.1"
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 tempfile = "3"
+serde_yaml = "0.9"
+keyring = "3"
+chacha20poly1305 = "0.10"
+sha2 = "0.10"
+rand = "0.8"
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

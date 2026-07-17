@@ -1,12 +1,12 @@
 mod execution;
 mod haccp;
+mod images;
 mod nutrition;
 mod repository;
+mod search;
 pub use repository::SqliteCatalogRepository;
 
-use culinator_core::{
-    Formula, FormulaBasis, FormulaIngredient, FormulaResult, Recipe, RecipeBook,
-};
+use culinator_core::{Formula, FormulaBasis, FormulaIngredient, FormulaResult, Recipe, RecipeBook};
 use rusqlite::{Connection, OptionalExtension, Result, Transaction, params};
 use std::collections::HashMap;
 
@@ -18,6 +18,8 @@ pub const MIGRATION_005: &str = include_str!("../../migrations/005_recipe_books.
 pub const MIGRATION_006: &str = include_str!("../../migrations/006_haccp.sql");
 pub const MIGRATION_007: &str = include_str!("../../migrations/007_kitchen_mode.sql");
 pub const MIGRATION_008: &str = include_str!("../../migrations/008_resource_nutrition_links.sql");
+pub const MIGRATION_009: &str = include_str!("../../migrations/009_recipe_images.sql");
+pub const MIGRATION_010: &str = include_str!("../../migrations/010_recipe_search.sql");
 
 #[derive(Debug, Clone)]
 pub struct RecipeRecord {
@@ -65,6 +67,14 @@ pub fn migrate(connection: &Connection) -> Result<()> {
         connection.execute_batch(MIGRATION_008)?;
         connection.pragma_update(None, "user_version", 8)?;
     }
+    if version < 9 {
+        connection.execute_batch(MIGRATION_009)?;
+        connection.pragma_update(None, "user_version", 9)?;
+    }
+    if version < 10 {
+        connection.execute_batch(MIGRATION_010)?;
+        connection.pragma_update(None, "user_version", 10)?;
+    }
     Ok(())
 }
 
@@ -72,6 +82,7 @@ pub fn save_recipe(connection: &mut Connection, recipe: &Recipe, source: &str) -
     let tx = connection.transaction()?;
     upsert_recipe(&tx, recipe, source)?;
     replace_recipe_entities(&tx, recipe)?;
+    search::index_recipe(&tx, recipe)?;
     tx.commit()
 }
 

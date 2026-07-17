@@ -63,9 +63,7 @@ pub fn run() {
                 "http://localhost:1420".to_owned(),
             ];
             let state = ServiceState::sqlite(database_path, settings_path)?;
-            if let Err(error) = state.seed_if_empty() {
-                eprintln!("Culinator sample recipes were not seeded: {error}");
-            }
+            // Sample seeding runs via service.initialize once the UI connects.
             let service = tauri::async_runtime::block_on(bind(
                 ServiceConfig {
                     state,

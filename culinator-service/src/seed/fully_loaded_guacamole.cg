@@ -2,6 +2,7 @@ culinator 0.3;
 
 recipe fully_loaded_guacamole {
     title "Fully Loaded Guacamole";
+    section "Starters";
 
     source "Alton Brown";
     publisher "Food Network / altonbrown.com";

@@ -1,5 +1,9 @@
 use crate::{ApplicationError, FormulaRepository};
-use culinator_core::{Formula, FormulaResult, PercentageConversion, PercentageView};
+use culinator_core::{
+    Formula, FormulaIngredient, FormulaResult, PercentageConversion, PercentageView, Preferment,
+    PrefermentKind, desired_dough_temperature,
+};
+use culinator_models::{DoughTempRequest, DoughTempResponse, PrefermentBuildRequest};
 use std::sync::Arc;
 use uuid::Uuid;
 
@@ -57,6 +61,36 @@ impl FormulaService {
         self.repository
             .save_formula_run(formula_id, target_mass_grams, &result)?;
         Ok(result)
+    }
+
+    pub fn build_preferment(
+        &self,
+        request: PrefermentBuildRequest,
+    ) -> Result<Vec<FormulaIngredient>, ApplicationError> {
+        let preferment = Preferment {
+            kind: PrefermentKind::parse(&request.kind)
+                .map_err(|error| ApplicationError::InvalidInput(error.to_string()))?,
+            flour_pct: request.flour_pct,
+            hydration: request.hydration,
+            inoculation: request.inoculation,
+            stage: request.stage,
+        };
+        Ok(preferment.build_stage())
+    }
+
+    pub fn dough_temp(
+        &self,
+        request: DoughTempRequest,
+    ) -> Result<DoughTempResponse, ApplicationError> {
+        Ok(DoughTempResponse {
+            water_temp: desired_dough_temperature(
+                request.desired_dough_temp,
+                request.friction_factor,
+                request.flour_temp,
+                request.room_temp,
+                request.preferment_temp,
+            ),
+        })
     }
 }
 

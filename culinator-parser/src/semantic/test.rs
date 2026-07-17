@@ -1,6 +1,6 @@
 use super::*;
 use culinator_core::{
-    BindingRole, Dimension, DependencyKind, DonenessKind, HeatLevel, LaborMode, ResourceKind, Value,
+    BindingRole, DependencyKind, Dimension, DonenessKind, HeatLevel, LaborMode, ResourceKind, Value,
 };
 
 fn op<'a>(recipe: &'a culinator_core::Recipe, symbol: &str) -> &'a culinator_core::Operation {
@@ -38,10 +38,16 @@ recipe guac {
     assert_eq!(op.process, "prep");
     assert_eq!(op.labor, Some(LaborMode::Active));
     assert_eq!(op.duration_max_seconds, Some(120));
-    assert!(op.bindings.iter().any(|b| b.role == BindingRole::Input
-        && b.resource == "jalapeno"));
-    assert!(op.bindings.iter().any(|b| b.role == BindingRole::Output
-        && b.resource == "minced_jalapeno"));
+    assert!(
+        op.bindings
+            .iter()
+            .any(|b| b.role == BindingRole::Input && b.resource == "jalapeno")
+    );
+    assert!(
+        op.bindings
+            .iter()
+            .any(|b| b.role == BindingRole::Output && b.resource == "minced_jalapeno")
+    );
     // The produced material becomes an implicit intermediate resource.
     let material = recipe
         .resources
@@ -50,7 +56,11 @@ recipe guac {
         .expect("output registered as intermediate");
     assert_eq!(material.kind, ResourceKind::Intermediate);
     // The process records the desugared operation.
-    let process = recipe.processes.iter().find(|p| p.symbol == "prep").unwrap();
+    let process = recipe
+        .processes
+        .iter()
+        .find(|p| p.symbol == "prep")
+        .unwrap();
     assert!(process.operations.contains(&"mince_jalapeno".to_string()));
 }
 
@@ -69,8 +79,11 @@ recipe guac {
         .find(|op| op.symbol == "dice_onion")
         .expect("prep desugared at recipe root");
     assert_eq!(op.labor, Some(LaborMode::Active));
-    assert!(op.bindings.iter().any(|b| b.role == BindingRole::Output
-        && b.resource == "onion_dice"));
+    assert!(
+        op.bindings
+            .iter()
+            .any(|b| b.role == BindingRole::Output && b.resource == "onion_dice")
+    );
 }
 
 fn parse_op_body(body: &str) -> culinator_core::Recipe {
@@ -161,13 +174,14 @@ fn operation_binding_partial_quantity() {
     assert_eq!(qty.value, 6.0);
     assert_eq!(qty.unit, "tbsp");
     // List form has no per-item quantity.
-    assert!(step
-        .bindings
-        .iter()
-        .find(|b| b.resource == "sugar")
-        .unwrap()
-        .quantity
-        .is_none());
+    assert!(
+        step.bindings
+            .iter()
+            .find(|b| b.resource == "sugar")
+            .unwrap()
+            .quantity
+            .is_none()
+    );
 }
 
 #[test]
@@ -185,7 +199,11 @@ recipe r {
   }
 }"#;
     let recipe = parse_semantic_recipe(source).expect("semantic recipe");
-    let garlic = recipe.resources.iter().find(|r| r.symbol == "garlic").unwrap();
+    let garlic = recipe
+        .resources
+        .iter()
+        .find(|r| r.symbol == "garlic")
+        .unwrap();
     assert!(garlic.optional);
     assert_eq!(garlic.substitutes.len(), 1);
     match garlic.properties.get("quantity") {
@@ -196,7 +214,11 @@ recipe r {
         other => panic!("expected ranged quantity, got {other:?}"),
     }
     // `clove` and `stick` now resolve to the Count dimension, not Ratio.
-    let butter = recipe.resources.iter().find(|r| r.symbol == "butter").unwrap();
+    let butter = recipe
+        .resources
+        .iter()
+        .find(|r| r.symbol == "butter")
+        .unwrap();
     assert!(butter.divided);
 }
 
@@ -207,7 +229,11 @@ recipe r {
   ingredient cheese measured by mass { quantity 8 oz; }
 }"#;
     let recipe = parse_semantic_recipe(source).expect("semantic recipe");
-    let cheese = recipe.resources.iter().find(|r| r.symbol == "cheese").unwrap();
+    let cheese = recipe
+        .resources
+        .iter()
+        .find(|r| r.symbol == "cheese")
+        .unwrap();
     match cheese.properties.get("quantity") {
         Some(Value::Quantity(q)) => assert_eq!(q.dimension, Dimension::Mass),
         other => panic!("expected mass quantity, got {other:?}"),

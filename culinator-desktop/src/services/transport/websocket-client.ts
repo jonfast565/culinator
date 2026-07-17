@@ -219,7 +219,7 @@ async function serviceClient(): Promise<WebSocketServiceClient> {
 }
 
 export async function serviceRpc<T>(method: string, params?: Record<string, unknown>): Promise<T> {
-  return (await serviceClient()).request<T>(method, params);
+  return (await serviceClient()).request<T>(method, params ?? {});
 }
 
 export async function serviceRequest<T>(path: string, init?: RequestInit): Promise<T> {

@@ -41,10 +41,7 @@ impl NutritionService {
         query: &str,
         limit: usize,
     ) -> Result<Vec<crate::NutritionSearchResult>, ApplicationError> {
-        let catalog = self
-            .catalog
-            .as_ref()
-            .ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
         if query.trim().is_empty() {
             return Err(ApplicationError::InvalidInput(
                 "search query cannot be empty".to_owned(),
@@ -70,10 +67,7 @@ impl NutritionService {
                 "resource symbol cannot be empty".to_owned(),
             ));
         }
-        let catalog = self
-            .catalog
-            .as_ref()
-            .ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
         let food = catalog
             .food(input.fdc_id)?
             .ok_or_else(|| ApplicationError::not_found("food"))?;
@@ -105,10 +99,7 @@ impl NutritionService {
         recipe_id: Uuid,
         request: CalculateRecipeNutritionRequest,
     ) -> Result<RecipeNutritionResult, ApplicationError> {
-        let catalog = self
-            .catalog
-            .as_ref()
-            .ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
         let document = self
             .recipes
             .get_recipe(recipe_id)?

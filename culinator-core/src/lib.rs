@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use uuid::Uuid;
 
+mod units;
+pub use units::*;
+
 pub type Symbol = String;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -49,7 +52,12 @@ impl Dimension {
     /// case-insensitive. Ambiguous single letters (`T`/`t` for tablespoon vs.
     /// teaspoon) are deliberately excluded — use the spelled-out abbreviations.
     pub fn from_unit(unit: &str) -> Dimension {
-        match unit.trim().trim_end_matches('.').to_ascii_lowercase().as_str() {
+        match unit
+            .trim()
+            .trim_end_matches('.')
+            .to_ascii_lowercase()
+            .as_str()
+        {
             // --- Mass / weight ---
             "g" | "gram" | "grams" | "gm" | "gms" => Dimension::Mass,
             "kg" | "kilogram" | "kilograms" | "kilo" | "kilos" => Dimension::Mass,
@@ -126,19 +134,7 @@ impl Quantity {
     /// Convert this quantity to grams, if it is a mass quantity with a known
     /// unit. Volume/count units return `None` (no density is assumed).
     pub fn as_grams(&self) -> Option<f64> {
-        if self.dimension != Dimension::Mass {
-            return None;
-        }
-        let factor = match self.unit.trim().to_ascii_lowercase().as_str() {
-            "g" | "gram" | "grams" | "gm" | "gms" => 1.0,
-            "kg" | "kilogram" | "kilograms" | "kilo" | "kilos" => 1000.0,
-            "mg" | "milligram" | "milligrams" => 0.001,
-            "oz" | "ounce" | "ounces" => 28.349_523_125,
-            "lb" | "lbs" | "pound" | "pounds" => 453.592_37,
-            "dram" | "drams" => 1.771_845_2,
-            _ => return None,
-        };
-        Some(self.value * factor)
+        units::quantity_as_grams(self)
     }
 }
 
@@ -168,7 +164,10 @@ pub enum Value {
     Object(BTreeMap<Symbol, Value>),
     /// An inclusive range, e.g. `2 to 3 clove` or `15 min to 20 min`. Both
     /// bounds are normally `Number` or `Quantity` values of the same dimension.
-    Range { min: Box<Value>, max: Box<Value> },
+    Range {
+        min: Box<Value>,
+        max: Box<Value>,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -455,6 +454,210 @@ pub enum PercentageView {
     Total,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PrefermentKind {
+    Poolish,
+    Biga,
+    Levain,
+    Sponge,
+    Soaker,
+    Tangzhong,
+}
+
+impl PrefermentKind {
+    pub fn parse(value: &str) -> Result<Self, FormulaError> {
+        match value.trim().to_ascii_lowercase().as_str() {
+            "poolish" => Ok(Self::Poolish),
+            "biga" => Ok(Self::Biga),
+            "levain" => Ok(Self::Levain),
+            "sponge" => Ok(Self::Sponge),
+            "soaker" => Ok(Self::Soaker),
+            "tangzhong" => Ok(Self::Tangzhong),
+            _ => Err(FormulaError::InvalidPrefermentKind {
+                kind: value.to_owned(),
+            }),
+        }
+    }
+
+    fn label(self) -> &'static str {
+        match self {
+            Self::Poolish => "poolish",
+            Self::Biga => "biga",
+            Self::Levain => "levain",
+            Self::Sponge => "sponge",
+            Self::Soaker => "soaker",
+            Self::Tangzhong => "tangzhong",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Preferment {
+    pub kind: PrefermentKind,
+    /// Share of total recipe flour allocated to this stage (reference percent).
+    pub flour_pct: f64,
+    /// Preferment hydration: water as a percentage of preferment flour.
+    pub hydration: f64,
+    /// Culture load relative to preferment flour (yeast % or starter %).
+    #[serde(default)]
+    pub inoculation: f64,
+    /// Stage symbol consumed by the multi-stage formula solver.
+    #[serde(default = "default_preferment_stage")]
+    pub stage: Symbol,
+}
+
+fn default_preferment_stage() -> Symbol {
+    "preferment".to_owned()
+}
+
+impl Preferment {
+    /// Emit reference-percent ingredients tagged with this preferment's stage.
+    pub fn build_stage(&self) -> Vec<FormulaIngredient> {
+        let stage = self.stage.clone();
+        let kind = self.kind.label();
+        let mut ingredients = Vec::with_capacity(if self.inoculation > 0.0 { 3 } else { 2 });
+
+        let mut flour_props = BTreeMap::new();
+        flour_props.insert(
+            "preferment_kind".into(),
+            Value::Text(self.kind.label().into()),
+        );
+        flour_props.insert("role".into(), Value::Text("flour".into()));
+        ingredients.push(FormulaIngredient {
+            id: Uuid::new_v4(),
+            symbol: format!("{stage}_flour"),
+            name: format!("{kind} flour"),
+            stage: stage.clone(),
+            basis: FormulaBasis::ReferencePercent,
+            percentage: Some(self.flour_pct),
+            mass_grams: None,
+            is_reference: false,
+            is_flour: true,
+            water_fraction: 0.0,
+            scalable: true,
+            properties: flour_props,
+        });
+
+        let mut water_props = BTreeMap::new();
+        water_props.insert(
+            "preferment_kind".into(),
+            Value::Text(self.kind.label().into()),
+        );
+        water_props.insert("role".into(), Value::Text("water".into()));
+        ingredients.push(FormulaIngredient {
+            id: Uuid::new_v4(),
+            symbol: format!("{stage}_water"),
+            name: format!("{kind} water"),
+            stage: stage.clone(),
+            basis: FormulaBasis::ReferencePercent,
+            percentage: Some(self.flour_pct * self.hydration / 100.0),
+            mass_grams: None,
+            is_reference: false,
+            is_flour: false,
+            water_fraction: 1.0,
+            scalable: true,
+            properties: water_props,
+        });
+
+        if self.inoculation > 0.0 && !matches!(self.kind, PrefermentKind::Soaker) {
+            let culture_pct = self.flour_pct * self.inoculation / 100.0;
+            let water_fraction = match self.kind {
+                PrefermentKind::Levain => 0.5,
+                _ => 0.0,
+            };
+            let mut culture_props = BTreeMap::new();
+            culture_props.insert(
+                "preferment_kind".into(),
+                Value::Text(self.kind.label().into()),
+            );
+            culture_props.insert("role".into(), Value::Text("culture".into()));
+            ingredients.push(FormulaIngredient {
+                id: Uuid::new_v4(),
+                symbol: format!("{stage}_culture"),
+                name: format!("{kind} culture"),
+                stage,
+                basis: FormulaBasis::ReferencePercent,
+                percentage: Some(culture_pct),
+                mass_grams: None,
+                is_reference: false,
+                is_flour: false,
+                water_fraction,
+                scalable: true,
+                properties: culture_props,
+            });
+        }
+
+        ingredients
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum IngredientRole {
+    Salt,
+    Fat,
+    Sugar,
+    Other,
+}
+
+fn property_truthy(value: Option<&Value>) -> bool {
+    match value {
+        Some(Value::Boolean(true)) => true,
+        Some(Value::Number(n)) => *n != 0.0,
+        _ => false,
+    }
+}
+
+fn ingredient_role(item: &FormulaIngredient) -> IngredientRole {
+    if let Some(Value::Text(role)) = item.properties.get("role") {
+        match role.to_ascii_lowercase().as_str() {
+            "salt" => return IngredientRole::Salt,
+            "fat" => return IngredientRole::Fat,
+            "sugar" => return IngredientRole::Sugar,
+            _ => {}
+        }
+    }
+    if property_truthy(item.properties.get("is_salt")) {
+        return IngredientRole::Salt;
+    }
+    if property_truthy(item.properties.get("is_fat")) {
+        return IngredientRole::Fat;
+    }
+    if property_truthy(item.properties.get("is_sugar")) {
+        return IngredientRole::Sugar;
+    }
+    IngredientRole::Other
+}
+
+fn liquid_equivalent_fraction(item: &FormulaIngredient) -> f64 {
+    if let Some(Value::Number(value)) = item.properties.get("liquid_equivalent") {
+        return *value;
+    }
+    if item.water_fraction > 0.0 {
+        return item.water_fraction;
+    }
+    match ingredient_role(item) {
+        IngredientRole::Fat => 0.16,
+        IngredientRole::Sugar => 0.0,
+        _ => 0.0,
+    }
+}
+
+/// Standard desired dough temperature (DDT) calculation. Without a preferment,
+/// `water_temp = 3×DDT − (flour + room + friction)`. With a preferment,
+/// multiply DDT by four and subtract the preferment temperature as well.
+pub fn desired_dough_temperature(
+    desired_dough_temp: f64,
+    friction_factor: f64,
+    flour_temp: f64,
+    room_temp: f64,
+    preferment_temp: Option<f64>,
+) -> f64 {
+    let factor = if preferment_temp.is_some() { 4.0 } else { 3.0 };
+    let known = flour_temp + room_temp + friction_factor + preferment_temp.unwrap_or(0.0);
+    factor * desired_dough_temp - known
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct FormulaIngredient {
     pub id: Uuid,
@@ -514,6 +717,14 @@ pub struct FormulaResult {
     pub total_mass_grams: f64,
     pub hydration_percent: f64,
     pub prefermented_flour_percent: f64,
+    #[serde(default)]
+    pub salt_percent: f64,
+    #[serde(default)]
+    pub fat_percent: f64,
+    #[serde(default)]
+    pub sugar_percent: f64,
+    #[serde(default)]
+    pub effective_hydration_percent: f64,
     pub lines: Vec<FormulaLineResult>,
 }
 
@@ -535,6 +746,7 @@ pub enum FormulaError {
     ReferencePercentMustEqualOneHundred,
     MissingReferenceIngredients,
     PercentOfTotalExceedsOneHundred,
+    InvalidPrefermentKind { kind: Symbol },
 }
 
 impl std::fmt::Display for FormulaError {
@@ -560,6 +772,9 @@ impl std::fmt::Display for FormulaError {
                 f,
                 "percent-of-total ingredients must total less than 100% when other scalable ingredients exist"
             ),
+            Self::InvalidPrefermentKind { kind } => {
+                write!(f, "unknown preferment kind `{kind}`")
+            }
         }
     }
 }
@@ -659,6 +874,10 @@ impl Formula {
         let mut total = 0.0;
         let mut flour = 0.0;
         let mut water = 0.0;
+        let mut effective_water = 0.0;
+        let mut salt = 0.0;
+        let mut fat = 0.0;
+        let mut sugar = 0.0;
         let mut prefermented_flour = 0.0;
         for item in &self.ingredients {
             let mass = match item.basis {
@@ -675,6 +894,13 @@ impl Formula {
                 flour += mass;
             }
             water += mass * item.water_fraction;
+            effective_water += mass * liquid_equivalent_fraction(item);
+            match ingredient_role(item) {
+                IngredientRole::Salt => salt += mass,
+                IngredientRole::Fat => fat += mass,
+                IngredientRole::Sugar => sugar += mass,
+                IngredientRole::Other => {}
+            }
             if item.is_flour && !matches!(item.stage.as_str(), "final" | "main") {
                 prefermented_flour += mass;
             }
@@ -702,6 +928,26 @@ impl Formula {
             },
             prefermented_flour_percent: if flour > 0.0 {
                 prefermented_flour / flour * 100.0
+            } else {
+                0.0
+            },
+            salt_percent: if flour > 0.0 {
+                salt / flour * 100.0
+            } else {
+                0.0
+            },
+            fat_percent: if flour > 0.0 {
+                fat / flour * 100.0
+            } else {
+                0.0
+            },
+            sugar_percent: if flour > 0.0 {
+                sugar / flour * 100.0
+            } else {
+                0.0
+            },
+            effective_hydration_percent: if flour > 0.0 {
+                effective_water / flour * 100.0
             } else {
                 0.0
             },

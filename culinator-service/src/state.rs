@@ -1,16 +1,24 @@
 use culinator_application::{
-    BookService, ExportService, FormulaService, HaccpService, ImportService, KitchenService,
-    NewRecipeBook, NutritionService, RecipeService, ScheduleService,
+    ApplicationError, BookService, ExportService, FormulaService, HaccpService, ImportService,
+    KitchenService, NewRecipeBook, NutritionService, RecipeService, ScheduleService, SearchService,
+    UnitService,
 };
-use culinator_export::StaticRecipeExporter;
-use culinator_import::{JsonSettingsStore, OpenAiRecipeInterpreter, TesseractCommandOcr};
-use culinator_models::{CatalogRepository, DocumentParser, NutritionCatalog, RecipeValidator};
+use culinator_export::{StaticRecipeBookExporter, StaticRecipeExporter};
+use culinator_import::{
+    JsonSettingsStore, OpenAiRecipeInterpreter, StructuredRecipeParser, TesseractCommandOcr,
+};
+use culinator_models::{
+    CatalogRepository, DocumentParser, NutritionCatalog, RecipeImageAsset, RecipeImageData,
+    RecipeValidator, UploadRecipeImageRequest,
+};
 use culinator_nutrition_fdc::SqliteNutritionCatalog;
 use culinator_parser::CulinatorParser;
 use culinator_scheduler::CriticalPathScheduler;
+use culinator_secrets::resolve_secret_store;
 use culinator_sqlite::SqliteCatalogRepository;
 use culinator_validator::CulinatorValidator;
 use std::{path::PathBuf, sync::Arc};
+use uuid::Uuid;
 
 /// Sample recipes used to seed a fresh catalog. These are Alton Brown recipes
 /// converted into the Culinator DSL for demonstration; each carries a source
@@ -32,6 +40,10 @@ pub struct ServiceState {
     exports: ExportService,
     imports: ImportService,
     schedules: ScheduleService,
+    search: SearchService,
+    units: UnitService,
+    images: Arc<dyn CatalogRepository>,
+    fdc_path: PathBuf,
 }
 
 impl ServiceState {
@@ -48,6 +60,13 @@ impl ServiceState {
         settings_path: PathBuf,
         fdc_path: PathBuf,
     ) -> Result<Self, culinator_application::ApplicationError> {
+        if !fdc_path.exists() {
+            culinator_nutrition_fdc::seed_minimal_catalog(&fdc_path).map_err(|error| {
+                culinator_application::ApplicationError::Internal(format!(
+                    "nutrition starter catalog: {error}"
+                ))
+            })?;
+        }
         let repository = Arc::new(SqliteCatalogRepository::new(db_path));
         repository.initialize()?;
         Ok(Self::with_dependencies(
@@ -55,7 +74,8 @@ impl ServiceState {
             Arc::new(CulinatorParser),
             Arc::new(CulinatorValidator),
             settings_path,
-            open_nutrition_catalog(fdc_path),
+            open_nutrition_catalog(fdc_path.clone()),
+            fdc_path,
         ))
     }
 
@@ -65,8 +85,14 @@ impl ServiceState {
         validator: Arc<dyn RecipeValidator>,
         settings_path: PathBuf,
         nutrition_catalog: Option<Arc<dyn NutritionCatalog>>,
+        fdc_path: PathBuf,
     ) -> Self {
         let schedules = ScheduleService::new(parser.clone(), Arc::new(CriticalPathScheduler));
+        let settings_dir = settings_path
+            .parent()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| settings_path.clone());
+        let secrets = resolve_secret_store(&settings_dir);
         Self {
             recipes: RecipeService::new(repository.clone(), parser.clone(), validator),
             books: BookService::new(repository.clone()),
@@ -79,16 +105,89 @@ impl ServiceState {
                 parser.clone(),
                 nutrition_catalog,
             ),
-            exports: ExportService::new(repository, parser.clone(), Arc::new(StaticRecipeExporter)),
+            exports: ExportService::new(
+                repository.clone(),
+                repository.clone(),
+                parser.clone(),
+                Arc::new(StaticRecipeExporter),
+                Arc::new(StaticRecipeBookExporter),
+            ),
             imports: ImportService::new(
                 Arc::new(TesseractCommandOcr),
                 Arc::new(OpenAiRecipeInterpreter::default()),
-                Arc::new(JsonSettingsStore::new(settings_path)),
+                Arc::new(StructuredRecipeParser),
+                Arc::new(JsonSettingsStore::new(settings_path, secrets.clone())),
+                secrets,
                 parser.clone(),
                 Arc::new(CulinatorValidator),
             ),
             schedules,
+            search: SearchService::new(repository.clone()),
+            units: UnitService::new(),
+            images: repository,
+            fdc_path,
         }
+    }
+
+    /// First-run orchestration: seed sample recipes when the catalog is empty and
+    /// ensure a starter nutrition dictionary exists when FDC has not been built.
+    pub fn initialize(
+        &self,
+    ) -> Result<culinator_models::InitReport, culinator_application::ApplicationError> {
+        let recipe_count_before = self.recipes.list()?.len() as i64;
+        let mut recipes_seeded = false;
+        if recipe_count_before == 0 {
+            self.seed_if_empty()?;
+            recipes_seeded = true;
+        }
+        let recipe_count = self.recipes.list()?.len() as i64;
+        Ok(culinator_models::InitReport {
+            catalog_ready: true,
+            recipes_seeded,
+            nutrition_ready: self.nutrition.catalog_available(),
+            nutrition_starter: self.fdc_path.exists(),
+            recipe_count,
+        })
+    }
+
+    pub fn init_status(
+        &self,
+    ) -> Result<culinator_models::InitReport, culinator_application::ApplicationError> {
+        Ok(culinator_models::InitReport {
+            catalog_ready: true,
+            recipes_seeded: !self.recipes.list()?.is_empty(),
+            nutrition_ready: self.nutrition.catalog_available(),
+            nutrition_starter: self.fdc_path.exists(),
+            recipe_count: self.recipes.list()?.len() as i64,
+        })
+    }
+
+    pub fn list_recipe_images(
+        &self,
+        recipe_id: Uuid,
+    ) -> Result<Vec<RecipeImageAsset>, ApplicationError> {
+        self.images.list_recipe_images(recipe_id)
+    }
+    pub fn get_recipe_image(
+        &self,
+        recipe_id: Uuid,
+        handle: &str,
+    ) -> Result<Option<RecipeImageData>, ApplicationError> {
+        self.images.get_recipe_image(recipe_id, handle)
+    }
+    pub fn upload_recipe_image(
+        &self,
+        recipe_id: Uuid,
+        input: UploadRecipeImageRequest,
+    ) -> Result<RecipeImageAsset, ApplicationError> {
+        self.images.upload_recipe_image(recipe_id, input)
+    }
+    pub fn delete_recipe_image(
+        &self,
+        recipe_id: Uuid,
+        handle: &str,
+    ) -> Result<bool, ApplicationError> {
+        self.images.delete_recipe_image(recipe_id, handle)
     }
 
     /// Populate a brand-new catalog with a handful of sample recipes so the
@@ -145,6 +244,14 @@ impl ServiceState {
 
     pub fn exports(&self) -> &ExportService {
         &self.exports
+    }
+
+    pub fn search(&self) -> &SearchService {
+        &self.search
+    }
+
+    pub fn units(&self) -> &UnitService {
+        &self.units
     }
 }
 

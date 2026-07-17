@@ -15,9 +15,10 @@ use crate::{
     ServiceState,
     auth::AccessPolicy,
     models::{
-        CreateRecipeRequest, ExportRecipeRequest, FormulaCalculationRequest, MoveRecipeRequest,
-        PercentageRequest, SaveRecipeBookRequest, SaveRecipeRequest, TranslateRecipeImagesRequest,
-        UpdateImportSettingsRequest, ValidateRequest,
+        CreateRecipeRequest, ExportBookRequest, ExportRecipeRequest, FormulaCalculationRequest,
+        MoveRecipeRequest, PercentageRequest, SaveRecipeBookRequest, SaveRecipeRequest,
+        StructuredImportRequest, TranslateRecipeImagesRequest, UpdateImportSettingsRequest,
+        ValidateRequest,
     },
     routes,
 };
@@ -320,6 +321,20 @@ async fn dispatch_inner(
             });
             Ok(Value::Null)
         }
+        "books.export" => {
+            let id = required_string(&params, "id")?;
+            let options =
+                serde_json::from_value(params.get("options").cloned().ok_or("Missing options")?)
+                    .map_err(to_string)?;
+            let axum::Json(value) = routes::exports::export_book(
+                axum::extract::Path(id),
+                State(state.service.clone()),
+                axum::Json(ExportBookRequest { options }),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         "recipes.move" => {
             let id = required_string(&params, "id")?;
             let book_id = params
@@ -383,6 +398,17 @@ async fn dispatch_inner(
                 routes::imports::translate(State(state.service.clone()), axum::Json(request))
                     .await
                     .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "imports.structured" => {
+            let request: StructuredImportRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) = routes::imports::import_structured(
+                State(state.service.clone()),
+                axum::Json(request),
+            )
+            .await
+            .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "recipes.schedule" => {
@@ -473,6 +499,24 @@ async fn dispatch_inner(
             )
             .await
             .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "formulas.preferment" => {
+            let request: culinator_models::PrefermentBuildRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) =
+                routes::formulas::preferment(State(state.service.clone()), axum::Json(request))
+                    .await
+                    .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "formulas.doughTemp" => {
+            let request: culinator_models::DoughTempRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let axum::Json(value) =
+                routes::formulas::dough_temp(State(state.service.clone()), axum::Json(request))
+                    .await
+                    .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
         "haccp.list" => {
@@ -734,7 +778,81 @@ async fn dispatch_inner(
             .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
+        "images.list" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let id = uuid::Uuid::parse_str(&recipe_id).map_err(to_string)?;
+            let value = state.service.list_recipe_images(id).map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "images.get" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let handle = required_string(&params, "handle")?;
+            let id = uuid::Uuid::parse_str(&recipe_id).map_err(to_string)?;
+            match state
+                .service
+                .get_recipe_image(id, &handle)
+                .map_err(to_string)?
+            {
+                Some(data) => serde_json::to_value(data).map_err(to_string),
+                None => Ok(Value::Null),
+            }
+        }
+        "images.upload" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let id = uuid::Uuid::parse_str(&recipe_id).map_err(to_string)?;
+            let request: culinator_models::UploadRecipeImageRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let value = state
+                .service
+                .upload_recipe_image(id, request)
+                .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"imageUploaded","recipeId":recipe_id,"handle":value.handle}),
+            });
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "images.delete" => {
+            let recipe_id = required_string(&params, "recipeId")?;
+            let handle = required_string(&params, "handle")?;
+            let id = uuid::Uuid::parse_str(&recipe_id).map_err(to_string)?;
+            state
+                .service
+                .delete_recipe_image(id, &handle)
+                .map_err(to_string)?;
+            state.publish(ServerEvent {
+                event: "recipes.changed".to_owned(),
+                payload: json!({"kind":"imageDeleted","recipeId":recipe_id,"handle":handle}),
+            });
+            Ok(Value::Null)
+        }
+        "search.query" => {
+            let query: culinator_models::SearchQuery =
+                serde_json::from_value(params).map_err(to_string)?;
+            let value = state.service.search().query(&query).map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "units.convert" => {
+            let request: culinator_models::UnitConvertRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let value = state.service.units().convert(&request).map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "units.format" => {
+            let request: culinator_models::UnitFormatRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let value = state.service.units().format(&request).map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         "service.ping" => Ok(json!({"status":"ok"})),
+        "service.initialize" => {
+            let value = state.service.initialize().map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
+        "service.status" => {
+            let value = state.service.init_status().map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         _ => Err(format!("Unknown RPC method: {method}")),
     }
 }

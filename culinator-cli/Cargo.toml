@@ -12,6 +12,8 @@ culinator-core = { path = "../culinator-core" }
 culinator-parser = { path = "../culinator-parser" }
 culinator-validator = { path = "../culinator-validator" }
 culinator-sqlite = { path = "../culinator-sqlite" }
+culinator-import = { path = "../culinator-import" }
+culinator-application = { path = "../culinator-application" }
 rusqlite.workspace = true
 serde_json.workspace = true
 

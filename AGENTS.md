@@ -60,6 +60,28 @@ material/ingredient state badges. Operation nodes stay editable via the inspecto
 sidebar (edits the original source by byte `range`, so do NOT desugar the whole
 source string — it would corrupt every offset).
 
+## Recipe images, sections, and the book UI
+
+- **`section`, `image` (recipe cover), `photo` (per-step)** are DSL properties that
+  ride the **generic `property` path** — the Rust `semantic.rs` parser stores them with
+  no special arm; only the frontend `parseUiModel` extracts them (`UiRecipeModel.section`
+  / `.coverImage`, `UiOperation.photo`). No Rust parser change was needed.
+- **Image values are either an external URL/`data:` URI (rendered directly) or an asset
+  handle**. Handle bytes live in the `recipe_images` side table (`migrations/009`), served
+  by `RecipeImageRepository` (port) → `culinator-sqlite/src/images.rs` →
+  `CatalogRepository` supertrait → `ServiceState::{list,get,upload,delete}_recipe_image`
+  → WS RPC `images.*` (`ws.rs`). Frontend: `services/api/image-api.ts` (serviceRpc +
+  localStorage fallback), resolved by `features/reading/components/RecipeImage.vue`.
+- **`recipe_images` is deliberately NOT in `replace_recipe_entities`** — that function
+  wipes+reinserts child rows on every `save_recipe`, which would destroy image bytes.
+  Images are managed only via the dedicated upload/delete methods and cascade-delete with
+  the recipe.
+- **Book UI** (`features/bookshelf/`): the shelf → open book (StPageFlip via
+  `usePageFlip.ts`) → reading page (`features/reading/`). A book's leaves (cover, auto-TOC
+  front matter, section dividers, recipe cards) are built by `bookContents.ts`. Editing is
+  the reading page + `EditDrawer.vue` (live preview); `sourcePatch.ts` patches `.cg`
+  properties in place.
+
 ## Test layout
 
 Sibling `test.rs` modules per source file; `autobins=false` gotcha for `src/bin`

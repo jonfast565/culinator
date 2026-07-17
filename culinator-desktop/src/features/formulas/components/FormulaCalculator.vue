@@ -8,11 +8,24 @@ import type {
   PercentageView,
 } from "../../../domain/types";
 import * as api from "../../../services/api";
+import UnitConverter from "../../units/components/UnitConverter.vue";
 
 const props = defineProps<{ recipeId: string }>();
 const targetMass = ref(1000);
 const result = ref<FormulaResult | null>(null);
 const error = ref("");
+const prefermentKind = ref("poolish");
+const prefermentFlourPct = ref(20);
+const prefermentHydration = ref(100);
+const prefermentInoculation = ref(0.1);
+const ddt = ref({
+  desired: 24,
+  friction: 2,
+  flour: 21,
+  room: 21,
+  preferment: null as number | null,
+});
+const waterTemp = ref<number | null>(null);
 function ingredient(name: string, percentage: number, reference = false): FormulaIngredient {
   return {
     id: crypto.randomUUID(),
@@ -54,6 +67,26 @@ async function convert(view: PercentageView): Promise<void> {
 }
 async function save(): Promise<void> {
   await api.saveFormula(formula);
+}
+async function addPreferment(): Promise<void> {
+  const lines = await api.buildPreferment({
+    kind: prefermentKind.value,
+    flourPct: prefermentFlourPct.value,
+    hydration: prefermentHydration.value,
+    inoculation: prefermentInoculation.value,
+  });
+  formula.ingredients.push(...lines);
+  await calculate();
+}
+async function computeWaterTemp(): Promise<void> {
+  const response = await api.calculateDoughTemp({
+    desiredDoughTemp: ddt.value.desired,
+    frictionFactor: ddt.value.friction,
+    flourTemp: ddt.value.flour,
+    roomTemp: ddt.value.room,
+    prefermentTemp: ddt.value.preferment,
+  });
+  waterTemp.value = response.waterTemp;
 }
 function add(): void {
   formula.ingredients.push(ingredient("Ingredient", 0));
@@ -108,6 +141,40 @@ onMounted(async () => {
       </div>
     </div>
     <button class="primary wide" @click="calculate">Calculate</button>
+    <section class="preferment-box">
+      <h4>Preferment builder</h4>
+      <div class="pref-grid">
+        <select v-model="prefermentKind">
+          <option value="poolish">Poolish</option>
+          <option value="biga">Biga</option>
+          <option value="levain">Levain</option>
+          <option value="sponge">Sponge</option>
+          <option value="soaker">Soaker</option>
+          <option value="tangzhong">Tangzhong</option>
+        </select>
+        <input v-model.number="prefermentFlourPct" type="number" placeholder="Flour %" />
+        <input v-model.number="prefermentHydration" type="number" placeholder="Hydration %" />
+        <input
+          v-model.number="prefermentInoculation"
+          type="number"
+          step="0.01"
+          placeholder="Inoculation"
+        />
+        <button @click="addPreferment">Add preferment</button>
+      </div>
+    </section>
+    <section class="preferment-box">
+      <h4>Dough temperature (DDT)</h4>
+      <div class="pref-grid">
+        <input v-model.number="ddt.desired" type="number" placeholder="Target °C" />
+        <input v-model.number="ddt.friction" type="number" placeholder="Friction" />
+        <input v-model.number="ddt.flour" type="number" placeholder="Flour °C" />
+        <input v-model.number="ddt.room" type="number" placeholder="Room °C" />
+        <button @click="computeWaterTemp">Water temp</button>
+      </div>
+      <p v-if="waterTemp != null">Water: {{ waterTemp.toFixed(1) }} °C</p>
+    </section>
+    <UnitConverter />
     <p v-if="error" class="error">{{ error }}</p>
     <dl v-if="result" class="metrics">
       <div>
@@ -118,9 +185,29 @@ onMounted(async () => {
         <dt>Hydration</dt>
         <dd>{{ result.hydration_percent.toFixed(1) }}%</dd>
       </div>
+      <div v-if="result.effective_hydration_percent != null">
+        <dt>Effective hydration</dt>
+        <dd>{{ result.effective_hydration_percent.toFixed(1) }}%</dd>
+      </div>
       <div>
         <dt>Flour</dt>
         <dd>{{ result.total_flour_grams.toFixed(1) }} g</dd>
+      </div>
+      <div v-if="result.salt_percent != null">
+        <dt>Salt</dt>
+        <dd>{{ result.salt_percent.toFixed(2) }}%</dd>
+      </div>
+      <div v-if="result.fat_percent != null">
+        <dt>Fat</dt>
+        <dd>{{ result.fat_percent.toFixed(2) }}%</dd>
+      </div>
+      <div v-if="result.sugar_percent != null">
+        <dt>Sugar</dt>
+        <dd>{{ result.sugar_percent.toFixed(2) }}%</dd>
+      </div>
+      <div>
+        <dt>Prefermented flour</dt>
+        <dd>{{ result.prefermented_flour_percent.toFixed(1) }}%</dd>
       </div>
     </dl>
   </section>

@@ -242,9 +242,26 @@
   }
   .method-step {
     display: grid;
-    grid-template-columns: 26px 1fr;
+    grid-template-columns: 26px 1fr auto;
     gap: 11px;
     align-items: start;
+  }
+  .step-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    justify-self: end;
+    white-space: nowrap;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: #e4efe6;
+    color: #28643b;
+    font-size: 11px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .step-time svg {
+    opacity: 0.75;
   }
   .step-number {
     display: grid;

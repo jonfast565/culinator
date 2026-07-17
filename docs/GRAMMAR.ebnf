@@ -1,6 +1,13 @@
 document       = "culinator", version, ";", recipe ;
 recipe         = "recipe", identifier, [ "as", type_ref ], block ;
 block          = "{", { declaration | property }, "}" ;
+(* Recipe-level metadata is carried as generic `property` entries (see below):
+   `title`, `source`, `publisher`, `source_url`, `attribution`,
+   `section "<chapter>";` — the book chapter this recipe belongs to, used to
+   group recipes and build a book's table of contents, and
+   `image "<handle-or-url>";` — the recipe cover image, either an uploaded
+   asset handle (bytes stored in the `recipe_images` table) or an external URL.
+   Unknown properties are accepted and preserved. *)
 declaration    = type_decl | resource_decl | formula_decl | process_decl | operation_decl | prep_decl | yield_decl | serving_decl ;
 type_decl      = "type", identifier, "as", type_ref, block ;
 resource_decl  = resource_kind, identifier, [ "as", type_ref ], [ measurement ], block
@@ -44,6 +51,9 @@ heat_field     = "heat", ( "low" | "medium_low" | "medium" | "medium_high" | "hi
    others take a descriptive string (or symbol). *)
 until_field    = "until", ( "internal_temp" | "visual" | "tester" | "texture" | "rise" ), value, ";" ;
 optional_field = "optional", [ ( "true" | "false" ) ], ";" ;
+(* An operation may also carry a generic `photo "<handle-or-url>";` property (a
+   per-step image: an uploaded asset handle or an external URL), parsed via the
+   generic `property` path like any unrecognized operation field. *)
 (* `prep <verb> <ingredient> [into <output>]` is sugar for an operation named
    `<verb>_<ingredient>` that takes the ingredient as input and produces the
    output material (defaulting to `<ingredient>_<verb>`). The optional block

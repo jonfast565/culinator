@@ -1,10 +1,14 @@
 import type {
+  DoughTempRequest,
+  DoughTempResponse,
   Formula,
+  FormulaIngredient,
   FormulaResult,
   PercentageConversion,
   PercentageView,
+  PrefermentBuildRequest,
 } from "../../domain/types";
-import { hasConfiguredService, serviceRequest } from "../transport/websocket-client";
+import { hasConfiguredService, serviceRequest, serviceRpc } from "../transport/websocket-client";
 
 const formulaKey = "culinator.demo.formulas";
 function stored(): Formula[] {
@@ -116,4 +120,27 @@ export async function listRecipeFormulas(recipeId: string): Promise<Formula[]> {
   if (hasConfiguredService())
     return serviceRequest(`/api/v1/recipes/${encodeURIComponent(recipeId)}/formulas`);
   return stored().filter((item) => item.recipe_id === recipeId);
+}
+
+export async function buildPreferment(
+  request: PrefermentBuildRequest,
+): Promise<FormulaIngredient[]> {
+  if (hasConfiguredService())
+    return serviceRpc("formulas.preferment", { ...request } as Record<string, unknown>);
+  return [];
+}
+
+export async function calculateDoughTemp(request: DoughTempRequest): Promise<DoughTempResponse> {
+  if (hasConfiguredService())
+    return serviceRpc("formulas.doughTemp", { ...request } as Record<string, unknown>);
+  const temps = [
+    request.roomTemp,
+    request.flourTemp,
+    request.frictionFactor,
+    request.prefermentTemp ?? request.roomTemp,
+  ];
+  const factor = request.prefermentTemp == null ? 3 : 4;
+  return {
+    waterTemp: (factor * request.desiredDoughTemp - temps.reduce((a, b) => a + b, 0)) / 1,
+  };
 }

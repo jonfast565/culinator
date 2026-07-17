@@ -64,6 +64,16 @@ export function useRecipeLibrary() {
     selectedBookId.value = bookId;
     await refresh(selectedRecipe.value.id);
   }
+  async function moveRecipes(ids: string[], bookId: string | null): Promise<void> {
+    if (!ids.length) return;
+    await Promise.all(ids.map((id) => api.moveRecipeToBook(id, bookId)));
+    await refresh(selectedRecipe.value?.id);
+  }
+  async function deleteRecipes(ids: string[]): Promise<void> {
+    if (!ids.length) return;
+    await Promise.all(ids.map((id) => api.deleteRecipe(id)));
+    await refresh();
+  }
 
   onMounted(() => {
     void refresh();
@@ -86,5 +96,7 @@ export function useRecipeLibrary() {
     renameBook,
     deleteBook,
     moveSelected,
+    moveRecipes,
+    deleteRecipes,
   };
 }

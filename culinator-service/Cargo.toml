@@ -18,6 +18,7 @@ culinator-nutrition-fdc = { path = "../culinator-nutrition-fdc" }
 axum.workspace = true
 culinator-export = { path = "../culinator-export" }
 culinator-import = { path = "../culinator-import" }
+culinator-secrets = { path = "../culinator-secrets" }
 base64.workspace = true
 culinator-core = { path = "../culinator-core" }
 culinator-parser = { path = "../culinator-parser" }
