@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { ChevronLeft, Search, Loader2, BookOpen, ListChecks } from "lucide-vue-next";
+import { ChevronLeft, Search, Loader2, BookOpen, ListChecks, X } from "lucide-vue-next";
 import { getRecipe } from "../../../services/api";
 import { parseUiModel } from "../../recipe-editor/model";
 import { buildLeaves, sectionOf, type LoadedRecipe } from "../bookContents";
@@ -24,15 +24,13 @@ const emit = defineEmits<{
 
 const mode = ref<"flip" | "manage">("flip");
 const useServiceSearch = ref(true);
+const searchOpen = ref(false);
 
 const bookTitle = computed(() => props.book?.title ?? "Unfiled recipes");
 const query = ref("");
 const loading = ref(false);
 const loaded = ref<LoadedRecipe[]>([]);
 
-// Load each recipe's document so cards and the table of contents can show the
-// parsed section, title, and summary. Re-runs whenever the book's recipe set
-// changes (add/remove/reorder).
 watch(
   () => props.recipes.map((recipe) => recipe.id).join("|"),
   async () => {
@@ -59,23 +57,33 @@ const filtered = computed<LoadedRecipe[]>(() => {
 });
 
 const leaves = computed(() => buildLeaves(bookTitle.value, filtered.value));
-
-// Remount the flip engine whenever the leaf set changes (StPageFlip owns its
-// DOM, so a fresh instance is safer than mutating pages in place).
 const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
+
+function handleSearchSelect(recipeId: string): void {
+  searchOpen.value = false;
+  emit("open-recipe", recipeId);
+}
 </script>
 
 <template>
   <div class="open-book">
     <header class="book-bar">
-      <button class="ghost" @click="emit('back')"><ChevronLeft :size="16" /> Shelf</button>
+      <button type="button" class="ghost" @click="emit('back')">
+        <ChevronLeft :size="16" /> Shelf
+      </button>
       <h1 class="book-name">{{ bookTitle }}</h1>
       <div class="book-tools">
         <div class="mode-toggle" role="tablist">
-          <button :class="{ active: mode === 'flip' }" title="Flip through" @click="mode = 'flip'">
+          <button
+            type="button"
+            :class="{ active: mode === 'flip' }"
+            title="Flip through"
+            @click="mode = 'flip'"
+          >
             <BookOpen :size="15" />
           </button>
           <button
+            type="button"
             :class="{ active: mode === 'manage' }"
             title="Manage recipes"
             @click="mode = 'manage'"
@@ -83,28 +91,42 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
             <ListChecks :size="15" />
           </button>
         </div>
-        <label class="book-search">
+        <button
+          v-if="useServiceSearch && book"
+          type="button"
+          class="tool-btn"
+          :class="{ active: searchOpen }"
+          title="Search this book"
+          @click="searchOpen = !searchOpen"
+        >
+          <Search :size="15" />
+        </button>
+        <label v-else class="book-search">
           <Search :size="15" />
           <input
-            v-if="!useServiceSearch"
             v-model="query"
             type="search"
-            placeholder="Search this book…"
+            placeholder="Search…"
             aria-label="Search recipes in this book"
           />
-          <span v-else class="search-hint">Service search active below</span>
         </label>
         <BookExportPanel v-if="book" :book-id="book.id" :book-title="book.title" />
       </div>
     </header>
 
-    <RecipeSearchPanel
-      v-if="useServiceSearch && book"
-      class="book-service-search"
-      :book-id="book.id"
-      placeholder="Search this book…"
-      @select="emit('open-recipe', $event)"
-    />
+    <div v-if="searchOpen && useServiceSearch && book" class="search-popover">
+      <div class="search-popover-head">
+        <strong>Search this book</strong>
+        <button type="button" class="icon-btn" aria-label="Close search" @click="searchOpen = false">
+          <X :size="16" />
+        </button>
+      </div>
+      <RecipeSearchPanel
+        :book-id="book.id"
+        placeholder="Search this book…"
+        @select="handleSearchSelect"
+      />
+    </div>
 
     <div v-if="loading" class="book-loading"><Loader2 :size="22" class="spin" /> Opening book…</div>
     <div v-else-if="!loaded.length" class="book-empty">
@@ -127,6 +149,7 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
 
 <style scoped>
 .open-book {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;
@@ -135,24 +158,26 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
 }
 .book-bar {
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 16px;
-  padding: 14px 18px;
+  gap: 12px;
+  padding: 8px 14px;
   border-bottom: 1px solid rgba(60, 50, 30, 0.14);
+  background: rgba(251, 249, 243, 0.72);
+  backdrop-filter: blur(6px);
 }
 .book-bar .ghost {
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: 34px;
-  padding: 0 12px;
+  height: 32px;
+  padding: 0 10px;
   background: rgba(255, 255, 255, 0.6);
   border: 1px solid #cbd3cd;
   border-radius: 8px;
   color: #23302a;
   font-size: 13px;
+  cursor: pointer;
 }
 .book-bar .ghost:hover {
   background: #fff;
@@ -160,16 +185,18 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
 .book-name {
   margin: 0;
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 600;
   text-align: center;
   color: #23302a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .book-tools {
-  justify-self: end;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 .mode-toggle {
   display: inline-flex;
@@ -179,29 +206,46 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
   overflow: hidden;
 }
 .mode-toggle button {
-  width: 36px;
-  height: 34px;
+  width: 34px;
+  height: 32px;
   display: grid;
   place-items: center;
   background: transparent;
   border: 0;
   color: #55635b;
+  cursor: pointer;
 }
 .mode-toggle button.active {
   background: #28643b;
   color: #fff;
 }
+.tool-btn {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #cbd3cd;
+  background: rgba(255, 255, 255, 0.75);
+  color: #55635b;
+  cursor: pointer;
+}
+.tool-btn:hover,
+.tool-btn.active {
+  background: #fff;
+  color: #28643b;
+}
 .book-search {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  height: 34px;
+  height: 32px;
   padding: 0 12px;
   background: rgba(255, 255, 255, 0.75);
   border: 1px solid #cbd3cd;
   border-radius: 999px;
   color: #6d7972;
-  max-width: 260px;
+  max-width: 200px;
 }
 .book-search input {
   border: 0;
@@ -212,12 +256,40 @@ const flipKey = computed(() => leaves.value.map((leaf) => leaf.key).join("|"));
   width: 100%;
   padding: 0;
 }
-.search-hint {
-  font-size: 12px;
-  color: #6d7972;
+.search-popover {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  z-index: 20;
+  width: min(92vw, 420px);
+  padding: 14px;
+  border: 1px solid #cbd3cd;
+  border-radius: 12px;
+  background: #fbf9f3;
+  box-shadow: 0 16px 40px -18px rgba(20, 30, 25, 0.35);
 }
-.book-service-search {
-  padding: 0 18px 12px;
+.search-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #23302a;
+}
+.icon-btn {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #55635b;
+  cursor: pointer;
+}
+.icon-btn:hover {
+  background: rgba(40, 100, 59, 0.08);
+  color: #28643b;
 }
 .book-loading,
 .book-empty {

@@ -10,16 +10,22 @@ const props = defineProps<{ leaves: BookLeaf[] }>();
 const emit = defineEmits<{ (event: "open-recipe", recipeId: string): void }>();
 
 const container = ref<HTMLElement | null>(null);
+const fallbackRef = ref<HTMLElement | null>(null);
 const flip = usePageFlip(container);
 
 function openRecipe(recipeId: string): void {
   emit("open-recipe", recipeId);
 }
 
+function fallbackFlipTo(page: number): void {
+  const pages = fallbackRef.value?.children;
+  if (!pages?.length) return;
+  const target = pages.item(Math.min(page, pages.length - 1)) as HTMLElement | null;
+  target?.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 onMounted(async () => {
   await nextTick();
-  // One frame so the flex container has measured its size before StPageFlip
-  // reads the bounding rect.
   requestAnimationFrame(() => flip.mount());
 });
 
@@ -28,10 +34,13 @@ defineExpose({ leafCount: () => props.leaves.length });
 
 <template>
   <div class="book-flip-wrap">
-    <!-- Fallback: plain scroll of leaves if StPageFlip can't initialise -->
-    <div v-if="flip.failed.value" class="flip-fallback">
+    <div v-if="flip.failed.value" ref="fallbackRef" class="flip-fallback">
       <div v-for="leaf in leaves" :key="leaf.key" class="fallback-page">
-        <BookLeafView :leaf="leaf" @open-recipe="openRecipe" @flip-to="() => {}" />
+        <BookLeafView
+          :leaf="leaf"
+          @open-recipe="openRecipe"
+          @flip-to="fallbackFlipTo"
+        />
       </div>
     </div>
 
@@ -50,6 +59,7 @@ defineExpose({ leafCount: () => props.leaves.length });
       <button class="flip-arrow" title="Previous page" @click="flip.prev()">
         <ChevronLeft :size="20" />
       </button>
+      <span class="page-indicator">{{ flip.currentPage.value + 1 }} / {{ flip.pageCount.value }}</span>
       <button class="flip-arrow" title="Next page" @click="flip.next()">
         <ChevronRight :size="20" />
       </button>
@@ -66,10 +76,11 @@ defineExpose({ leafCount: () => props.leaves.length });
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  padding: 8px 0 12px;
 }
 .book-flip {
-  width: min(94vw, 1000px);
-  height: min(76vh, 700px);
+  width: min(96vw, 1280px);
+  height: min(88vh, 920px);
 }
 .page {
   background: #fbf9f3;
@@ -77,8 +88,16 @@ defineExpose({ leafCount: () => props.leaves.length });
 
 .flip-controls {
   display: flex;
+  align-items: center;
   gap: 12px;
-  margin-top: 16px;
+  margin-top: 12px;
+}
+.page-indicator {
+  min-width: 72px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  color: #6d7972;
 }
 .flip-arrow {
   display: grid;
@@ -97,7 +116,7 @@ defineExpose({ leafCount: () => props.leaves.length });
 }
 
 .flip-fallback {
-  width: min(94vw, 720px);
+  width: min(96vw, 900px);
   max-height: 100%;
   overflow: auto;
   display: flex;
@@ -109,7 +128,7 @@ defineExpose({ leafCount: () => props.leaves.length });
   background: #fbf9f3;
   border-radius: 4px;
   box-shadow: 0 10px 30px -18px rgba(40, 40, 30, 0.5);
-  min-height: 320px;
+  min-height: 420px;
   display: flex;
 }
 </style>

@@ -1,5 +1,5 @@
 import type { UiRecipeModel } from "../recipe-editor/model";
-import { formatDuration } from "../recipe-editor/narrative";
+import { formatDuration, previewSteps } from "../recipe-editor/narrative";
 
 // Turns a book's loaded recipe models into an ordered list of book "leaves":
 // cover → table of contents (front matter) → [section divider → recipe cards]…
@@ -30,6 +30,8 @@ export type BookLeaf =
       title: string;
       summary: string;
       ingredients: string[];
+      steps: string[];
+      stepCount: number;
       cover?: string;
     };
 
@@ -90,6 +92,7 @@ export function buildLeaves(bookTitle: string, recipes: LoadedRecipe[]): BookLea
     for (const recipe of groups.get(section)!) {
       const page = leaves.length;
       const title = recipe.model.title || "Untitled recipe";
+      const operations = recipe.model.operations ?? [];
       leaves.push({
         kind: "recipe",
         key: `recipe-${recipe.id}`,
@@ -98,6 +101,8 @@ export function buildLeaves(bookTitle: string, recipes: LoadedRecipe[]): BookLea
         title,
         summary: summarize(recipe.model),
         ingredients: topIngredients(recipe.model),
+        steps: previewSteps(recipe.model, 4),
+        stepCount: operations.length,
         cover: recipe.model.coverImage,
       });
       toc.entries.push({ recipeId: recipe.id, title, section, page });

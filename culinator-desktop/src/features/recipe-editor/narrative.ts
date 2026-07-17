@@ -1,5 +1,8 @@
 import { computed, type ComputedRef, type Ref } from "vue";
 import type { UiOperation, UiRecipeModel, UiResource } from "./model";
+import { sortOperationsForDisplay } from "./operation-order";
+
+export { sortOperationsForDisplay } from "./operation-order";
 
 // Shared recipe-narrative derivation. Both the inspector's RecipeNarrative and
 // the full-screen reading page (RecipePage) render from this single source of
@@ -89,46 +92,10 @@ export function useRecipeNarrative(
     model.value.resources.filter((resource) => resource.kind === "ingredient"),
   );
 
-  const operations = computed(() => model.value.operations ?? []);
-
-  // Map every declared resource symbol to a human-readable label so steps can
-  // refer to ingredients and intermediate products by name, not by symbol.
-  const labelFor = computed(() => {
-    const map = new Map<string, string>();
-    for (const resource of model.value.resources) {
-      map.set(resource.symbol, resource.name || humanize(resource.symbol));
-    }
-    return map;
-  });
-
-  function inputNames(operation: UiOperation): string {
-    const names = operation.inputs.map((symbol) => labelFor.value.get(symbol) ?? humanize(symbol));
-    if (names.length === 0) return "";
-    if (names.length === 1) return names[0];
-    return `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
-  }
-
-  // A temperature setpoint reads "at 350 f"; a stovetop level reads "over medium heat".
-  function heatClause(operation: UiOperation): string {
-    if (operation.targetTemperature) return ` at ${operation.targetTemperature}`;
-    if (operation.heatLevel) return ` over ${humanize(operation.heatLevel)} heat`;
-    return "";
-  }
-
-  // Fold structured doneness cues into "…, until golden brown and it reaches 165 f internal".
-  function donenessClause(operation: UiOperation): string {
-    if (!operation.doneness?.length) return "";
-    const phrases = operation.doneness.map((cue) =>
-      cue.kind === "internal_temp" ? `it reaches ${cue.value} internal` : cue.value,
-    );
-    return `, until ${phrases.join(" and ")}`;
-  }
+  const operations = computed(() => sortOperationsForDisplay(model.value.operations ?? []));
 
   function describe(operation: UiOperation): string {
-    const verb = verbs[operation.action] ?? capitalize(humanize(operation.action));
-    const inputs = inputNames(operation);
-    const sentence = inputs ? `${verb} ${inputs}` : `${verb} ${humanize(operation.symbol)}`;
-    return `${sentence}${heatClause(operation)}${donenessClause(operation)}.`;
+    return describeOperation(model.value, operation);
   }
 
   // The step's time as a bare chip: a fixed time, an inclusive range
@@ -196,4 +163,45 @@ export function useRecipeNarrative(
   });
 
   return { ingredients, operations, rows, summary, describe, stepTime, stepMeta };
+}
+
+function labelMap(model: UiRecipeModel): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const resource of model.resources) {
+    map.set(resource.symbol, resource.name || humanize(resource.symbol));
+  }
+  return map;
+}
+
+/** Human-readable sentence for a step (verb, inputs, heat, doneness). */
+export function describeOperation(model: UiRecipeModel, operation: UiOperation): string {
+  const labels = labelMap(model);
+  const inputNames = operation.inputs
+    .map((symbol) => labels.get(symbol) ?? humanize(symbol))
+    .filter(Boolean);
+  let inputs = "";
+  if (inputNames.length === 1) inputs = inputNames[0];
+  else if (inputNames.length > 1) {
+    inputs = `${inputNames.slice(0, -1).join(", ")} and ${inputNames[inputNames.length - 1]}`;
+  }
+  const verb = verbs[operation.action] ?? capitalize(humanize(operation.action));
+  const sentence = inputs ? `${verb} ${inputs}` : `${verb} ${humanize(operation.symbol)}`;
+  let heat = "";
+  if (operation.targetTemperature) heat = ` at ${operation.targetTemperature}`;
+  else if (operation.heatLevel) heat = ` over ${humanize(operation.heatLevel)} heat`;
+  let doneness = "";
+  if (operation.doneness?.length) {
+    const phrases = operation.doneness.map((cue) =>
+      cue.kind === "internal_temp" ? `it reaches ${cue.value} internal` : cue.value,
+    );
+    doneness = `, until ${phrases.join(" and ")}`;
+  }
+  return `${sentence}${heat}${doneness}.`;
+}
+
+/** First N method steps in dependency order for compact previews. */
+export function previewSteps(model: UiRecipeModel, count = 4): string[] {
+  return sortOperationsForDisplay(model.operations ?? [])
+    .slice(0, count)
+    .map((operation) => describeOperation(model, operation));
 }

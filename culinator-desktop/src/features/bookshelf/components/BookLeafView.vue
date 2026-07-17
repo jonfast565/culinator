@@ -23,10 +23,15 @@ const emit = defineEmits<{
     <h2 class="leaf-heading">Contents</h2>
     <ul v-if="leaf.entries.length" class="toc-list">
       <li v-for="entry in leaf.entries" :key="entry.recipeId">
-        <button class="toc-entry" @click="emit('flip-to', entry.page)">
+        <button
+          type="button"
+          class="toc-entry"
+          :data-flip-to="entry.page"
+          @click="emit('flip-to', entry.page)"
+        >
           <span class="toc-title">{{ entry.title }}</span>
           <span class="toc-dots" aria-hidden="true"></span>
-          <span class="toc-page">{{ entry.page }}</span>
+          <span class="toc-page">{{ entry.page + 1 }}</span>
         </button>
       </li>
     </ul>
@@ -48,11 +53,30 @@ const emit = defineEmits<{
     <p class="recipe-eyebrow">{{ leaf.eyebrow }}</p>
     <h2 class="recipe-title">{{ leaf.title }}</h2>
     <p class="recipe-summary"><Clock :size="13" /> {{ leaf.summary }}</p>
-    <ul v-if="leaf.ingredients.length" class="recipe-ings">
-      <li v-for="(ingredient, index) in leaf.ingredients" :key="index">{{ ingredient }}</li>
-    </ul>
-    <button class="open-recipe" @click="emit('open-recipe', leaf.recipeId)">
-      Open recipe <ArrowRight :size="15" />
+
+    <div class="recipe-body">
+      <section v-if="leaf.ingredients.length" class="recipe-block">
+        <h3 class="block-label">Ingredients</h3>
+        <ul class="recipe-ings">
+          <li v-for="(ingredient, index) in leaf.ingredients" :key="index">{{ ingredient }}</li>
+        </ul>
+      </section>
+
+      <section v-if="leaf.steps.length" class="recipe-block">
+        <h3 class="block-label">Method</h3>
+        <ol class="recipe-steps">
+          <li v-for="(step, index) in leaf.steps" :key="index">{{ step }}</li>
+        </ol>
+        <p v-if="leaf.stepCount > leaf.steps.length" class="more-steps">
+          + {{ leaf.stepCount - leaf.steps.length }} more step{{
+            leaf.stepCount - leaf.steps.length === 1 ? "" : "s"
+          }}
+        </p>
+      </section>
+    </div>
+
+    <button type="button" class="open-recipe" @click="emit('open-recipe', leaf.recipeId)">
+      Open full recipe <ArrowRight :size="15" />
     </button>
   </div>
 </template>
@@ -66,7 +90,7 @@ const emit = defineEmits<{
   --herb: #28643b;
   --rule: #ddd9cc;
   height: 100%;
-  padding: clamp(22px, 4vw, 40px);
+  padding: clamp(20px, 3.5vw, 36px);
   overflow: hidden;
   color: var(--ink);
   display: flex;
@@ -171,14 +195,15 @@ const emit = defineEmits<{
 
 /* Recipe card */
 .card-cover {
-  margin: 0 0 16px;
+  margin: 0 0 14px;
   aspect-ratio: 16 / 9;
+  max-height: 38%;
   overflow: hidden;
   border-radius: 4px;
   box-shadow: 0 8px 20px -14px rgba(40, 40, 30, 0.5);
 }
 .recipe-eyebrow {
-  margin: 0 0 10px;
+  margin: 0 0 8px;
   font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -189,34 +214,72 @@ const emit = defineEmits<{
   margin: 0;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: clamp(24px, 3.6vw, 34px);
+  font-size: clamp(22px, 3.2vw, 30px);
   line-height: 1.08;
 }
 .recipe-summary {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 14px 0 18px;
+  margin: 10px 0 14px;
   font-size: 12px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
 }
+.recipe-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 16px;
+  overflow: hidden;
+}
+.recipe-block {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.block-label {
+  margin: 0 0 8px;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--herb);
+  font-weight: 700;
+}
 .recipe-ings {
   list-style: none;
   margin: 0;
-  padding: 16px 0 0;
-  border-top: 1px solid var(--rule);
+  padding: 0;
   color: #3a463f;
-  font-size: 14px;
-  line-height: 1.9;
-  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.65;
+  overflow: auto;
 }
 .recipe-ings li {
+  padding: 4px 0;
   border-bottom: 1px dotted var(--rule);
 }
+.recipe-steps {
+  margin: 0;
+  padding: 0 0 0 1.1em;
+  color: #3a463f;
+  font-size: 13px;
+  line-height: 1.55;
+  overflow: auto;
+}
+.recipe-steps li + li {
+  margin-top: 8px;
+}
+.more-steps {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+}
 .open-recipe {
-  margin-top: auto;
+  margin-top: 14px;
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -237,5 +300,11 @@ const emit = defineEmits<{
 .empty {
   color: var(--muted);
   font-style: italic;
+}
+
+@media (max-width: 520px) {
+  .recipe-body {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

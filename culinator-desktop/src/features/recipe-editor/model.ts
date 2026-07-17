@@ -268,6 +268,8 @@ export function parseUiModel(source: string): UiRecipeModel {
       });
     }
   }
+  operations.sort((a, b) => (a.range?.start ?? 0) - (b.range?.start ?? 0));
+
   const source_ = source.match(/\bsource\s+"([^"]+)"\s*;/)?.[1];
   const sourceUrl = source.match(/\bsource_url\s+"([^"]+)"\s*;/)?.[1];
   const attribution = source.match(/\battribution\s+"([^"]+)"\s*;/)?.[1];
