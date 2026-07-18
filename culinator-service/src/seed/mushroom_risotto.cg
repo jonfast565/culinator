@@ -1,0 +1,141 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe mushroom_risotto {
+    title "Mushroom Risotto";
+    section "Mains";
+    source "robert5800";
+    publisher "based.cooking";
+    source_url "https://based.cooking/mushroom-risotto/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 5 min;
+    total_time 35 min;
+
+    ingredient olive_oil measured by volume { }
+    ingredient shallot measured by count { quantity 1 count; }
+    ingredient garlic measured by count { quantity 4 clove; }
+    ingredient mushrooms measured by mass {
+        name "button or crimini mushrooms";
+        quantity 300 g;
+    }
+    ingredient rice measured by mass {
+        name "risotto rice";
+        quantity 400 g;
+        note "Arborio, Carnaroli, or Vialone Nano";
+    }
+    ingredient wine measured by volume {
+        name "white wine";
+        quantity 0.5 cup;
+        optional true;
+    }
+    ingredient stock measured by volume {
+        name "mushroom or chicken stock";
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient butter measured by volume {
+        quantity 2 tbsp;
+        state cold;
+    }
+    ingredient cheese measured by mass {
+        name "grated Pecorino or Parmesan";
+        to_taste true;
+    }
+
+    equipment skillet { name "wide skillet with tall sides"; }
+    equipment ladle { name "ladle"; }
+
+    material sauteed_aromatics measured by mass { }
+    material browned_mushrooms measured by mass { }
+    material toasted_rice measured by mass { }
+    material cooked_risotto measured by mass { }
+
+    process preparation {
+        prep mince shallot into minced_shallot {
+            note "finely mince";
+            duration 2 min;
+        }
+        prep mince garlic into minced_garlic {
+            note "finely mince";
+            duration 2 min;
+        }
+        prep slice mushrooms into sliced_mushrooms {
+            note "large pieces";
+            duration 3 min;
+        }
+    }
+
+    process cooking {
+        operation heat_oil does heat {
+            input [olive_oil];
+            equipment skillet;
+            heat medium_high;
+            note "a pot will also do the job";
+            duration 2 min;
+            labor monitor;
+            produces hot_oil;
+        }
+        operation saute does heat {
+            input [hot_oil, minced_shallot, minced_garlic];
+            after [heat_oil, mince_shallot, mince_garlic];
+            equipment skillet;
+            heat medium_high;
+            until visual "fragrant";
+            duration 2 min;
+            labor active;
+            produces sauteed_aromatics;
+        }
+        operation brown_mushrooms does heat {
+            input [sauteed_aromatics, sliced_mushrooms, salt];
+            after [saute, slice_mushrooms];
+            equipment skillet;
+            heat medium_high;
+            until visual "nicely browned and cooked down";
+            duration estimated 10 min;
+            labor active;
+            produces browned_mushrooms;
+        }
+        operation toast_rice does heat {
+            input [browned_mushrooms, rice];
+            after brown_mushrooms;
+            equipment skillet;
+            note "toasting develops nutty flavors, but overdoing it will affect the creaminess of the finished dish";
+            duration 1 min;
+            labor active;
+            produces toasted_rice;
+        }
+        operation deglaze does heat {
+            input [toasted_rice, wine];
+            after toast_rice;
+            optional true;
+            equipment skillet;
+            until visual "the alcohol has cooked off";
+            duration 2 min;
+            labor active;
+            produces deglazed_rice;
+        }
+        operation add_stock does heat {
+            input [toasted_rice, stock];
+            after [toast_rice, deglaze];
+            equipment skillet;
+            tool ladle;
+            note "ladle in the stock bit by bit, stirring constantly; timing depends on the brand of rice";
+            until texture "the rice is cooked but has a slight bite to it";
+            duration 20 min to 30 min;
+            labor active;
+            produces cooked_risotto;
+        }
+        operation finish does mix {
+            input [cooked_risotto, butter, cheese];
+            after add_stock;
+            equipment skillet;
+            note "off the heat, stir well to emulsify; check for final seasoning";
+            duration 2 min;
+            labor active;
+            produces risotto;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

@@ -32,7 +32,7 @@ pub async fn export_book(
 fn export_response(bundle: culinator_models::RecipeExportBundle) -> ExportRecipeResponse {
     ExportRecipeResponse {
         file_name: bundle.file_name,
-        media_type: "application/zip",
+        media_type: bundle.media_type,
         archive_base64: STANDARD.encode(bundle.archive),
         files: bundle.files.into_iter().map(|f| f.path).collect(),
     }

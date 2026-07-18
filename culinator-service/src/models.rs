@@ -226,7 +226,7 @@ pub struct StructuredImportRequest {
 #[serde(rename_all = "camelCase")]
 pub struct ExportRecipeResponse {
     pub file_name: String,
-    pub media_type: &'static str,
+    pub media_type: String,
     pub archive_base64: String,
     pub files: Vec<String>,
 }

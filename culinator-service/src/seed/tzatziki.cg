@@ -1,0 +1,98 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe tzatziki {
+    title "Tzatziki";
+    section "Starters";
+    publisher "based.cooking";
+    source_url "https://based.cooking/tzatziki/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 2 min;
+    total_time 8 min;
+
+    ingredient yogurt measured by volume {
+        name "Greek yogurt";
+        quantity 2 cup;
+    }
+    ingredient cucumber measured by length { quantity 3 inch; }
+    ingredient dill measured by count { name "fresh dill"; }
+    ingredient garlic measured by count { quantity 1 clove; }
+    ingredient olive_oil measured by volume { quantity 1 tsp; }
+    ingredient citrus measured by volume {
+        name "lemon or lime juice, or vinegar";
+        to_taste true;
+    }
+    ingredient salt measured by volume {
+        to_taste true;
+        note "a generous pinch";
+    }
+    ingredient pepper measured by volume {
+        to_taste true;
+        note "a small pinch";
+    }
+    ingredient extra_oil measured by volume {
+        name "extra olive oil";
+        optional true;
+    }
+
+    equipment grater { name "grater"; }
+    equipment towel { name "clean kitchen towel"; }
+    equipment mortar { name "mortar and pestle"; }
+    container bowl { name "serving bowl"; }
+
+    process preparation {
+        prep grate cucumber into grated_cucumber {
+            note "finely grate";
+            duration 2 min;
+        }
+        prep chop dill into chopped_dill { duration 1 min; }
+        operation strain_cucumber does strain {
+            input [grated_cucumber];
+            after grate_cucumber;
+            tool towel;
+            note "wring it out thoroughly";
+            duration 2 min;
+            labor active;
+            produces strained_cucumber;
+        }
+        operation mash_garlic does mix {
+            input [garlic, olive_oil];
+            tool mortar;
+            duration 2 min;
+            labor active;
+            produces garlic_paste;
+        }
+    }
+
+    process mixing {
+        operation combine does mix {
+            input [yogurt, strained_cucumber, chopped_dill, garlic_paste];
+            after [strain_cucumber, chop_dill, mash_garlic];
+            container bowl;
+            duration 1 min;
+            labor active;
+            produces tzatziki_base;
+        }
+        operation season does mix {
+            input [tzatziki_base, citrus, salt, pepper, extra_oil];
+            after combine;
+            container bowl;
+            note "squeeze in the citrus, season, and stir";
+            duration 1 min;
+            labor active;
+            produces tzatziki_dip;
+        }
+        operation chill does rest {
+            input [tzatziki_dip];
+            after season;
+            optional true;
+            note "a few hours in the fridge deepens the flavor";
+            duration up to 4 hour;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 3 count;
+    }
+}

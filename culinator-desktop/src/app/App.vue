@@ -36,7 +36,7 @@ const openBookRecipes = computed(() =>
   library.recipes.value.filter((recipe) => (recipe.bookId ?? null) === nav.bookId.value),
 );
 
-const clampInspector = (width: number): number => Math.min(760, Math.max(280, width));
+const clampInspector = (width: number): number => Math.max(280, width);
 const inspectorWidth = ref(
   clampInspector(Number(window.localStorage.getItem("cg:inspector-width")) || 390),
 );

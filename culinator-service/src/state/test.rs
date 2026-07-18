@@ -10,6 +10,20 @@ fn opens_and_migrates_database() {
 }
 
 #[test]
+fn initialize_makes_nutrition_catalog_available() {
+    let path =
+        std::env::temp_dir().join(format!("culinator-init-{}.sqlite3", uuid::Uuid::new_v4()));
+    let state =
+        ServiceState::sqlite(path.clone(), path.with_file_name("settings.json")).expect("state");
+    let report = state.initialize().expect("initialize");
+    assert!(report.nutrition_ready, "starter nutrition catalog is available");
+    assert!(report.nutrition_starter, "full USDA import is still pending");
+    let fdc_path = path.with_file_name("fdc.sqlite3");
+    let _ = std::fs::remove_file(&path);
+    let _ = std::fs::remove_file(fdc_path);
+}
+
+#[test]
 fn seeds_sample_recipes_only_once() {
     let path =
         std::env::temp_dir().join(format!("culinator-seed-{}.sqlite3", uuid::Uuid::new_v4()));

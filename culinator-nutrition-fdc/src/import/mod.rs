@@ -25,6 +25,25 @@ pub struct BuildReport {
     pub food_nutrients: u64,
 }
 
+/// Download the USDA full CSV archive and build a searchable SQLite catalog.
+pub fn download_and_build(
+    destination: impl AsRef<Path>,
+    release: &str,
+    url: &str,
+    replace: bool,
+) -> Result<BuildReport> {
+    let downloaded = tempfile::NamedTempFile::new()?;
+    let mut response = reqwest::blocking::get(url)?.error_for_status()?;
+    let mut target = downloaded.reopen()?;
+    std::io::copy(&mut response, &mut target).context("download USDA archive")?;
+    FdcDatabaseBuilder::build(&BuildOptions {
+        source: downloaded.path().to_path_buf(),
+        destination: destination.as_ref().to_path_buf(),
+        release: release.to_owned(),
+        replace,
+    })
+}
+
 pub struct FdcDatabaseBuilder;
 
 impl FdcDatabaseBuilder {
@@ -71,10 +90,15 @@ fn import_foods(
     report: &mut BuildReport,
 ) -> Result<()> {
     read_csv(root, "food.csv", |headers, row| {
+        let fdc_id = required_i64(headers, row, "fdc_id")?;
+        let description = optional(headers, row, "description")
+            .filter(|value| !value.is_empty())
+            .map(ToOwned::to_owned)
+            .unwrap_or_else(|| format!("USDA food {fdc_id}"));
         store.upsert_food(&FoodRecord {
-            fdc_id: required_i64(headers, row, "fdc_id")?,
+            fdc_id,
             data_type: required(headers, row, "data_type")?.to_owned(),
-            description: required(headers, row, "description")?.to_owned(),
+            description,
             food_category_id: optional_i64(headers, row, "food_category_id")?,
             publication_date: optional(headers, row, "publication_date").map(ToOwned::to_owned),
             brand_owner: None,
@@ -164,14 +188,19 @@ fn optional<'a>(headers: &StringRecord, row: &'a StringRecord, name: &str) -> Op
         .and_then(|i| row.get(i))
         .filter(|v| !v.is_empty())
 }
+fn parse_loose_i64(raw: &str) -> Result<i64> {
+    let raw = raw.trim();
+    raw.parse::<i64>()
+        .or_else(|_| raw.parse::<f64>().map(|value| value.trunc() as i64))
+        .with_context(|| format!("parse integer from {raw:?}"))
+}
+
 fn required_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<i64> {
-    Ok(required(headers, row, name)?.parse()?)
+    parse_loose_i64(required(headers, row, name)?)
 }
 fn optional_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<i64>> {
-    optional(headers, row, name)
-        .map(str::parse)
-        .transpose()
-        .map_err(Into::into)
+    Ok(optional(headers, row, name)
+        .and_then(|raw| parse_loose_i64(raw).ok()))
 }
 fn optional_f64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<f64>> {
     optional(headers, row, name)

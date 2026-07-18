@@ -1,0 +1,123 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain) following
+// docs/AI_RECIPE_CONVERSION.md, used to exercise the export prose generator.
+recipe banana_bread {
+    title "Banana Bread";
+    section "Breads & Baking";
+    source "martin-chrzanowski";
+    publisher "based.cooking";
+    source_url "https://based.cooking/banana-bread/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient flour measured by volume {
+        name "all-purpose flour";
+        quantity 2 cup;
+    }
+    ingredient baking_powder measured by volume { quantity 1.5 tsp; }
+    ingredient baking_soda measured by volume { quantity 0.5 tsp; }
+    ingredient cinnamon measured by volume { quantity 1 tsp; }
+    ingredient nutmeg measured by volume { quantity 0.25 tsp; }
+    ingredient ginger measured by volume {
+        name "ground ginger";
+        quantity 0.25 tsp;
+    }
+    ingredient salt measured by volume { quantity 0.25 tsp; }
+    ingredient bananas measured by count {
+        quantity 4 count to 5 count;
+        state ripe;
+        note "enough for 1 1/2 cups once mashed";
+    }
+    ingredient eggs measured by count { quantity 2 count; }
+    ingredient sugar measured by volume {
+        quantity 1 cup;
+        note "brown or white both work";
+    }
+    ingredient butter measured by volume { quantity 0.5 cup; }
+    ingredient walnuts measured by volume {
+        name "crushed walnuts";
+        quantity 0.25 cup;
+    }
+    ingredient pan_butter measured by volume {
+        name "butter or oil for the pan";
+        optional true;
+    }
+
+    container wet_bowl { name "mixing bowl"; }
+    container dry_bowl { name "second mixing bowl"; }
+    container loaf_pan { name "loaf pan"; }
+    equipment oven { name "oven"; }
+
+    material batter_mix measured by mass { }
+
+    process setup {
+        operation preheat does heat {
+            target oven;
+            temperature 350 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation grease does coat {
+            input pan_butter;
+            container loaf_pan;
+            note "butter or oil the pan lightly";
+            duration 1 min;
+            labor active;
+            produces greased_pan;
+        }
+    }
+
+    process mixing {
+        prep mash bananas into mashed_bananas { duration 3 min; }
+        operation mix_wet does mix {
+            input [eggs, mashed_bananas, butter, sugar];
+            after mash_bananas;
+            container wet_bowl;
+            duration 3 min;
+            labor active;
+            produces wet_mixture;
+        }
+        operation mix_dry does mix {
+            input [flour, baking_soda, baking_powder, cinnamon, nutmeg, ginger, salt];
+            container dry_bowl;
+            duration 2 min;
+            labor active;
+            produces dry_mixture;
+        }
+        operation combine does mix {
+            input [wet_mixture, dry_mixture, walnuts];
+            after [mix_wet, mix_dry];
+            container dry_bowl;
+            note "add the wet to the dry slowly while mixing";
+            until visual "no dry bits of flour remain";
+            duration 3 min;
+            labor active;
+            produces batter_mix;
+        }
+    }
+
+    process baking {
+        operation pour does move {
+            input [batter_mix];
+            after [combine, grease];
+            container loaf_pan;
+            duration 1 min;
+            labor active;
+            produces panned_batter;
+        }
+        operation bake does heat {
+            input [panned_batter];
+            after [pour, preheat];
+            container loaf_pan;
+            temperature 350 fahrenheit;
+            duration estimated 60 min;
+            until tester "a wooden skewer poked inside comes out clean";
+            labor passive;
+            produces banana_bread_loaf;
+        }
+    }
+
+    yield loaf measured by count {
+        amount 1 count;
+    }
+}

@@ -1,0 +1,127 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe roasted_chicken_breast {
+    title "Roasted Chicken Breast";
+    section "Mains";
+    source "michael";
+    publisher "based.cooking";
+    source_url "https://based.cooking/roasted-chicken-breast/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient chicken measured by count {
+        name "boneless skinless chicken breasts";
+        quantity 2 count;
+    }
+    ingredient water measured by volume {
+        note "enough to submerge the chicken";
+    }
+    ingredient brine_salt measured by volume {
+        name "salt";
+        note "enough to fully saturate the brine";
+    }
+    ingredient butter measured by count {
+        quantity 0.25 stick;
+        state melted;
+        note "per chicken breast";
+    }
+    ingredient pepper measured by volume { to_taste true; }
+    ingredient seasoning measured by volume {
+        optional true;
+        note "season with salt last";
+    }
+
+    container brine_bowl { name "large bowl"; }
+    container roasting_pan { name "roasting pan"; }
+    equipment thermometer { name "leave-in probe thermometer"; }
+    equipment foil { name "aluminum foil"; }
+    equipment brush { name "basting brush"; }
+    equipment oven { name "oven"; }
+
+    process brining {
+        operation brine does rest {
+            input [chicken, water, brine_salt];
+            container brine_bowl;
+            note "add salt to the water until fully saturated and keep the chicken submerged at room temperature";
+            duration 20 min to 40 min;
+            labor passive;
+            produces brined_chicken;
+        }
+        operation rinse_and_dry does strain {
+            input [brined_chicken];
+            after brine;
+            note "rinse the chicken, then dry it";
+            duration 2 min;
+            labor active;
+            produces dried_chicken;
+        }
+        operation preheat does heat {
+            target oven;
+            temperature 450 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+    }
+
+    process roasting {
+        operation transfer does move {
+            input [dried_chicken];
+            after rinse_and_dry;
+            container roasting_pan;
+            note "a casserole dish, oven-safe skillet, or baking pan works too";
+            duration 1 min;
+            labor active;
+            produces panned_chicken;
+        }
+        operation baste does coat {
+            input [panned_chicken, butter];
+            after transfer;
+            tool brush;
+            note "for best results, brush all sides of each breast";
+            duration 2 min;
+            labor active;
+            produces buttered_chicken;
+        }
+        operation season does coat {
+            input [buttered_chicken, pepper, seasoning];
+            after baste;
+            note "season with pepper first and salt last";
+            duration 1 min;
+            labor active;
+            produces seasoned_chicken;
+        }
+        operation insert_probe does mix {
+            input [seasoned_chicken];
+            after season;
+            tool thermometer;
+            note "into the thickest part of the smallest breast";
+            duration 1 min;
+            labor active;
+            produces probed_chicken;
+        }
+        operation roast does heat {
+            input [probed_chicken];
+            after [insert_probe, preheat];
+            container roasting_pan;
+            equipment oven;
+            temperature 450 fahrenheit;
+            until internal_temp 68 celsius;
+            duration estimated 25 min;
+            labor automated;
+            produces roasted_chicken;
+        }
+        operation rest does rest {
+            input [roasted_chicken];
+            after roast;
+            tool foil;
+            note "cover immediately with foil, leaving the probe inserted; carryover cooking should take it to at least 74 C / 165 F";
+            duration 10 min;
+            until internal_temp 74 celsius;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 2 count;
+    }
+}

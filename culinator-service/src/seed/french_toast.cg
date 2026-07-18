@@ -1,0 +1,102 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe french_toast {
+    title "French Toast";
+    section "Breakfast";
+    source "ryan-wilson";
+    publisher "based.cooking";
+    source_url "https://based.cooking/french-toast/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 5 min;
+    total_time 30 min;
+
+    ingredient eggs measured by count { quantity 2 count; }
+    ingredient milk measured by volume {
+        quantity 0.5 cup;
+        note "use 1/4 cup for a more solid consistency";
+    }
+    ingredient bread measured by count { quantity 5 slice; }
+    ingredient syrup measured by volume {
+        name "maple syrup";
+        optional true;
+    }
+    ingredient butter measured by volume {
+        name "butter for the pan";
+        note "you may need to add more between slices";
+    }
+
+    container bowl { name "bowl"; }
+    container plate { name "plate"; }
+    equipment pan { name "frying pan"; }
+    equipment beater { name "beater"; }
+    equipment butter_knife { name "butter knife"; }
+
+    material custard measured by volume { }
+
+    process batter {
+        operation butter_pan does coat {
+            input [butter];
+            equipment pan;
+            heat medium_low;
+            note "set the pan on the burner";
+            duration 1 min;
+            labor active;
+            produces buttered_pan;
+        }
+        operation crack_eggs does mix {
+            input [eggs, milk];
+            container bowl;
+            note "crack the eggs in first, then pour in the milk";
+            duration 1 min;
+            labor active;
+            produces egg_mixture;
+        }
+        operation beat does mix {
+            input [egg_mixture];
+            after crack_eggs;
+            container bowl;
+            tool beater;
+            note "break the yolks first";
+            until texture "a smooth, yellow liquid";
+            duration 2 min;
+            labor active;
+            produces custard;
+        }
+    }
+
+    process cooking {
+        operation dip does coat {
+            input [bread, custard];
+            after beat;
+            note "dip one side so the liquid coats the whole surface, scrape off any excess with a butter knife, then repeat for the other side";
+            duration 1 min;
+            repeat 5;
+            labor active;
+            produces soaked_bread;
+        }
+        operation fry does heat {
+            input [soaked_bread];
+            after [dip, butter_pan];
+            equipment pan;
+            heat medium_low;
+            until visual "golden brown on both sides";
+            duration 4 min;
+            repeat 5;
+            labor monitor;
+            produces cooked_toast;
+        }
+        operation serve does move {
+            input [cooked_toast, syrup];
+            after fry;
+            container plate;
+            note "stack and drench with maple syrup";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield slices measured by count {
+        amount 5 count;
+    }
+}

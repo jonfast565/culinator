@@ -11,14 +11,24 @@ use culinator_models::{
     CatalogRepository, DocumentParser, NutritionCatalog, RecipeImageAsset, RecipeImageData,
     RecipeValidator, UploadRecipeImageRequest,
 };
-use culinator_nutrition_fdc::SqliteNutritionCatalog;
+use culinator_nutrition_fdc::{
+    DEFAULT_FULL_DOWNLOAD_URL, SqliteNutritionCatalog, needs_full_catalog, seed_minimal_catalog,
+};
 use culinator_parser::CulinatorParser;
 use culinator_scheduler::CriticalPathScheduler;
 use culinator_secrets::resolve_secret_store;
 use culinator_sqlite::SqliteCatalogRepository;
 use culinator_validator::CulinatorValidator;
-use std::{path::PathBuf, sync::Arc};
+use std::{
+    path::PathBuf,
+    sync::{
+        Arc, RwLock,
+        atomic::{AtomicBool, Ordering},
+    },
+};
 use uuid::Uuid;
+
+const FDC_RELEASE: &str = "2026-04";
 
 /// Sample recipes used to seed a fresh catalog. These are Alton Brown recipes
 /// converted into the Culinator DSL for demonstration; each carries a source
@@ -44,6 +54,7 @@ pub struct ServiceState {
     units: UnitService,
     images: Arc<dyn CatalogRepository>,
     fdc_path: PathBuf,
+    nutrition_catalog: Arc<RwLock<Option<Arc<dyn NutritionCatalog>>>>,
 }
 
 impl ServiceState {
@@ -69,12 +80,13 @@ impl ServiceState {
         }
         let repository = Arc::new(SqliteCatalogRepository::new(db_path));
         repository.initialize()?;
+        let nutrition_catalog = Arc::new(RwLock::new(open_nutrition_catalog(fdc_path.clone())));
         Ok(Self::with_dependencies(
             repository.clone(),
             Arc::new(CulinatorParser),
             Arc::new(CulinatorValidator),
             settings_path,
-            open_nutrition_catalog(fdc_path.clone()),
+            nutrition_catalog,
             fdc_path,
         ))
     }
@@ -84,7 +96,7 @@ impl ServiceState {
         parser: Arc<dyn DocumentParser>,
         validator: Arc<dyn RecipeValidator>,
         settings_path: PathBuf,
-        nutrition_catalog: Option<Arc<dyn NutritionCatalog>>,
+        nutrition_catalog: Arc<RwLock<Option<Arc<dyn NutritionCatalog>>>>,
         fdc_path: PathBuf,
     ) -> Self {
         let schedules = ScheduleService::new(parser.clone(), Arc::new(CriticalPathScheduler));
@@ -103,7 +115,7 @@ impl ServiceState {
                 repository.clone(),
                 repository.clone(),
                 parser.clone(),
-                nutrition_catalog,
+                nutrition_catalog.clone(),
             ),
             exports: ExportService::new(
                 repository.clone(),
@@ -126,14 +138,17 @@ impl ServiceState {
             units: UnitService::new(),
             images: repository,
             fdc_path,
+            nutrition_catalog: nutrition_catalog.clone(),
         }
     }
 
     /// First-run orchestration: seed sample recipes when the catalog is empty and
-    /// ensure a starter nutrition dictionary exists when FDC has not been built.
+    /// ensure the nutrition dictionary exists (starter immediately, full USDA import
+    /// kicked off in the background when only the starter catalog is present).
     pub fn initialize(
         &self,
     ) -> Result<culinator_models::InitReport, culinator_application::ApplicationError> {
+        self.ensure_nutrition_catalog()?;
         let recipe_count_before = self.recipes.list()?.len() as i64;
         let mut recipes_seeded = false;
         if recipe_count_before == 0 {
@@ -145,7 +160,7 @@ impl ServiceState {
             catalog_ready: true,
             recipes_seeded,
             nutrition_ready: self.nutrition.catalog_available(),
-            nutrition_starter: self.fdc_path.exists(),
+            nutrition_starter: needs_full_catalog(&self.fdc_path),
             recipe_count,
         })
     }
@@ -157,9 +172,64 @@ impl ServiceState {
             catalog_ready: true,
             recipes_seeded: !self.recipes.list()?.is_empty(),
             nutrition_ready: self.nutrition.catalog_available(),
-            nutrition_starter: self.fdc_path.exists(),
+            nutrition_starter: needs_full_catalog(&self.fdc_path),
             recipe_count: self.recipes.list()?.len() as i64,
         })
+    }
+
+    fn ensure_nutrition_catalog(&self) -> Result<(), ApplicationError> {
+        if !self.nutrition.catalog_available() {
+            if !self.fdc_path.exists() {
+                seed_minimal_catalog(&self.fdc_path).map_err(|error| {
+                    ApplicationError::Internal(format!("nutrition starter catalog: {error}"))
+                })?;
+            }
+            if let Some(catalog) = open_nutrition_catalog(self.fdc_path.clone()) {
+                self.nutrition.set_catalog(Some(catalog));
+            }
+        }
+        if needs_full_catalog(&self.fdc_path) {
+            self.spawn_full_catalog_import();
+        }
+        Ok(())
+    }
+
+    fn spawn_full_catalog_import(&self) {
+        static DOWNLOADING: AtomicBool = AtomicBool::new(false);
+        if DOWNLOADING
+            .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+            .is_err()
+        {
+            return;
+        }
+
+        let fdc_path = self.fdc_path.clone();
+        let catalog_slot = self.nutrition_catalog.clone();
+        std::thread::spawn(move || {
+            let _guard = DownloadGuard(&DOWNLOADING);
+            eprintln!("Culinator: downloading USDA nutrition database…");
+            match culinator_nutrition_fdc::download_and_build(
+                &fdc_path,
+                FDC_RELEASE,
+                DEFAULT_FULL_DOWNLOAD_URL,
+                true,
+            ) {
+                Ok(report) => {
+                    eprintln!(
+                        "Culinator: nutrition database ready (foods={}, nutrients={}, food_nutrients={})",
+                        report.foods, report.nutrients, report.food_nutrients
+                    );
+                    if let Some(catalog) = open_nutrition_catalog(fdc_path) {
+                        *catalog_slot
+                            .write()
+                            .expect("nutrition catalog lock poisoned") = Some(catalog);
+                    }
+                }
+                Err(error) => {
+                    eprintln!("Culinator: USDA nutrition download/import failed: {error}");
+                }
+            }
+        });
     }
 
     pub fn list_recipe_images(
@@ -265,6 +335,14 @@ fn open_nutrition_catalog(path: PathBuf) -> Option<Arc<dyn NutritionCatalog>> {
             eprintln!("Culinator nutrition database could not be opened: {error}");
             None
         }
+    }
+}
+
+struct DownloadGuard<'a>(&'a AtomicBool);
+
+impl Drop for DownloadGuard<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Release);
     }
 }
 

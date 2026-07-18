@@ -1,0 +1,147 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe french_onion_soup {
+    title "French Onion Soup";
+    section "Soups";
+    source "joe-powerhouse";
+    publisher "based.cooking";
+    source_url "https://based.cooking/french-onion-soup/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 30 min;
+    total_time 180 min;
+
+    ingredient onions measured by count { quantity 6 count to 7 count; }
+    ingredient butter measured by count { quantity 1 stick; }
+    ingredient olive_oil measured by volume { quantity 0.5 cup; }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient baguette measured by count { quantity 1 loaf; }
+    ingredient chicken_broth measured by count { quantity 1 can; }
+    ingredient garlic measured by count { quantity 3 clove; }
+    ingredient brown_sugar measured by volume { quantity 0.25 cup; }
+    ingredient balsamic_vinegar measured by volume { to_taste true; }
+    ingredient worcestershire measured by volume {
+        name "Worcestershire sauce";
+        to_taste true;
+    }
+    ingredient soy_sauce measured by volume { to_taste true; }
+    ingredient beef_broth measured by volume { quantity 64 floz; }
+    ingredient bay_leaves measured by count { quantity 2 count to 3 count; }
+    ingredient cheese measured by mass {
+        name "melty cheese";
+        note "Gruyere or Swiss work well";
+        to_taste true;
+    }
+
+    container dutch_oven { name "Dutch oven"; }
+    container juice_bowl { name "bowl"; }
+    equipment wooden_spoon { name "wooden spoon"; }
+    equipment brush { name "pastry brush"; }
+    equipment oven { name "oven"; }
+    equipment broiler { name "broiler"; }
+
+    material sweated_onions measured by mass { }
+    material onion_juice measured by volume { }
+    material caramelized_onions measured by mass { state caramelized; }
+    material soup measured by volume { }
+
+    process onions {
+        prep slice onions into sliced_onions {
+            note "cut into quarter moons";
+            duration 10 min;
+        }
+        operation sweat does heat {
+            input [sliced_onions, butter, olive_oil, salt];
+            after slice_onions;
+            container dutch_oven;
+            heat medium_low;
+            duration 120 min;
+            until visual "soft, mostly shrunken down, and mostly covered by the butter, oil, and onion juice";
+            note "keep covered; stir occasionally at first and more often as the heat comes up";
+            labor monitor;
+            produces sweated_onions;
+        }
+        operation strain does strain {
+            input [sweated_onions];
+            after sweat;
+            container juice_bowl;
+            note "collect the juice; the onions go back into the pot";
+            duration 3 min;
+            labor active;
+            produces onion_juice;
+        }
+        operation caramelize does heat {
+            input [sweated_onions, chicken_broth, minced_garlic, brown_sugar, balsamic_vinegar, worcestershire, soy_sauce];
+            after [strain, mince_garlic];
+            container dutch_oven;
+            tool wooden_spoon;
+            heat medium_high;
+            duration estimated 30 min;
+            until visual "thoroughly caramelized with no liquid left to add";
+            note "deglaze with a little liquid whenever a fond forms, letting the pot dry between additions";
+            labor monitor;
+            produces caramelized_onions;
+        }
+    }
+
+    process bread {
+        prep slice baguette into baguette_slices { duration 3 min; }
+        operation brush_bread does coat {
+            input [baguette_slices, onion_juice];
+            after [slice_baguette, strain];
+            tool brush;
+            note "brush the onion juice over both sides of each slice";
+            duration 4 min;
+            labor active;
+            produces brushed_bread;
+        }
+        operation toast does heat {
+            input [brushed_bread];
+            after brush_bread;
+            equipment oven;
+            temperature 400 fahrenheit;
+            duration estimated 8 min;
+            until visual "toasted";
+            labor monitor;
+            produces toasted_bread;
+        }
+        operation melt_cheese does heat {
+            input [toasted_bread, cheese];
+            after toast;
+            equipment broiler;
+            duration estimated 3 min;
+            until visual "the cheese is melted";
+            labor monitor;
+            produces cheese_toasts;
+        }
+    }
+
+    process finish {
+        prep mince garlic into minced_garlic {
+            note "finely chopped";
+            duration 2 min;
+        }
+        operation simmer does heat {
+            input [caramelized_onions, beef_broth, bay_leaves];
+            after caramelize;
+            container dutch_oven;
+            heat medium;
+            duration estimated 15 min;
+            until visual "simmering";
+            note "keep covered";
+            labor monitor;
+            produces soup;
+        }
+        operation serve does move {
+            input [soup, cheese_toasts];
+            after [simmer, melt_cheese];
+            note "pour the soup over the bread, or float the bread on top";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 5 count;
+    }
+}

@@ -1,0 +1,102 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe banana_pancakes {
+    title "Banana Pancakes";
+    section "Breakfast";
+    source "ricky-linden";
+    publisher "based.cooking";
+    source_url "https://based.cooking/banana-pancakes/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 20 min;
+
+    ingredient flour measured by volume { quantity 1 cup; }
+    ingredient sugar measured by volume { quantity 1 tbsp; }
+    ingredient baking_powder measured by volume { quantity 2 tsp; }
+    ingredient milk measured by volume { quantity 1 cup; }
+    ingredient egg measured by count { quantity 1 count; }
+    ingredient bananas measured by count {
+        quantity 2 count;
+        state "very ripe";
+    }
+    ingredient salt measured by volume {
+        to_taste true;
+        note "just a little bit";
+    }
+    ingredient butter measured by volume {
+        name "butter for the pan";
+    }
+
+    container bowl { name "large mixing bowl"; }
+    equipment pan { name "frying pan"; }
+    equipment whisk { name "whisk"; }
+    equipment oven { name "oven"; }
+
+    material pancake_batter measured by volume { }
+
+    process batter {
+        operation mix_dry does mix {
+            input [flour, sugar, baking_powder, salt];
+            container bowl;
+            duration 1 min;
+            labor active;
+            produces dry_mixture;
+        }
+        operation whisk_in_milk does mix {
+            input [dry_mixture, milk, egg];
+            after mix_dry;
+            container bowl;
+            tool whisk;
+            until texture "no clumps remain in the batter";
+            duration 2 min;
+            labor active;
+            produces smooth_batter;
+        }
+        prep mash bananas into mashed_bananas { duration 2 min; }
+        operation fold_in_bananas does mix {
+            input [smooth_batter, mashed_bananas];
+            after [whisk_in_milk, mash_bananas];
+            container bowl;
+            note "mix well";
+            duration 1 min;
+            labor active;
+            produces pancake_batter;
+        }
+    }
+
+    process cooking {
+        operation heat_pan does heat {
+            input [butter];
+            equipment pan;
+            heat medium;
+            duration 2 min;
+            labor monitor;
+            produces buttered_pan;
+        }
+        operation cook_pancakes does heat {
+            input [pancake_batter];
+            after [fold_in_bananas, heat_pan];
+            equipment pan;
+            heat medium;
+            duration 2 min to 5 min;
+            repeat 8;
+            until visual "tiny air bubbles form on top; after turning, the bottom is browned";
+            note "make them smaller or bigger as you like; turn once the bubbles form";
+            labor monitor;
+            produces pancakes;
+        }
+        operation keep_warm does heat {
+            input [pancakes];
+            after cook_pancakes;
+            equipment oven;
+            optional true;
+            note "put finished pancakes on a plate in a low oven, or eat them as they get ready";
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

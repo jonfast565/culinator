@@ -9,7 +9,7 @@ use crate::{
     search_result_label,
 };
 use std::collections::HashMap;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
 use uuid::Uuid;
 
 #[derive(Clone)]
@@ -17,7 +17,7 @@ pub struct NutritionService {
     nutrition: Arc<dyn ResourceNutritionRepository>,
     recipes: Arc<dyn RecipeRepository>,
     parser: Arc<dyn DocumentParser>,
-    catalog: Option<Arc<dyn NutritionCatalog>>,
+    catalog: Arc<RwLock<Option<Arc<dyn NutritionCatalog>>>>,
 }
 
 impl NutritionService {
@@ -25,7 +25,7 @@ impl NutritionService {
         nutrition: Arc<dyn ResourceNutritionRepository>,
         recipes: Arc<dyn RecipeRepository>,
         parser: Arc<dyn DocumentParser>,
-        catalog: Option<Arc<dyn NutritionCatalog>>,
+        catalog: Arc<RwLock<Option<Arc<dyn NutritionCatalog>>>>,
     ) -> Self {
         Self {
             nutrition,
@@ -35,8 +35,26 @@ impl NutritionService {
         }
     }
 
+    pub fn set_catalog(&self, catalog: Option<Arc<dyn NutritionCatalog>>) {
+        *self
+            .catalog
+            .write()
+            .expect("nutrition catalog lock poisoned") = catalog;
+    }
+
     pub fn catalog_available(&self) -> bool {
-        self.catalog.is_some()
+        self.catalog
+            .read()
+            .expect("nutrition catalog lock poisoned")
+            .is_some()
+    }
+
+    fn catalog(&self) -> Result<Arc<dyn NutritionCatalog>, ApplicationError> {
+        self.catalog
+            .read()
+            .expect("nutrition catalog lock poisoned")
+            .clone()
+            .ok_or_else(Self::catalog_missing)
     }
 
     pub fn search_foods(
@@ -44,7 +62,7 @@ impl NutritionService {
         query: &str,
         limit: usize,
     ) -> Result<Vec<crate::NutritionSearchResult>, ApplicationError> {
-        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog()?;
         if query.trim().is_empty() {
             return Err(ApplicationError::InvalidInput(
                 "search query cannot be empty".to_owned(),
@@ -57,7 +75,7 @@ impl NutritionService {
         &self,
         request: FuzzyMatchRequest,
     ) -> Result<Vec<FuzzyFoodMatch>, ApplicationError> {
-        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog()?;
         if request.query.trim().is_empty() {
             return Err(ApplicationError::InvalidInput(
                 "search query cannot be empty".to_owned(),
@@ -129,7 +147,7 @@ impl NutritionService {
                 "resource symbol cannot be empty".to_owned(),
             ));
         }
-        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog()?;
         let food = catalog
             .food(input.fdc_id)?
             .ok_or_else(|| ApplicationError::not_found("food"))?;
@@ -161,7 +179,7 @@ impl NutritionService {
         recipe_id: Uuid,
         request: AutoLinkRequest,
     ) -> Result<AutoLinkResult, ApplicationError> {
-        self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        self.catalog()?;
         let document = self
             .recipes
             .get_recipe(recipe_id)?
@@ -246,7 +264,7 @@ impl NutritionService {
             });
         }
 
-        let catalog = self.catalog.as_ref().ok_or_else(Self::catalog_missing)?;
+        let catalog = self.catalog()?;
         let document = self
             .recipes
             .get_recipe(recipe_id)?

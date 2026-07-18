@@ -19,20 +19,41 @@ something non-obvious. `CLAUDE.md` links here.
   to follow these; that doc's "seed bug" call-outs are worked before/after
   examples.
 
-## Two things that must stay in sync (easy to forget)
+## Two parsers that must stay in sync (easy to forget)
 
-1. **Two parsers.** The Rust semantic parser (`culinator-parser/src/semantic.rs`)
-   is the source of truth for validation, scheduling, export. The frontend has a
-   *separate* regex parser (`culinator-desktop/src/features/recipe-editor/model.ts`,
-   `parseUiModel`) that drives the editor UI (outline, ingredients, visual
-   workflow graph). Any DSL syntax change usually needs to land in **both**, and
-   they should desugar identically.
-2. **Two seed copies.** Sample recipes exist as Rust `.cg` files in
-   `culinator-service/src/seed/*.cg` (loaded via `include_str!` in
-   `culinator-service/src/state.rs`) *and* as embedded template strings in
-   `culinator-desktop/src/services/api/seed-recipes.ts`. Update both; they had already
-   drifted once (frontend guac baked prep into ingredient names). When new
-   syntax lands, migrate the seeds to use it (user preference).
+**Two parsers.** The Rust semantic parser (`culinator-parser/src/semantic.rs`)
+is the source of truth for validation, scheduling, export. The frontend has a
+*separate* regex parser (`culinator-desktop/src/features/recipe-editor/model.ts`,
+`parseUiModel`) that drives the editor UI (outline, ingredients, visual
+workflow graph). Any DSL syntax change usually needs to land in **both**, and
+they should desugar identically.
+
+**Seed recipes.** Sample recipes live only as Rust `.cg` files in
+`culinator-service/src/seed/*.cg` (loaded via `include_str!` in
+`culinator-service/src/state.rs`). Recipes are stored exclusively in the
+backend, which seeds these on startup — the desktop app has no embedded copies.
+When new syntax lands, migrate the seeds to use it (user preference).
+
+## Two prose generators that must also stay in sync
+
+Step/ingredient prose is derived twice: the exporter
+(`culinator-export/src/content.rs`, used by plain text, markdown, web/print
+HTML, and EPUB) and the frontend narrative
+(`culinator-desktop/src/features/recipe-editor/narrative.ts`, used by the
+reading page, book previews, and kitchen mode). The sentence heuristics —
+multi-word symbol verbs ("mix_dry", "warm_up", "bake_covered"), lay-on verbs
+("Top X with Y", "Dip X in Y"), cook-style quantities (fractions, dropped
+`count` units, pluralized count nouns), `to_taste` phrasing, and °C/°F
+doneness — are mirrored between them; change both. The exporter additionally
+weaves in tools/containers/equipment, which the frontend doesn't model yet.
+
+**Prose audit corpus:** `examples/prose-audit/*.cg` holds 18 real recipes
+(based.cooking, public domain) converted per `docs/AI_RECIPE_CONVERSION.md`,
+chosen to stress the generator (phrasal verbs, internal-temp doneness, repeat
+batches, variant groups, divided ingredients). To eyeball the generated prose,
+render them with a tiny bin that calls `parse_recipe` + `StaticRecipeExporter`
+with the single `PlainText` format (`include_source: false` makes the bundle
+archive the bare text file).
 
 ## DSL specifics worth remembering
 

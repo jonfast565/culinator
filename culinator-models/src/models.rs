@@ -230,6 +230,10 @@ pub struct ExportFile {
 #[serde(rename_all = "camelCase")]
 pub struct RecipeExportBundle {
     pub file_name: String,
+    /// Media type of `archive`: "application/zip" for multi-file bundles, the
+    /// single file's own type when only one file was produced.
+    #[serde(default)]
+    pub media_type: String,
     pub files: Vec<ExportFile>,
     pub archive: Vec<u8>,
 }

@@ -1,0 +1,179 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe hummus {
+    title "Hummus";
+    section "Starters";
+    source "jacob-smith";
+    publisher "based.cooking";
+    source_url "https://based.cooking/hummus/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient chickpeas measured by count {
+        name "garbanzo beans";
+        quantity 1 can;
+    }
+    ingredient baking_soda measured by volume {
+        quantity 0.5 tsp;
+        note "alters the pH so the beans break down and shed their skins";
+    }
+    ingredient tahini measured by volume { quantity 0.5 cup; }
+    ingredient lemon_juice measured by volume {
+        quantity 0.25 cup;
+        to_taste true;
+        note "fresh preferred - about 1 1/2 to 2 lemons' worth";
+    }
+    ingredient garlic measured by count {
+        quantity 1 clove to 2 clove;
+        state "roughly chopped";
+        note "fresh or frozen pre-chopped, but not dry";
+    }
+    ingredient cumin measured by volume {
+        name "ground cumin";
+        quantity 0.25 tsp;
+        note "if whole, toast in a dry pan until fragrant before grinding";
+    }
+    ingredient zaatar measured by volume {
+        name "za'atar";
+        quantity 0.25 tsp;
+        optional true;
+    }
+    ingredient olive_oil measured by volume {
+        quantity 1 tbsp;
+        divided true;
+        note "plus more for serving";
+    }
+    ingredient salt measured by volume { quantity 0.25 tsp; }
+    ingredient ice_water measured by volume {
+        name "ice-cold water";
+        quantity 2 tbsp;
+    }
+    ingredient parsley measured by count {
+        name "fresh parsley";
+        optional true;
+        note "finely chopped, for serving";
+    }
+
+    container saucepan { name "small saucepan"; }
+    container serving_bowl { name "serving bowl"; }
+    equipment food_processor { name "food processor"; }
+    equipment strainer { name "mesh strainer"; }
+
+    material cooked_beans measured by mass { }
+    material garlic_lemon measured by volume { }
+    material whipped_tahini measured by mass { }
+
+    process beans {
+        operation rinse_beans does strain {
+            input [chickpeas];
+            equipment strainer;
+            note "drain and rinse";
+            duration 1 min;
+            labor active;
+            produces rinsed_beans;
+        }
+        operation boil_beans does heat {
+            input [rinsed_beans, baking_soda];
+            after rinse_beans;
+            container saucepan;
+            heat high;
+            note "cover with a few inches of water; you may need to reduce the heat after a few minutes to prevent boil-overs";
+            until visual "the skins begin to fall off and the beans look overcooked and mushy";
+            duration 20 min;
+            labor monitor;
+            produces boiled_beans;
+        }
+        operation drain_beans does strain {
+            input [boiled_beans];
+            after boil_beans;
+            equipment strainer;
+            note "rinse for at least 30 seconds with cold water to remove any lingering baking soda taste";
+            duration 1 min;
+            labor active;
+            produces cooked_beans;
+        }
+    }
+
+    process base {
+        operation pulse_garlic does mix {
+            input [garlic, lemon_juice, salt];
+            equipment food_processor;
+            note "scrape down the bowl as needed so the garlic chops finely";
+            until texture "a fine, uniform consistency";
+            duration 2 min;
+            labor active;
+            produces garlic_lemon;
+        }
+        operation mellow does rest {
+            input [garlic_lemon];
+            after pulse_garlic;
+            note "the raw garlic taste mellows";
+            duration 10 min;
+            labor passive;
+            produces mellowed_garlic;
+        }
+        operation blend_tahini does mix {
+            input [mellowed_garlic, tahini];
+            after mellow;
+            equipment food_processor;
+            note "scrape down the sides and bottom of the bowl";
+            until texture "creamy";
+            duration 1 min;
+            labor active;
+            produces tahini_base;
+        }
+        operation whip does mix {
+            input [tahini_base, ice_water];
+            after blend_tahini;
+            equipment food_processor;
+            note "drizzle in the ice water slowly with the processor running on high, scraping down the bowl as necessary";
+            until visual "the mixture lightens in color and thickens substantially";
+            duration 2 min;
+            labor active;
+            produces whipped_tahini;
+        }
+    }
+
+    process finishing {
+        operation blend does mix {
+            input [whipped_tahini, cooked_beans, cumin, zaatar];
+            input olive_oil 1 tbsp;
+            after [whip, drain_beans];
+            equipment food_processor;
+            note "pulse a few times, then run on high and drizzle in the olive oil as slowly as you can manage";
+            duration 1 min to 3 min;
+            until texture "smooth";
+            labor active;
+            produces hummus_paste;
+        }
+        operation transfer does move {
+            input [hummus_paste];
+            after blend;
+            container serving_bowl;
+            note "smooth out the surface with the back of a spoon, creating swirls for olive oil";
+            duration 1 min;
+            labor active;
+            produces plated_hummus;
+        }
+        operation top does coat {
+            input [plated_hummus, parsley];
+            after transfer;
+            note "top with additional olive oil, and optionally more za'atar or a sprinkling of sumac or dukkah";
+            duration 1 min;
+            labor active;
+            produces finished_hummus;
+        }
+        operation store does rest {
+            input [finished_hummus];
+            after top;
+            optional true;
+            note "serve immediately, or refrigerate in an airtight container";
+            duration up to 7 day;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 6 count;
+    }
+}

@@ -1,0 +1,134 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe greek_salad {
+    title "Greek Salad";
+    section "Salads";
+    source "joel-maxuel";
+    publisher "based.cooking";
+    source_url "https://based.cooking/greek-salad/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 15 min;
+
+    ingredient lettuce measured by volume {
+        name "assorted lettuce";
+        quantity 2 cup;
+    }
+    ingredient tomatoes measured by count { quantity 4 count; }
+    ingredient cucumber measured by count { quantity 1 count; }
+    ingredient bell_pepper measured by count { quantity 1 count; }
+    ingredient onion measured by count {
+        quantity 1 count;
+        size "small";
+    }
+    ingredient olives measured by volume {
+        name "pitted black olives";
+        quantity 0.5 cup;
+        note "preferably brine-cured";
+    }
+    ingredient feta measured by volume {
+        name "feta cheese";
+        quantity 0.6 cup;
+    }
+    ingredient olive_oil measured by volume { quantity 6 tbsp; }
+    ingredient vinegar measured by volume {
+        name "red wine vinegar";
+        quantity 1 tsp;
+    }
+    ingredient garlic measured by volume {
+        name "fresh garlic";
+        quantity 0.5 tsp;
+        state chopped;
+    }
+    ingredient oregano measured by volume { quantity 0.5 tsp; }
+    ingredient dill measured by volume {
+        name "dill weed";
+        quantity 0.5 tsp;
+    }
+    ingredient parsley measured by volume {
+        quantity 0.25 cup;
+        note "measured after chopping";
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient black_pepper measured by volume {
+        name "freshly ground black pepper";
+        to_taste true;
+    }
+    ingredient lemon_juice measured by volume {
+        name "fresh lemon juice";
+        quantity 2 tbsp;
+    }
+
+    container salad_bowl { name "salad bowl"; }
+    container small_bowl { name "small bowl"; }
+    equipment whisk { name "whisk"; }
+
+    material salad_base measured by mass { }
+    material dressing measured by volume { }
+
+    process preparation {
+        prep chop lettuce into chopped_lettuce {
+            note "chopped or torn";
+            duration 2 min;
+        }
+        prep wedge tomatoes into tomato_wedges {
+            note "wedged or sliced";
+            duration 2 min;
+        }
+        prep slice cucumber into sliced_cucumber {
+            note "seeded first";
+            duration 2 min;
+        }
+        prep slice bell_pepper into sliced_pepper {
+            note "seeded first";
+            duration 2 min;
+        }
+        prep slice onion into sliced_onion { duration 1 min; }
+        prep chop olives into chopped_olives {
+            note "coarsely chopped";
+            duration 1 min;
+        }
+        prep crumble feta into crumbled_feta { duration 1 min; }
+        prep chop parsley into chopped_parsley { duration 1 min; }
+    }
+
+    process assembly {
+        operation combine does mix {
+            input [chopped_lettuce, tomato_wedges, sliced_cucumber, sliced_onion, sliced_pepper, chopped_olives];
+            after [chop_lettuce, wedge_tomatoes, slice_cucumber, slice_onion, slice_bell_pepper, chop_olives];
+            container salad_bowl;
+            duration 2 min;
+            labor active;
+            produces salad_base;
+        }
+        operation whisk_dressing does mix {
+            input [olive_oil, vinegar, garlic, oregano, dill, chopped_parsley, salt, black_pepper, lemon_juice];
+            after chop_parsley;
+            container small_bowl;
+            tool whisk;
+            duration 2 min;
+            labor active;
+            produces dressing;
+        }
+        operation drizzle does coat {
+            input [salad_base, dressing];
+            after [combine, whisk_dressing];
+            container salad_bowl;
+            duration 1 min;
+            labor active;
+            produces dressed_salad;
+        }
+        operation sprinkle does coat {
+            input [dressed_salad, crumbled_feta];
+            after [drizzle, crumble_feta];
+            container salad_bowl;
+            note "serve right away";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count to 6 count;
+    }
+}

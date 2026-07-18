@@ -3,7 +3,10 @@
 
 use crate::store::SqliteNutritionCatalog;
 use culinator_models::{FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionImportStore};
+use rusqlite::{Connection, OptionalExtension};
 use std::path::Path;
+
+const STARTER_RELEASE: &str = "starter";
 
 const STARTER_FOODS: &[(&str, i64)] = &[
     ("All-purpose flour", 20001),
@@ -24,6 +27,30 @@ const NUTRIENT_PROTEIN: i64 = 1003;
 const NUTRIENT_FAT: i64 = 1004;
 const NUTRIENT_CARBS: i64 = 1005;
 
+pub fn catalog_release(path: impl AsRef<Path>) -> Option<String> {
+    metadata_value(path, "fdc_release")
+}
+
+fn metadata_value(path: impl AsRef<Path>, key: &str) -> Option<String> {
+    let connection = Connection::open(path).ok()?;
+    connection
+        .query_row(
+            "SELECT value FROM metadata WHERE key=?1",
+            [key],
+            |row| row.get(0),
+        )
+        .optional()
+        .ok()?
+}
+
+pub fn needs_full_catalog(path: impl AsRef<Path>) -> bool {
+    match catalog_release(&path) {
+        None => true,
+        Some(release) if release == STARTER_RELEASE => true,
+        Some(_) => metadata_value(path, "import_complete").as_deref() != Some("true"),
+    }
+}
+
 pub fn seed_minimal_catalog(path: impl AsRef<Path>) -> anyhow::Result<()> {
     let path = path.as_ref();
     if path.exists() {
@@ -33,7 +60,7 @@ pub fn seed_minimal_catalog(path: impl AsRef<Path>) -> anyhow::Result<()> {
         std::fs::create_dir_all(parent)?;
     }
     let mut store = SqliteNutritionCatalog::open(path)?;
-    store.begin_import("starter")?;
+    store.begin_import(STARTER_RELEASE)?;
     for nutrient in [
         NutrientDefinition {
             id: NUTRIENT_ENERGY,

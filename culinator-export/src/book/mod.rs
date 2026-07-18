@@ -45,9 +45,13 @@ impl RecipeBookExporter for StaticRecipeBookExporter {
             }
         }
 
+        if let [single] = files.as_slice() {
+            return Ok(crate::single_file_bundle(&title, single.clone()));
+        }
         let archive = zip_files(&files)?;
         Ok(RecipeExportBundle {
             file_name: format!("{}.zip", util::slug(&title)),
+            media_type: "application/zip".to_owned(),
             files,
             archive,
         })

@@ -1,5 +1,5 @@
 import type { UiRecipeModel } from "../recipe-editor/model";
-import { formatDuration, previewSteps } from "../recipe-editor/narrative";
+import { formatDuration, previewSteps, previewIngredients } from "../recipe-editor/narrative";
 
 // Turns a book's loaded recipe models into an ordered list of book "leaves":
 // cover → table of contents (front matter) → [section divider → recipe cards]…
@@ -55,10 +55,7 @@ export function summarize(model: UiRecipeModel): string {
 }
 
 function topIngredients(model: UiRecipeModel, count = 5): string[] {
-  return model.resources
-    .filter((resource) => resource.kind === "ingredient")
-    .slice(0, count)
-    .map((resource) => resource.name || resource.symbol.replaceAll("_", " "));
+  return previewIngredients(model, count);
 }
 
 export function buildLeaves(bookTitle: string, recipes: LoadedRecipe[]): BookLeaf[] {

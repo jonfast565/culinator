@@ -1,0 +1,158 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe meatloaf {
+    title "Meatloaf";
+    section "Mains";
+    source "ryan-wilson";
+    publisher "based.cooking";
+    source_url "https://based.cooking/meatloaf/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 30 min;
+    total_time 100 min;
+
+    ingredient beef measured by mass {
+        name "ground beef";
+        quantity 4.5 lb;
+        state thawed;
+    }
+    ingredient onion measured by count { quantity 1 count; }
+    ingredient bread measured by count { quantity 2 slice; }
+    ingredient eggs measured by count { quantity 4 count; }
+    ingredient milk measured by volume { quantity 0.25 cup; }
+    ingredient garlic_salt measured by volume { to_taste true; }
+    ingredient onion_powder measured by volume { to_taste true; }
+    ingredient mustard measured by volume {
+        divided true;
+        note "a moderate amount in the loaf, 1/4 cup in the sauce";
+    }
+    ingredient ketchup measured by volume {
+        name "sugar-free ketchup";
+        divided true;
+        note "a moderate amount in the loaf, 1/4 cup in the sauce";
+    }
+    ingredient sugar_cubes measured by count {
+        name "brown sugar cubes";
+        quantity 3 cube;
+    }
+    ingredient tomato_soup measured by count {
+        name "canned tomato soup";
+        quantity 1 can;
+    }
+    ingredient hot_sauce measured by volume {
+        optional true;
+        to_taste true;
+    }
+    ingredient hot_water measured by volume {
+        note "a little bit, to melt the sugar";
+    }
+
+    container mixing_bowl { name "big mixing bowl"; }
+    container sauce_bowl { name "bowl"; }
+    container dishes { name "2 or 3 greased oven-safe glass dishes"; }
+    equipment oven { name "oven"; }
+
+    material meat_mixture measured by mass { }
+    material sauce measured by volume { }
+
+    process loaf {
+        prep dice onion into diced_onion {
+            note "small pieces";
+            duration 2 min;
+        }
+        prep dice bread into diced_bread {
+            note "small pieces";
+            duration 1 min;
+        }
+        operation combine does mix {
+            input [beef, diced_onion, diced_bread, eggs, milk, mustard, ketchup, garlic_salt, onion_powder];
+            after [dice_onion, dice_bread];
+            container mixing_bowl;
+            note "mix well with clean hands and make sure you get the bottom";
+            duration 5 min;
+            labor active;
+            produces meat_mixture;
+        }
+        operation portion does move {
+            input [meat_mixture];
+            after combine;
+            container dishes;
+            note "distribute evenly, flatten the surface, then press a small channel down the middle of each loaf to keep its shape while cooking";
+            duration 5 min;
+            labor active;
+            produces shaped_loaves;
+        }
+        operation bake does heat {
+            input [shaped_loaves];
+            after portion;
+            container dishes;
+            equipment oven;
+            temperature 180 celsius;
+            duration 60 min;
+            labor passive;
+            produces baked_loaves;
+        }
+    }
+
+    process sauce_making {
+        operation melt_sugar does mix {
+            input [sugar_cubes, hot_water];
+            container sauce_bowl;
+            duration 2 min;
+            labor active;
+            produces sugar_syrup;
+        }
+        operation mix_sauce does mix {
+            input [sugar_syrup, tomato_soup, hot_sauce];
+            input ketchup 0.25 cup;
+            input mustard 0.25 cup;
+            after melt_sugar;
+            container sauce_bowl;
+            until visual "a thick, light red color";
+            note "start the sauce when about 15 minutes remain on the meatloaf timer";
+            duration 5 min;
+            labor active;
+            produces sauce;
+        }
+    }
+
+    process finishing {
+        operation check does heat {
+            input [baked_loaves];
+            after bake;
+            note "take the loaves out; cut open the thickest one and confirm the beef is cooked through";
+            duration 2 min;
+            labor active;
+            produces checked_loaves;
+        }
+        operation glaze does coat {
+            input [checked_loaves, sauce];
+            after [check, mix_sauce];
+            note "coat the top of each loaf evenly";
+            duration 2 min;
+            labor active;
+            produces glazed_loaves;
+        }
+        operation bake_again does heat {
+            input [glazed_loaves];
+            after glaze;
+            container dishes;
+            equipment oven;
+            temperature 180 celsius;
+            duration 10 min;
+            labor passive;
+            produces finished_loaves;
+        }
+        operation cool does rest {
+            input [finished_loaves];
+            after bake_again;
+            note "once cool, slice it up and serve";
+            duration 10 min;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 6 count;
+    }
+}

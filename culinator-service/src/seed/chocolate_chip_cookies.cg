@@ -1,0 +1,118 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe chocolate_chip_cookies {
+    title "Chocolate Chip Cookies";
+    section "Desserts";
+    source "mfed3";
+    publisher "based.cooking";
+    source_url "https://based.cooking/chocolate-chip-cookies/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 20 min;
+
+    ingredient butter measured by mass {
+        quantity 230 g;
+        state melted;
+        note "2 sticks";
+    }
+    ingredient flour measured by mass {
+        name "bread flour";
+        quantity 330 g;
+    }
+    ingredient salt measured by mass { quantity 5 g; }
+    ingredient baking_soda measured by mass { quantity 5 g; }
+    ingredient white_sugar measured by mass { quantity 100 g to 200 g; }
+    ingredient brown_sugar measured by mass { quantity 100 g to 200 g; }
+    ingredient egg measured by count { quantity 1 count; }
+    ingredient milk measured by mass { quantity 15 g; }
+    ingredient vanilla measured by mass { quantity 5 g; }
+    ingredient chocolate_chips measured by mass {
+        name "chocolate chips";
+        quantity 225 g;
+        note "50-70% dark or semi-sweet milk chocolate";
+    }
+
+    container dry_bowl { name "mixing bowl"; }
+    container wet_bowl { name "second bowl"; }
+    equipment mixer { name "mixer or whisk"; }
+    equipment scoop { name "ice cream scoop"; }
+    equipment baking_sheet { name "parchment-lined baking sheet"; }
+    equipment cooling_rack { name "cooling rack"; }
+    equipment oven { name "oven"; }
+
+    process dough {
+        operation preheat does heat {
+            target oven;
+            temperature 375 fahrenheit;
+            duration estimated 12 min;
+            labor automated;
+        }
+        operation mix_dry does mix {
+            input [flour, baking_soda, salt];
+            container dry_bowl;
+            duration 1 min;
+            labor active;
+            produces dry_mixture;
+        }
+        operation beat_wet does mix {
+            input [butter, white_sugar, brown_sugar, egg, vanilla, milk];
+            container wet_bowl;
+            tool mixer;
+            duration 3 min;
+            labor active;
+            produces wet_mixture;
+        }
+        operation combine does mix {
+            input [wet_mixture, dry_mixture, chocolate_chips];
+            after [mix_dry, beat_wet];
+            container wet_bowl;
+            note "stir in the dry ingredients first, then the chocolate chips";
+            duration 2 min;
+            labor active;
+            produces cookie_dough;
+        }
+        operation portion does move {
+            input [cookie_dough];
+            after combine;
+            tool scoop;
+            equipment baking_sheet;
+            note "make uniform balls of dough at the size you like and space them out evenly; use a second sheet if needed";
+            duration 5 min;
+            labor active;
+            produces dough_balls;
+        }
+    }
+
+    process baking {
+        operation bake does heat {
+            input [dough_balls];
+            after [portion, preheat];
+            equipment baking_sheet;
+            temperature 375 fahrenheit;
+            duration 8 min to 10 min;
+            until visual "just starting to brown";
+            note "one baking sheet at a time";
+            labor passive;
+            produces baked_cookies;
+        }
+        operation cool does rest {
+            input [baked_cookies];
+            after bake;
+            duration 3 min;
+            labor passive;
+            produces cooled_cookies;
+        }
+        operation rack does move {
+            input [cooled_cookies];
+            after cool;
+            equipment cooling_rack;
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

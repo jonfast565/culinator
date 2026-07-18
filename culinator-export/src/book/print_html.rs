@@ -1,5 +1,5 @@
 use super::util::{escape, group_recipes};
-use crate::content;
+use crate::{content, method_html};
 use culinator_core::Recipe;
 use culinator_models::BookExportOptions;
 
@@ -79,26 +79,25 @@ pub(crate) fn render(
         }
         for entry in &section.recipes {
             let content = content::extract(entry.recipe);
-            let ingredients = content
-                .ingredients
-                .iter()
-                .map(|item| format!("<li>{}</li>", escape(item)))
-                .collect::<String>();
-            let instructions = content
-                .instructions
-                .iter()
-                .map(|item| format!("<li>{}</li>", escape(item)))
-                .collect::<String>();
+            let equipment = method_html::equipment_html(&content);
+            let equipment_block = if equipment.is_empty() {
+                String::new()
+            } else {
+                format!("<h3>Equipment</h3>{equipment}")
+            };
             body.push_str(&format!(
                 r#"<section class="page recipe page-break" id="{slug}">
 <h2>{title}</h2>
-<h3>Ingredients</h3><ul>{ingredients}</ul>
-<h3>Method</h3><ol>{instructions}</ol>
+<p class="summary">{summary}</p>
+<h3>Ingredients</h3>{ingredients}
+{equipment_block}<h3>Method</h3>{method}
 </section>"#,
                 slug = entry.slug,
                 title = escape(&entry.recipe.title),
-                ingredients = ingredients,
-                instructions = instructions
+                summary = escape(&content.summary),
+                ingredients = method_html::ingredients_html(&content),
+                equipment_block = equipment_block,
+                method = method_html::method_html(&content, 4)
             ));
         }
     }

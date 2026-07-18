@@ -9,6 +9,10 @@ recipe easy_crepes {
     source_url "https://altonbrown.com/recipes/easy-crepes/";
     attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
 
+    // Times as stated by the source (active hands-on vs. total incl. chilling).
+    active_time 15 min;
+    total_time 85 min;
+
     ingredient eggs measured by count {
         name "eggs";
         quantity 2 count;
@@ -67,7 +71,8 @@ recipe easy_crepes {
     }
 
     equipment blender { name "blender"; }
-    equipment pan { name "10-inch nonstick pan"; }
+    // The pan is the vessel the crepes cook in, so it is a container.
+    container pan { name "10-inch nonstick pan"; }
 
     material crepe_batter measured by volume { }
     material rested_batter measured by volume { }
@@ -78,7 +83,7 @@ recipe easy_crepes {
             input [eggs, milk, water, flour, butter, salt];
             tool blender;
             note "pulse for 10 seconds until smooth";
-            duration 1 min;
+            duration 10 seconds to 15 seconds;
             labor active;
             produces crepe_batter;
         }
@@ -98,12 +103,12 @@ recipe easy_crepes {
             input [rested_batter];
             input pan_butter;
             after chill;
-            tool pan;
+            container pan;
             heat medium;
             duration 45 seconds to 90 seconds;
             repeat 11;
             until visual "edges begin to lift";
-            note "pour a scant 1/4 cup and swirl to coat; flip and cook about 30 seconds more; butter the pan between crepes";
+            note "heat the pan with butter until sizzling; pour a scant 1/4 cup and swirl to coat; flip and cook about 30 seconds more; butter the pan between crepes";
             labor active;
             produces cooked_crepes;
         }
@@ -113,7 +118,7 @@ recipe easy_crepes {
         operation store does rest {
             input [cooked_crepes];
             after cook;
-            note "cool flat, then stack separated by parchment; refrigerate several days or freeze up to 1 month";
+            note "cool flat, then stack separated by parchment; refrigerate several days or freeze up to 1 month; thaw frozen crepes on a rack before separating";
             duration up to 30 day;
             labor passive;
             optional true;

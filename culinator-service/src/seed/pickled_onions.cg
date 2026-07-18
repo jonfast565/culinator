@@ -1,0 +1,86 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe pickled_onions {
+    title "Pickled Red Onions";
+    section "Sauces & Basics";
+    source "aj";
+    publisher "based.cooking";
+    source_url "https://based.cooking/pickled-onions/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 20 min;
+
+    ingredient onions measured by count {
+        name "red onions";
+    }
+    ingredient vinegar measured by volume {
+        note "equal parts with the water";
+    }
+    ingredient water measured by volume {
+        note "equal parts with the vinegar";
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pickling_spices measured by volume {
+        name "herbs or pickling spices";
+        optional true;
+        note "add before sealing for different flavors";
+    }
+
+    container jar { name "jar"; }
+    container pot { name "pot"; }
+
+    material brine measured by volume { }
+
+    process pickling {
+        prep slice onions into sliced_onions {
+            note "cut in half, then slice root to stem";
+            duration 4 min;
+        }
+        operation fill_jar does move {
+            input [sliced_onions];
+            after slice_onions;
+            container jar;
+            duration 1 min;
+            labor active;
+            produces jarred_onions;
+        }
+        operation boil_brine does heat {
+            input [water, vinegar, salt];
+            container pot;
+            heat high;
+            until visual "it just begins to boil";
+            note "turn off the heat as soon as it boils";
+            duration estimated 8 min;
+            labor monitor;
+            produces brine;
+        }
+        operation pour does move {
+            input [brine, pickling_spices];
+            after [boil_brine, fill_jar];
+            container jar;
+            duration 1 min;
+            labor active;
+            produces filled_jar;
+        }
+        operation cool does rest {
+            input [filled_jar];
+            after pour;
+            duration estimated 30 min;
+            labor passive;
+            produces cooled_jar;
+        }
+        operation refrigerate does rest {
+            input [cooled_jar];
+            after cool;
+            note "seal the jar first";
+            until visual "vibrant pink";
+            duration 3 hour to 5 hour;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

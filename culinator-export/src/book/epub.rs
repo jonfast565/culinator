@@ -1,5 +1,5 @@
 use super::util::{escape, group_recipes};
-use crate::{content, label};
+use crate::{content, label, method_html};
 use culinator_core::Recipe;
 use culinator_models::{ApplicationError, BookExportOptions, NutritionFacts};
 use std::io::{Cursor, Write};
@@ -209,16 +209,12 @@ fn section_xhtml(title: &str) -> String {
 
 fn recipe_xhtml(recipe: &Recipe, options: &BookExportOptions, label_svg: &str) -> String {
     let content = content::extract(recipe);
-    let ingredients = content
-        .ingredients
-        .iter()
-        .map(|item| format!("<li>{}</li>", escape(item)))
-        .collect::<String>();
-    let instructions = content
-        .instructions
-        .iter()
-        .map(|item| format!("<li>{}</li>", escape(item)))
-        .collect::<String>();
+    let equipment = method_html::equipment_html(&content);
+    let equipment_block = if equipment.is_empty() {
+        String::new()
+    } else {
+        format!("<h2>Equipment</h2>{equipment}")
+    };
     let nutrition = if options.include_nutrition && !label_svg.is_empty() {
         "<h2>Nutrition Facts</h2><img src=\"../nutrition-facts.svg\" alt=\"Nutrition Facts\"/>"
             .to_string()
@@ -231,15 +227,18 @@ fn recipe_xhtml(recipe: &Recipe, options: &BookExportOptions, label_svg: &str) -
 <link rel="stylesheet" type="text/css" href="../style.css"/></head>
 <body>
 <h1>{title}</h1>
+<p>{summary}</p>
 <p>{description}</p>
-<h2>Ingredients</h2><ul>{ingredients}</ul>
-<h2>Method</h2><ol>{instructions}</ol>
+<h2>Ingredients</h2>{ingredients}
+{equipment_block}<h2>Method</h2>{method}
 {nutrition}
 </body></html>"#,
         title = escape(&recipe.title),
+        summary = escape(&content.summary),
         description = escape(options.description.as_deref().unwrap_or("")),
-        ingredients = ingredients,
-        instructions = instructions,
+        ingredients = method_html::ingredients_html(&content),
+        equipment_block = equipment_block,
+        method = method_html::method_html(&content, 3),
         nutrition = nutrition
     )
 }

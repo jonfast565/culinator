@@ -1,0 +1,80 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe gluehwein {
+    title "Gluehwein (Mulled Wine)";
+    section "Drinks";
+    source "bernhard-egger";
+    publisher "based.cooking";
+    source_url "https://based.cooking/gluehwein/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient cassis_juice measured by volume {
+        name "cassis juice";
+        quantity 300 ml;
+        note "cranberry pomegranate juice also works";
+    }
+    ingredient red_wine measured by volume {
+        name "red wine";
+        quantity 700 ml;
+        note "Primitivo/Zinfandel is good; don't buy a cheap cooking wine";
+    }
+    ingredient sugar measured by mass { quantity 50 g; }
+    ingredient raisins measured by mass { quantity 25 g; }
+    ingredient orange measured by count { quantity 1 count; }
+    ingredient cinnamon_bark measured by count {
+        quantity 1 count;
+        variant "whole spices";
+    }
+    ingredient ginger_powder measured by volume {
+        quantity 1 spoon;
+        note "or a bit of fresh ginger";
+        variant "whole spices";
+    }
+    ingredient cloves measured by volume {
+        quantity 1 spoon;
+        variant "whole spices";
+    }
+    ingredient star_anise measured by count {
+        quantity 5 count;
+        variant "whole spices";
+    }
+    ingredient tea_bags measured by count {
+        name "sweet cinnamon tea bags";
+        quantity 6 count;
+        note "they contain most of the spices";
+        variant "shortcut";
+    }
+
+    container pot { name "pot"; }
+
+    process mulling {
+        prep cut orange into orange_pieces {
+            note "nice looking pieces - they are mainly decoration";
+            duration 2 min;
+        }
+        operation combine does mix {
+            input [cassis_juice, red_wine, sugar, raisins, orange_pieces, cinnamon_bark, ginger_powder, cloves, star_anise];
+            after cut_orange;
+            container pot;
+            duration 2 min;
+            labor active;
+            produces mulled_wine_base;
+        }
+        operation warm_up does heat {
+            input [mulled_wine_base];
+            after combine;
+            container pot;
+            heat low;
+            until visual "steaming hot";
+            note "do not let it boil";
+            duration estimated 10 min;
+            labor monitor;
+            produces gluehwein_drink;
+        }
+    }
+
+    yield servings measured by count {
+        amount 1 count to 4 count;
+    }
+}

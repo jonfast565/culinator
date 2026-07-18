@@ -1,0 +1,112 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe sweet_potato_fries {
+    title "Basic Sweet Potato Fries";
+    section "Sides";
+    source "shane-kunz";
+    publisher "based.cooking";
+    source_url "https://based.cooking/sweet-potato-fries/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient sweet_potatoes measured by count {
+        quantity 1 count to 2 count;
+        note "try different types";
+    }
+    ingredient olive_oil measured by volume { }
+    ingredient cinnamon measured by volume { to_taste true; }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pepper measured by volume {
+        optional true;
+        to_taste true;
+    }
+    ingredient rosemary measured by volume {
+        optional true;
+        to_taste true;
+    }
+
+    equipment sheet_pan { name "sheet pan"; }
+    equipment parchment { name "parchment paper"; }
+    equipment cutting_board { name "cutting board"; }
+    equipment knife { name "sharp knife"; }
+    equipment tongs { name "rubber tongs"; }
+    equipment oven { name "oven"; }
+
+    material seasoned_fries measured by mass { }
+
+    process setup {
+        operation preheat does heat {
+            target oven;
+            temperature 425 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation line_pan does coat {
+            equipment sheet_pan;
+            tool parchment;
+            note "aluminum foil also works";
+            duration 1 min;
+            labor active;
+            produces lined_pan;
+        }
+        prep chop sweet_potatoes into cut_fries {
+            note "first into fourths, slice the fourths, then chop the sliced layers while stacked into fries";
+            duration 5 min;
+        }
+    }
+
+    process seasoning {
+        operation oil_fries does coat {
+            input [cut_fries, olive_oil];
+            after [chop_sweet_potatoes, line_pan];
+            equipment sheet_pan;
+            note "drizzle, then toss with clean hands to coat; wash your hands with soap afterwards";
+            duration 2 min;
+            labor active;
+            produces oiled_fries;
+        }
+        operation top_fries does coat {
+            input [oiled_fries, cinnamon, salt, pepper, rosemary];
+            after oil_fries;
+            note "top generously";
+            duration 1 min;
+            labor active;
+            produces seasoned_fries;
+        }
+    }
+
+    process baking {
+        operation bake does heat {
+            input [seasoned_fries];
+            after [top_fries, preheat];
+            equipment sheet_pan;
+            temperature 425 fahrenheit;
+            duration 20 min;
+            labor passive;
+            produces half_baked_fries;
+        }
+        operation flip does move {
+            input [half_baked_fries];
+            after bake;
+            tool tongs;
+            note "rubber tongs make it easy to grab and turn a lot";
+            duration 2 min;
+            labor active;
+            produces flipped_fries;
+        }
+        operation finish_baking does heat {
+            input [flipped_fries];
+            after flip;
+            equipment sheet_pan;
+            temperature 425 fahrenheit;
+            duration 10 min to 20 min;
+            until visual "your desired crispiness, depending on the oven";
+            labor passive;
+            produces baked_fries;
+        }
+    }
+
+    yield servings measured by count {
+        amount 2 count;
+    }
+}

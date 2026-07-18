@@ -6,6 +6,7 @@ mod html;
 mod label;
 mod manifest;
 mod markdown;
+mod method_html;
 mod plain_text;
 
 pub use book::StaticRecipeBookExporter;
@@ -90,6 +91,11 @@ impl RecipeExporter for StaticRecipeExporter {
                 source_text.as_bytes().to_vec(),
             ));
         }
+        // A single-format export yields the file itself; the zip + manifest
+        // wrapper only exists to hold multi-file bundles together.
+        if let [single] = files.as_slice() {
+            return Ok(single_file_bundle(&recipe.title, single.clone()));
+        }
         let manifest = manifest::render(recipe, options, &files);
         files.push(file(
             "manifest.json",
@@ -99,9 +105,24 @@ impl RecipeExporter for StaticRecipeExporter {
         let archive = zip_files(&files)?;
         Ok(RecipeExportBundle {
             file_name: format!("{}.zip", slug(&recipe.title)),
+            media_type: "application/zip".to_owned(),
             files,
             archive,
         })
+    }
+}
+
+pub(crate) fn single_file_bundle(title: &str, single: ExportFile) -> RecipeExportBundle {
+    let extension = single
+        .path
+        .rsplit_once('.')
+        .map(|(_, extension)| extension)
+        .unwrap_or("bin");
+    RecipeExportBundle {
+        file_name: format!("{}.{extension}", slug(title)),
+        media_type: single.media_type.clone(),
+        archive: single.contents.clone(),
+        files: vec![single],
     }
 }
 

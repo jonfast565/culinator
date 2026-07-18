@@ -2,7 +2,7 @@
 import { computed, inject, ref, toRef, watch } from "vue";
 import { Clock } from "lucide-vue-next";
 import type { UiOperation, UiRecipeModel } from "../../recipe-editor/model";
-import { useRecipeNarrative } from "../../recipe-editor/narrative";
+import { useRecipeNarrative, formatIngredientDescription } from "../../recipe-editor/narrative";
 import {
   formatOperationTemperature,
   UNIT_DISPLAY_KEY,
@@ -13,15 +13,14 @@ const props = defineProps<{ model: UiRecipeModel; recipeId?: string }>();
 
 const units = inject(UNIT_DISPLAY_KEY, null);
 
-const { ingredients, operations, rows, summary, describe, stepTime, stepMeta } = useRecipeNarrative(
-  toRef(props, "model"),
-);
+const { ingredientGroups, operations, rows, summary, describe, stepTime, stepMeta } =
+  useRecipeNarrative(toRef(props, "model"));
 
 const formattedQuantities = ref<Record<string, string>>({});
 const formattedTemperatures = ref<Record<string, string>>({});
 
 watch(
-  [ingredients, () => units?.unitSystem.value],
+  [() => ingredientGroups.value.flatMap((group) => group.items), () => units?.unitSystem.value],
   async () => {
     if (!units) {
       formattedQuantities.value = {};
@@ -29,9 +28,11 @@ watch(
     }
     const map: Record<string, string> = {};
     await Promise.all(
-      ingredients.value.map(async (ingredient) => {
-        map[ingredient.symbol] = await units.formatQuantity(ingredient.quantity);
-      }),
+      ingredientGroups.value.flatMap((group) =>
+        group.items.map(async (ingredient) => {
+          map[ingredient.symbol] = await units.formatQuantity(ingredient.quantity);
+        }),
+      ),
     );
     formattedQuantities.value = map;
   },
@@ -64,6 +65,13 @@ function displayQuantity(symbol: string, fallback?: string): string {
   return formattedQuantities.value[symbol] || fallback || "—";
 }
 
+function ingredientLine(ingredient: (typeof ingredientGroups.value)[number]["items"][number]): string {
+  return formatIngredientDescription(
+    ingredient,
+    displayQuantity(ingredient.symbol, ingredient.quantity),
+  );
+}
+
 function describeStep(operation: UiOperation): string {
   const base = describe(operation);
   const formatted = formattedTemperatures.value[operation.symbol];
@@ -88,14 +96,16 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 
     <section class="leaf-section ingredients">
       <h2 class="section-label">Ingredients</h2>
-      <ul v-if="ingredients.length" class="ingredient-grid">
-        <li v-for="ingredient in ingredients" :key="ingredient.symbol">
-          <span class="qty">{{ displayQuantity(ingredient.symbol, ingredient.quantity) }}</span>
-          <span class="name"
-            >{{ ingredient.name }}<em v-if="ingredient.optional" class="opt"> (optional)</em></span
-          >
-        </li>
-      </ul>
+      <div v-if="ingredientGroups.length" class="ingredient-groups">
+        <div v-for="group in ingredientGroups" :key="group.label ?? 'base'" class="ingredient-group">
+          <h3 v-if="group.label" class="variant-heading">{{ group.label }} finish</h3>
+          <ul class="ingredient-list">
+            <li v-for="ingredient in group.items" :key="ingredient.symbol">
+              {{ ingredientLine(ingredient) }}
+            </li>
+          </ul>
+        </div>
+      </div>
       <p v-else class="empty">No ingredients listed yet.</p>
     </section>
 
@@ -219,34 +229,29 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   background: var(--rule);
 }
 
-.ingredient-grid {
+.ingredient-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.variant-heading {
+  margin: 0 0 8px;
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.ingredient-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: 1fr;
-  column-gap: 40px;
 }
-.ingredient-grid li {
-  display: grid;
-  grid-template-columns: 92px 1fr;
-  gap: 12px;
-  align-items: baseline;
+.ingredient-list li {
   padding: 7px 0;
   border-bottom: 1px dotted #e2e0d4;
-}
-.ingredient-grid .qty {
-  font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  text-align: right;
-  color: var(--ink);
-}
-.ingredient-grid .name {
-  color: #3a463f;
-}
-.opt {
-  font-style: italic;
-  opacity: 0.7;
+  line-height: 1.45;
 }
 
 .steps {
@@ -324,12 +329,5 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 .leaf-credit a {
   color: var(--herb);
   word-break: break-all;
-}
-
-/* Two-column ingredients on wider leaves. */
-@media (min-width: 720px) {
-  .ingredient-grid {
-    grid-template-columns: 1fr 1fr;
-  }
 }
 </style>

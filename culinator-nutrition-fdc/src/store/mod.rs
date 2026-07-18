@@ -133,6 +133,10 @@ impl NutritionImportStore for SqliteNutritionCatalog {
             "INSERT INTO metadata(key,value) VALUES('fdc_release',?1) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             [release],
         ).map_err(Self::persistence)?;
+        self.lock().execute(
+            "INSERT INTO metadata(key,value) VALUES('import_complete','false') ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [],
+        ).map_err(Self::persistence)?;
         Ok(())
     }
 
@@ -177,6 +181,10 @@ impl NutritionImportStore for SqliteNutritionCatalog {
     }
 
     fn finish_import(&mut self) -> std::result::Result<(), ApplicationError> {
+        self.lock().execute(
+            "INSERT INTO metadata(key,value) VALUES('import_complete','true') ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [],
+        ).map_err(Self::persistence)?;
         self.lock().execute_batch(
             "PRAGMA foreign_keys=ON; INSERT INTO foods_fts(foods_fts) VALUES('rebuild'); ANALYZE; PRAGMA optimize; PRAGMA wal_checkpoint(TRUNCATE);",
         ).map_err(Self::persistence)

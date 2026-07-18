@@ -9,6 +9,10 @@ recipe baked_macaroni_and_cheese {
     source_url "https://altonbrown.com/recipes/baked-macaroni-and-cheese/";
     attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
 
+    // Times as stated by the source (active hands-on vs. total).
+    active_time 20 min;
+    total_time 65 min;
+
     ingredient macaroni measured by mass {
         name "elbow macaroni";
         quantity 8 oz;
@@ -72,6 +76,7 @@ recipe baked_macaroni_and_cheese {
     container pot { name "4-quart pot"; }
     container saucepan { name "3-quart saucepan"; }
     equipment colander { name "colander"; }
+    equipment oven { name "oven"; }
 
     material cooked_macaroni measured by mass { }
     material roux measured by mass { }
@@ -85,8 +90,9 @@ recipe baked_macaroni_and_cheese {
     // The oven preheat is ~15 unattended minutes that overlaps the prep, and
     // greasing the dish is a real (if quick) step the source calls for.
     process setup {
+        // Preheating heats the oven, not the dish the food later bakes in.
         operation preheat does heat {
-            target casserole;
+            target oven;
             temperature 350 fahrenheit;
             duration estimated 15 min;
             labor automated;

@@ -2,13 +2,12 @@
 import { computed, toRef } from "vue";
 import { Clock } from "lucide-vue-next";
 import type { UiRecipeModel } from "../model";
-import { useRecipeNarrative } from "../narrative";
+import { useRecipeNarrative, formatIngredientDescription } from "../narrative";
 
 const props = defineProps<{ model: UiRecipeModel }>();
 
-const { ingredients, operations, rows, summary, describe, stepTime, stepMeta } = useRecipeNarrative(
-  toRef(props, "model"),
-);
+const { ingredientGroups, operations, rows, summary, describe, stepTime, stepMeta } =
+  useRecipeNarrative(toRef(props, "model"));
 
 const hasSteps = computed(() => operations.value.length > 0);
 </script>
@@ -22,14 +21,16 @@ const hasSteps = computed(() => operations.value.length > 0);
 
     <div class="narrative-section">
       <h4>Ingredients</h4>
-      <ul v-if="ingredients.length" class="ingredient-list">
-        <li v-for="ingredient in ingredients" :key="ingredient.symbol">
-          <span class="qty">{{ ingredient.quantity || "—" }}</span>
-          <span class="name"
-            >{{ ingredient.name }}<em v-if="ingredient.optional" class="opt"> (optional)</em></span
-          >
-        </li>
-      </ul>
+      <div v-if="ingredientGroups.length" class="ingredient-groups">
+        <div v-for="group in ingredientGroups" :key="group.label ?? 'base'">
+          <h5 v-if="group.label" class="variant-heading">{{ group.label }} finish</h5>
+          <ul class="ingredient-list">
+            <li v-for="ingredient in group.items" :key="ingredient.symbol">
+              {{ formatIngredientDescription(ingredient) }}
+            </li>
+          </ul>
+        </div>
+      </div>
       <p v-else class="empty">No ingredients yet.</p>
     </div>
 
@@ -64,8 +65,11 @@ const hasSteps = computed(() => operations.value.length > 0);
 </template>
 
 <style scoped>
-.opt {
-  font-style: italic;
-  opacity: 0.7;
+.variant-heading {
+  margin: 12px 0 6px;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #6d7972);
 }
 </style>

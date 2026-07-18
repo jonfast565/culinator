@@ -1,0 +1,94 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe no_knead_bread {
+    title "No-Knead Bread";
+    section "Breads & Baking";
+    source "enthdegree";
+    publisher "based.cooking";
+    source_url "https://based.cooking/no-knead-bread/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 780 min;
+
+    ingredient flour measured by volume { quantity 3 cup; }
+    ingredient salt measured by volume { quantity 1 tsp; }
+    ingredient yeast measured by volume {
+        name "instant yeast";
+        quantity 0.25 tsp;
+        note "or a scant 1/3 tsp active dry yeast";
+    }
+    ingredient water measured by volume {
+        name "warm water";
+        quantity 1.5 cup;
+    }
+
+    container mixing_bowl { name "mixing bowl"; }
+    container pan { name "oven-safe pan"; }
+    equipment oven { name "oven"; }
+
+    material dough measured by mass { }
+    material risen_dough measured by mass { }
+
+    process mixing {
+        operation mix_dough does mix {
+            input [flour, salt, yeast, water];
+            container mixing_bowl;
+            note "mix the dry ingredients first, then add the water";
+            until texture "a firm dough";
+            duration 5 min;
+            labor active;
+            produces dough;
+        }
+        operation rise does rest {
+            input [dough];
+            after mix_dough;
+            container mixing_bowl;
+            note "at room temperature";
+            duration 12 hour;
+            labor passive;
+            produces risen_dough;
+        }
+        operation hold does rest {
+            input [risen_dough];
+            after rise;
+            optional true;
+            note "the risen dough can wait in the fridge before baking";
+            duration up to 48 hour;
+            labor passive;
+        }
+    }
+
+    process baking {
+        operation preheat does heat {
+            target pan;
+            note "preheat the pan along with the oven";
+            temperature 450 fahrenheit;
+            duration estimated 20 min;
+            labor automated;
+        }
+        operation bake_covered does heat {
+            input [risen_dough];
+            after [rise, preheat];
+            container pan;
+            temperature 450 fahrenheit;
+            note "cover the pan, e.g. with aluminum foil";
+            duration 30 min;
+            labor passive;
+            produces covered_loaf;
+        }
+        operation bake_uncovered does heat {
+            input [covered_loaf];
+            after bake_covered;
+            container pan;
+            temperature 450 fahrenheit;
+            duration 20 min;
+            labor passive;
+            produces bread_loaf;
+        }
+    }
+
+    yield slices measured by count {
+        amount 8 count to 12 count;
+    }
+}

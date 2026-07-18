@@ -1,0 +1,122 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe shakshouka {
+    title "Shakshouka";
+    section "Breakfast";
+    source "jakub-korsak";
+    publisher "based.cooking";
+    source_url "https://based.cooking/shakshouka/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 20 min;
+
+    ingredient tomatoes measured by count {
+        quantity 5 count;
+        size "small";
+    }
+    ingredient eggs measured by count { quantity 5 count; }
+    ingredient onion measured by count {
+        name "white onion";
+        quantity 1 count;
+        state peeled;
+    }
+    ingredient chives measured by count { name "chives"; }
+    ingredient cumin measured by volume { to_taste true; }
+    ingredient sweet_pepper measured by volume {
+        name "powdered sweet pepper";
+        to_taste true;
+    }
+    ingredient oil measured by volume { }
+
+    equipment frying_pan { name "frying pan"; }
+    equipment lid { name "lid"; }
+
+    material tomato_sauce measured by mass { }
+
+    process preparation {
+        operation scald does heat {
+            input [tomatoes];
+            note "so they are easier to peel";
+            duration 2 min;
+            labor active;
+            produces scalded_tomatoes;
+        }
+        prep cube tomatoes into cubed_tomatoes {
+            note "peel first";
+            after scald;
+            duration 3 min;
+        }
+        prep chop onion into chopped_onion { duration 2 min; }
+    }
+
+    process cooking {
+        operation glaze_onion does heat {
+            input [chopped_onion, oil];
+            after chop_onion;
+            equipment frying_pan;
+            heat medium;
+            until visual "glazed and translucent";
+            duration 3 min;
+            labor active;
+            produces glazed_onion;
+        }
+        operation add_tomatoes does mix {
+            input [glazed_onion, cubed_tomatoes];
+            after [glaze_onion, cube_tomatoes];
+            equipment frying_pan;
+            duration 1 min;
+            labor active;
+            produces tomato_base;
+        }
+        operation season does mix {
+            input [tomato_base, cumin, sweet_pepper];
+            after add_tomatoes;
+            equipment frying_pan;
+            duration 1 min;
+            labor active;
+            produces seasoned_base;
+        }
+        operation simmer does heat {
+            input [seasoned_base];
+            after season;
+            equipment frying_pan;
+            heat medium;
+            note "stir now and then";
+            until texture "the sauce gets denser";
+            duration estimated 5 min;
+            labor monitor;
+            produces tomato_sauce;
+        }
+        operation add_eggs does mix {
+            input [tomato_sauce, eggs];
+            after simmer;
+            equipment frying_pan;
+            note "knock the eggs in and season them";
+            duration 1 min;
+            labor active;
+            produces egg_base;
+        }
+        operation cook_covered does heat {
+            input [egg_base];
+            after add_eggs;
+            equipment frying_pan;
+            tool lid;
+            note "cover the pan with the lid";
+            until visual "the eggs are set";
+            duration estimated 4 min;
+            labor monitor;
+            produces cooked_shakshouka;
+        }
+        operation garnish does mix {
+            input [cooked_shakshouka, chives];
+            after cook_covered;
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 2 count;
+    }
+}

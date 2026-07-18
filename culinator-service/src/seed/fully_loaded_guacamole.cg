@@ -9,6 +9,10 @@ recipe fully_loaded_guacamole {
     source_url "https://altonbrown.com/recipes/fully-loaded-guacamole/";
     attribution "Recipe by Alton Brown. Included as sample data; see the source link for the original.";
 
+    // Times as stated by the source (active hands-on vs. total incl. resting).
+    active_time 10 min;
+    total_time 130 min;
+
     // Size grades and handling notes that a bare `count` would drop are carried
     // on the ingredient (`size`, `note`) instead of being smuggled into `name`.
     ingredient avocados measured by count {
@@ -66,7 +70,9 @@ recipe fully_loaded_guacamole {
     // the mash and the knife work contend for the cook's hands but not vessels.
     equipment masher { name "potato masher"; }
     container mixing_bowl { name "large mixing bowl"; }
-    container plastic_wrap { name "plastic wrap"; }
+    // The wrap is applied to the surface, not a vessel the food sits in, so it
+    // is a tool rather than a container.
+    equipment plastic_wrap { name "plastic wrap"; }
 
     // `avocado_pulp` and `mashed_avocado` are declared so they can carry a
     // state/note; the diced/minced prep products stay implicit intermediates.
@@ -115,7 +121,7 @@ recipe fully_loaded_guacamole {
         operation rest does rest {
             input [guacamole_mix];
             after fold;
-            container plastic_wrap;
+            tool plastic_wrap;
             note "press plastic wrap directly onto the surface and rest at room temperature";
             duration 120 min;
             labor passive;

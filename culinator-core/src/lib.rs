@@ -5,6 +5,8 @@ use uuid::Uuid;
 mod units;
 pub use units::*;
 
+pub mod order;
+
 pub type Symbol = String;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

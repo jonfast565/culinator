@@ -11,7 +11,7 @@ import type {
   SaveIngredientManualNutritionRequest,
   SaveRecipeNutritionRequest,
 } from "../../domain/types";
-import { hasConfiguredService, serviceRequest, serviceRpc } from "../transport/websocket-client";
+import { hasConfiguredService, serviceRpc } from "../transport/websocket-client";
 
 const browserLinks = new Map<string, ResourceNutritionLink[]>();
 const browserState = new Map<string, RecipeNutritionState>();
@@ -48,7 +48,9 @@ export function per100gFacts(): NutritionFacts {
 }
 
 export async function getNutritionStatus(): Promise<NutritionCatalogStatus> {
-  if (hasConfiguredService()) return serviceRequest("/api/v1/nutrition/status");
+  if (hasConfiguredService()) {
+    return serviceRpc<NutritionCatalogStatus>("nutrition.status", {});
+  }
   return { catalogAvailable: false };
 }
 
@@ -57,7 +59,7 @@ export async function searchNutritionFoods(
   limit = 20,
 ): Promise<NutritionSearchResult[]> {
   if (hasConfiguredService())
-    return serviceRequest(`/api/v1/nutrition/search?q=${encodeURIComponent(query)}&limit=${limit}`);
+    return serviceRpc("nutrition.search", { query, limit });
   if (!query.trim()) return [];
   return [
     {
@@ -84,8 +86,7 @@ export async function fuzzyMatchNutritionFoods(
 }
 
 export async function getNutritionState(recipeId: string): Promise<RecipeNutritionState> {
-  if (hasConfiguredService())
-    return serviceRequest(`/api/v1/recipes/${encodeURIComponent(recipeId)}/nutrition`);
+  if (hasConfiguredService()) return serviceRpc("nutrition.getState", { recipeId });
   return (
     browserState.get(recipeId) ?? {
       recipeId,
@@ -164,8 +165,7 @@ export async function autoLinkIngredients(
 }
 
 export async function listNutritionLinks(recipeId: string): Promise<ResourceNutritionLink[]> {
-  if (hasConfiguredService())
-    return serviceRequest(`/api/v1/recipes/${encodeURIComponent(recipeId)}/nutrition/links`);
+  if (hasConfiguredService()) return serviceRpc("nutrition.listLinks", { recipeId });
   return browserLinks.get(recipeId) ?? [];
 }
 

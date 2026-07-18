@@ -34,6 +34,11 @@ export interface UiDonenessCue {
   kind: string;
   value: string;
 }
+/** One `input` binding on an operation, optionally with a per-step quantity. */
+export interface UiInputBinding {
+  symbol: string;
+  quantity?: string;
+}
 export interface UiOperation {
   symbol: string;
   action: string;
@@ -45,6 +50,8 @@ export interface UiOperation {
   labor: string;
   after: string[];
   inputs: string[];
+  /** Full input bindings, including per-step amounts for divided ingredients. */
+  inputBindings: UiInputBinding[];
   produces?: string;
   /** Numeric temperature setpoint, verbatim (e.g. "350 f"). */
   targetTemperature?: string;
@@ -135,6 +142,23 @@ function parseDoneness(body: string): UiDonenessCue[] {
   }
   return cues;
 }
+/** Parse every `input` line in an operation body, preserving per-step amounts. */
+function parseInputBindings(body: string): UiInputBinding[] {
+  const bindings: UiInputBinding[] = [];
+  const pattern =
+    /\binput\s+(?:\[([^\]]+)\]|([A-Za-z_]\w*)(?:\s+([\d./]+\s*[\w-]+(?:\s+to\s+[\d./]+\s*[\w-]+)?)?))\s*;/g;
+  for (const match of body.matchAll(pattern)) {
+    if (match[1]) {
+      for (const item of match[1].split(",")) {
+        const symbol = item.trim().split(".").pop() ?? item.trim();
+        if (symbol) bindings.push({ symbol });
+      }
+    } else if (match[2]) {
+      bindings.push({ symbol: match[2], quantity: match[3]?.trim() });
+    }
+  }
+  return bindings;
+}
 
 export function parseUiModel(source: string): UiRecipeModel {
   const symbol = source.match(/\brecipe\s+([A-Za-z_]\w*)/)?.[1] ?? "";
@@ -211,19 +235,14 @@ export function parseUiModel(source: string): UiRecipeModel {
       .match(/\bafter\s+(?:\[([^\]]+)\]|([\w.]+))[^;]*;/)
       ?.slice(1)
       .find(Boolean);
-    // The single form may carry a per-step amount (`input butter 6 tbsp;`); we
-    // still surface the resource symbol only.
-    const inputText = body
-      .match(/\binput\s+(?:\[([^\]]+)\]|([\w.]+)(?:\s+[\d.]+\s*\w+)?)\s*;/)
-      ?.slice(1)
-      .find(Boolean);
+    const inputBindings = parseInputBindings(body);
     const produces = body.match(/\bproduces\s+([\w.]+)\s*;/)?.[1];
     const temperatureMatch = body.match(/\btemperature\s+([\d.]+)\s*([A-Za-z]+)\s*;/);
     const repeatMatch = body.match(/\brepeat\s+(\d+)\s*;/);
     const doneness = parseDoneness(body);
     operations.push({
-      inputs:
-        inputText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
+      inputBindings,
+      inputs: inputBindings.map((binding) => binding.symbol),
       produces: produces?.split(".").pop(),
       symbol: header[1],
       action: (header[2] ?? "operation").replace(/<.*$/, ""),
@@ -262,17 +281,13 @@ export function parseUiModel(source: string): UiRecipeModel {
       .match(/\bafter\s+(?:\[([^\]]+)\]|([\w.]+))[^;]*;/)
       ?.slice(1)
       .find(Boolean);
-    const extraInputs =
-      body
-        .match(/\binput\s+(?:\[([^\]]+)\]|([\w.]+))\s*;/)
-        ?.slice(1)
-        .find(Boolean)
-        ?.split(",")
-        .map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [];
+    const extraBindings = parseInputBindings(body);
+    const inputBindings: UiInputBinding[] = [{ symbol: ingredient }, ...extraBindings];
     const before = source.slice(0, match.index ?? 0);
     const process = [...before.matchAll(/\bprocess\s+(\w+)/g)].pop()?.[1] ?? "root";
     operations.push({
-      inputs: [ingredient, ...extraInputs],
+      inputBindings,
+      inputs: inputBindings.map((binding) => binding.symbol),
       produces: producedSymbol,
       symbol: `${verb}_${ingredient}`,
       action: verb,

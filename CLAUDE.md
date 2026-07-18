@@ -3,17 +3,15 @@
 Guidance for Claude Code when working in this repository. Detailed engineering
 notes live in [AGENTS.md](./AGENTS.md) — read it before non-trivial changes.
 
-## Always: keep seed recipes current and in sync
+## Always: keep seed recipes current
 
-Sample recipes exist in **two** places that must match:
-
-- Rust: `culinator-service/src/seed/*.cg`
-- Frontend: `culinator-desktop/src/services/api/seed-recipes.ts` (embedded copies)
+Sample recipes live only in the Rust service: `culinator-service/src/seed/*.cg`.
+Recipes are stored exclusively in the backend, which seeds these on startup —
+the desktop app has no embedded copies.
 
 When you add or change DSL syntax, **update the seed recipes to use the new
-syntax** (where it applies) and update **both** copies. Verify with
-`cargo test -p culinator-service` (the seed parse/schedule tests) and the
-frontend `npm run typecheck`.
+syntax** (where it applies). Verify with `cargo test -p culinator-service` (the
+seed parse/schedule tests).
 
 ## Other essentials
 

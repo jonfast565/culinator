@@ -1,0 +1,148 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe carbonara {
+    title "Carbonara";
+    section "Mains";
+    source "Peter Piontek, Ladislao Blanchi";
+    publisher "based.cooking";
+    source_url "https://based.cooking/carbonara/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 5 min;
+    total_time 30 min;
+
+    ingredient spaghetti measured by mass { quantity 320 g; }
+    ingredient eggs measured by count {
+        quantity 5 count;
+        size "medium";
+        note "only the yolks are used";
+    }
+    ingredient guanciale measured by mass {
+        name "guanciale or smoked pancetta";
+        quantity 150 g;
+        state cubed;
+        note "cleaned and cubed";
+    }
+    ingredient pecorino measured by mass {
+        name "grated Pecorino Romano or Parmigiano-Reggiano";
+        quantity 35 g;
+        to_taste true;
+    }
+    ingredient black_pepper measured by volume {
+        optional true;
+        to_taste true;
+    }
+    ingredient pasta_salt measured by volume {
+        name "salt for the pasta water";
+        note "salt the water less than typical pasta water";
+    }
+    ingredient olive_oil measured by volume {
+        name "extra virgin olive oil";
+        optional true;
+        note "only if not using an iron or nonstick pan";
+    }
+
+    container egg_bowl { name "bowl"; }
+    container pot { name "pasta pot"; }
+    equipment pan { name "iron or nonstick pan"; }
+    equipment fork { name "fork"; }
+    equipment colander { name "colander"; }
+
+    material yolk_mixture measured by mass { }
+    material beaten_eggs measured by mass { }
+    material crisped_guanciale measured by mass { }
+    material drained_pasta measured by mass { }
+
+    process preparation {
+        operation separate does mix {
+            input [eggs];
+            container egg_bowl;
+            note "crack the eggs and keep only the yolks";
+            duration 2 min;
+            labor active;
+            produces egg_yolks;
+        }
+        operation mix_yolks does mix {
+            input [egg_yolks, pecorino];
+            after separate;
+            container egg_bowl;
+            note "optionally add a dash of black pepper";
+            duration 1 min;
+            labor active;
+            produces yolk_mixture;
+        }
+        operation beat_eggs does mix {
+            input [yolk_mixture];
+            after mix_yolks;
+            container egg_bowl;
+            tool fork;
+            until texture "entirely liquid";
+            duration 2 min;
+            labor active;
+            produces beaten_eggs;
+        }
+    }
+
+    process cooking {
+        operation boil_water does heat {
+            input [pasta_salt];
+            container pot;
+            heat high;
+            duration estimated 10 min;
+            until visual "boiling";
+            labor monitor;
+            produces salted_water;
+        }
+        operation cook_pasta does heat {
+            input [spaghetti, salted_water];
+            after boil_water;
+            container pot;
+            heat high;
+            duration estimated 8 min;
+            note "cook one minute less than the package advises";
+            labor monitor;
+            produces cooked_pasta;
+        }
+        operation fry_guanciale does heat {
+            input [guanciale, olive_oil];
+            equipment pan;
+            heat medium_low;
+            duration estimated 8 min;
+            until texture "the sides are crisp but the insides are chewy";
+            labor monitor;
+            produces crisped_guanciale;
+        }
+        operation drain does strain {
+            input [cooked_pasta];
+            after cook_pasta;
+            equipment colander;
+            duration 1 min;
+            labor active;
+            produces drained_pasta;
+        }
+    }
+
+    process assembly {
+        operation toss does mix {
+            input [drained_pasta, beaten_eggs, crisped_guanciale];
+            after [drain, beat_eggs, fry_guanciale];
+            container egg_bowl;
+            note "if the pasta is very hot, wait a minute so the eggs don't scramble; keep moving and stirring, and add as much of the pan fat as you want";
+            duration 3 min;
+            labor active;
+            produces dressed_pasta;
+        }
+        operation plate does move {
+            input [dressed_pasta];
+            after toss;
+            optional true;
+            note "garnish with more grated cheese and black pepper";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}
