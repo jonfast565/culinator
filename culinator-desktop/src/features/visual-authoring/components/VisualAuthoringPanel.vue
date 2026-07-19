@@ -2,9 +2,11 @@
 import { computed, ref } from "vue";
 import { Plus, Trash2 } from "lucide-vue-next";
 import type { UiRecipeModel, UiResource } from "../../recipe-editor/model";
+import { useAppDialog } from "../../../shared/composables/useAppDialog";
 
 const props = defineProps<{ source: string; model: UiRecipeModel }>();
 const emit = defineEmits<{ "update:source": [value: string] }>();
+const dialog = useAppDialog();
 const selected = ref<string | null>(null);
 const selectedOperation = computed(() =>
   props.model.operations.find((item) => item.symbol === selected.value),
@@ -235,9 +237,9 @@ function updateOperation(field: "duration" | "labor", value: string): void {
     : block.replace(/{/, `{\n            ${line}`);
   replaceRange(operation.range.start, operation.range.end, block);
 }
-function deleteOperation(): void {
+async function deleteOperation(): Promise<void> {
   const operation = selectedOperation.value;
-  if (operation?.range && window.confirm(`Delete ${operation.symbol}?`)) {
+  if (operation?.range && (await dialog.confirm(`Delete ${operation.symbol}?`))) {
     replaceRange(operation.range.start, operation.range.end, "");
     selected.value = null;
   }

@@ -1,5 +1,6 @@
 import type { UiRecipeModel } from "../recipe-editor/model";
-import { formatDuration, previewSteps, previewIngredients } from "../recipe-editor/narrative";
+import { formatDuration, previewSteps, previewIngredientParts } from "../recipe-editor/narrative";
+import type { IngredientDisplayParts } from "../recipe-editor/narrative";
 
 // Turns a book's loaded recipe models into an ordered list of book "leaves":
 // cover → table of contents (front matter) → [section divider → recipe cards]…
@@ -9,6 +10,8 @@ import { formatDuration, previewSteps, previewIngredients } from "../recipe-edit
 export interface LoadedRecipe {
   id: string;
   model: UiRecipeModel;
+  /** Original `.cg` text — the narrative is rendered from this. */
+  source: string;
 }
 
 export interface TocEntry {
@@ -29,7 +32,7 @@ export type BookLeaf =
       eyebrow: string;
       title: string;
       summary: string;
-      ingredients: string[];
+      ingredients: IngredientDisplayParts[];
       steps: string[];
       stepCount: number;
       cover?: string;
@@ -54,8 +57,8 @@ export function summarize(model: UiRecipeModel): string {
   return parts.join(" · ");
 }
 
-function topIngredients(model: UiRecipeModel, count = 5): string[] {
-  return previewIngredients(model, count);
+function topIngredients(source: string, count = 5): IngredientDisplayParts[] {
+  return previewIngredientParts(source, count);
 }
 
 export function buildLeaves(bookTitle: string, recipes: LoadedRecipe[]): BookLeaf[] {
@@ -97,8 +100,8 @@ export function buildLeaves(bookTitle: string, recipes: LoadedRecipe[]): BookLea
         eyebrow: section,
         title,
         summary: summarize(recipe.model),
-        ingredients: topIngredients(recipe.model),
-        steps: previewSteps(recipe.model, 4),
+        ingredients: topIngredients(recipe.source),
+        steps: previewSteps(recipe.source, 4),
         stepCount: operations.length,
         cover: recipe.model.coverImage,
       });

@@ -21,7 +21,12 @@ const emit = defineEmits<{ (event: "update:source", value: string): void }>();
 
 // Reuse the reading-view narrative so step numbers, headings, and prose match
 // exactly what the recipe page shows.
-const { rows, describe } = useRecipeNarrative(toRef(props, "model"));
+const { steps } = useRecipeNarrative(toRef(props, "source"));
+
+/** The parsed operation behind a step, for photo attach/remove. */
+function operationFor(symbol: string): UiOperation | undefined {
+  return props.model.operations?.find((operation) => operation.symbol === symbol);
+}
 
 // Which step is mid-upload, keyed by operation symbol.
 const uploadingSymbol = ref<string | null>(null);
@@ -63,15 +68,18 @@ async function onFile(operation: UiOperation, event: Event): Promise<void> {
 
 <template>
   <div class="step-photos">
-    <template v-for="row in rows" :key="row.key">
-      <p v-if="row.kind === 'heading'" class="group">{{ row.label }}</p>
-      <div v-else class="step-row">
-        <span class="num">{{ row.number }}</span>
+    <template v-for="step in steps" :key="step.symbol">
+      <div class="step-row">
+        <span class="num">{{ step.number }}</span>
         <div class="body">
-          <p class="desc">{{ describe(row.operation!) }}</p>
-          <div v-if="row.operation!.photo" class="thumb">
-            <RecipeImage :image-ref="row.operation!.photo" :recipe-id="recipeId" />
-            <button class="thumb-remove" title="Remove photo" @click="setPhoto(row.operation!, '')">
+          <p class="desc">{{ step.text }}</p>
+          <div v-if="operationFor(step.symbol)?.photo" class="thumb">
+            <RecipeImage :image-ref="operationFor(step.symbol)!.photo" :recipe-id="recipeId" />
+            <button
+              class="thumb-remove"
+              title="Remove photo"
+              @click="setPhoto(operationFor(step.symbol)!, '')"
+            >
               <X :size="13" />
             </button>
           </div>
@@ -79,22 +87,22 @@ async function onFile(operation: UiOperation, event: Event): Promise<void> {
             <input
               type="url"
               placeholder="Image URL…"
-              @change="commitUrl(row.operation!, $event)"
-              @keyup.enter="commitUrl(row.operation!, $event)"
+              @change="commitUrl(operationFor(step.symbol)!, $event)"
+              @keyup.enter="commitUrl(operationFor(step.symbol)!, $event)"
             />
             <label
               class="upload"
-              :class="{ busy: uploadingSymbol === row.operation!.symbol }"
+              :class="{ busy: uploadingSymbol === step.symbol }"
               title="Upload a photo for this step"
             >
-              <Loader2 v-if="uploadingSymbol === row.operation!.symbol" :size="13" class="spin" />
+              <Loader2 v-if="uploadingSymbol === step.symbol" :size="13" class="spin" />
               <ImagePlus v-else :size="13" />
               <input
                 type="file"
                 accept="image/*"
                 hidden
-                :disabled="uploadingSymbol === row.operation!.symbol"
-                @change="onFile(row.operation!, $event)"
+                :disabled="uploadingSymbol === step.symbol"
+                @change="onFile(operationFor(step.symbol)!, $event)"
               />
             </label>
           </div>

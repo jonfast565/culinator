@@ -4,8 +4,8 @@
   "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vue-tsc --noEmit && vite build",
+    "dev": "npm run build:wasm && vite",
+    "build": "npm run build:wasm && vue-tsc --noEmit && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "typecheck": "vue-tsc --noEmit",
@@ -13,7 +13,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run build",
-    "dev:service": "node scripts/dev-service.mjs"
+    "dev:service": "node scripts/dev-service.mjs",
+    "build:wasm": "node scripts/build-wasm.mjs"
   },
   "dependencies": {
     "@codemirror/legacy-modes": "^6.5.3",

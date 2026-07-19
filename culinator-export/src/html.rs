@@ -1,4 +1,4 @@
-use crate::{content, method_html};
+use crate::method_html;
 use crate::method_html::escape;
 use culinator_core::Recipe;
 use culinator_models::{ApplicationError, RecipeExportOptions};
@@ -9,7 +9,7 @@ pub(crate) fn render(
     options: &RecipeExportOptions,
     label_svg: &str,
 ) -> Result<String, ApplicationError> {
-    let extracted = content::extract(recipe);
+    let extracted = culinator_narrative::extract(recipe);
     let json_ld = json!({
         "@context": "https://schema.org",
         "@type": "Recipe",

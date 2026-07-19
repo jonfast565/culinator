@@ -1,5 +1,5 @@
 use crate::method_html::escape;
-use crate::{content, label, method_html};
+use crate::{label, method_html};
 use culinator_core::Recipe;
 use culinator_models::{ApplicationError, RecipeExportOptions};
 use std::io::{Cursor, Write};
@@ -9,7 +9,7 @@ pub(crate) fn render(
     recipe: &Recipe,
     options: &RecipeExportOptions,
 ) -> Result<Vec<u8>, ApplicationError> {
-    let content = content::extract(recipe);
+    let content = culinator_narrative::extract(recipe);
     let equipment = method_html::equipment_html(&content);
     let equipment_block = if equipment.is_empty() {
         String::new()

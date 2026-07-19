@@ -1,0 +1,112 @@
+culinator 0.3;
+
+recipe miso_soup {
+    title "Miso Soup";
+    section "Soups";
+
+    source "yakatan";
+    publisher "based.cooking";
+    source_url "https://based.cooking/miso-soup/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient water measured by volume {
+        note "about half a potful";
+    }
+    ingredient dashi measured by volume {
+        name "dashi stock";
+    }
+    ingredient miso measured by volume {
+        name "miso paste";
+        to_taste true;
+    }
+    ingredient tofu measured by mass {
+        optional true;
+    }
+    ingredient seaweed measured by mass {
+        optional true;
+    }
+    ingredient green_onion measured by count {
+        optional true;
+        note "sliced, added at the bowl";
+    }
+
+    container pot { name "pot"; }
+    container bowls { name "small serving bowls"; }
+    equipment ladle { name "ladle"; }
+
+    material dashi_broth measured by volume { }
+    material miso_broth measured by volume { }
+
+    process broth {
+        operation boil_water does heat {
+            input [water];
+            container pot;
+            heat high;
+            until visual "boiling";
+            duration estimated 6 min;
+            labor monitor;
+            produces boiling_water;
+        }
+        operation add_dashi does mix {
+            input [boiling_water, dashi];
+            after boil_water;
+            container pot;
+            duration 1 min;
+            labor active;
+            produces dashi_broth;
+        }
+    }
+
+    process garnish {
+        prep cube tofu into cubed_tofu {
+            note "bite-sized pieces";
+            optional true;
+            duration 2 min;
+        }
+        prep cut seaweed into cut_seaweed {
+            note "bite-sized pieces";
+            optional true;
+            duration 1 min;
+        }
+        prep slice green_onion into sliced_green_onion {
+            optional true;
+            duration 1 min;
+        }
+        operation simmer_additions does heat {
+            input [dashi_broth, cubed_tofu, cut_seaweed];
+            after [add_dashi, cube_tofu, cut_seaweed];
+            optional true;
+            container pot;
+            heat medium;
+            until visual "the broth returns to a boil";
+            duration estimated 3 min;
+            labor monitor;
+            produces garnished_broth;
+        }
+    }
+
+    process finishing {
+        operation dissolve_miso does mix {
+            input [dashi_broth, miso];
+            after [add_dashi, simmer_additions];
+            container pot;
+            heat medium;
+            note "melt the miso into the broth rather than dropping it in whole";
+            duration 2 min;
+            labor active;
+            produces miso_broth;
+        }
+        operation serve does move {
+            input [miso_broth, sliced_green_onion];
+            after [dissolve_miso, slice_green_onion];
+            container bowls;
+            tool ladle;
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

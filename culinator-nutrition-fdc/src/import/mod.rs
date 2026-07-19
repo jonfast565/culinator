@@ -199,8 +199,7 @@ fn required_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Resul
     parse_loose_i64(required(headers, row, name)?)
 }
 fn optional_i64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<i64>> {
-    Ok(optional(headers, row, name)
-        .and_then(|raw| parse_loose_i64(raw).ok()))
+    Ok(optional(headers, row, name).and_then(|raw| parse_loose_i64(raw).ok()))
 }
 fn optional_f64(headers: &StringRecord, row: &StringRecord, name: &str) -> Result<Option<f64>> {
     optional(headers, row, name)

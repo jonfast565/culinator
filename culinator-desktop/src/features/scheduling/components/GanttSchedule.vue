@@ -2,11 +2,13 @@
 import { computed, ref, watch } from "vue";
 import type { RecipeSchedule } from "../../../domain/types";
 import { scheduleRecipe } from "../../../services/api";
+
 const props = defineProps<{ source: string }>();
 const schedule = ref<RecipeSchedule | null>(null);
 const error = ref("");
 const zoom = ref(1);
 let timer: number | undefined;
+
 watch(
   () => props.source,
   () => {
@@ -22,32 +24,52 @@ watch(
   },
   { immediate: true },
 );
+
 const width = computed(() =>
   Math.max(640, ((schedule.value?.makespanSeconds ?? 0) / 60) * 14 * zoom.value),
 );
-function minutes(seconds: number) {
+
+const activeLaborSeconds = computed(() => {
+  if (!schedule.value) return 0;
+  return schedule.value.operations
+    .filter((item) => item.labor === "active")
+    .reduce((total, item) => total + item.durationSeconds, 0);
+});
+
+const firstStep = computed(() => schedule.value?.operations[0] ?? null);
+
+function minutes(seconds: number): number {
   return Math.round(seconds / 60);
 }
+
+function formatAction(item: RecipeSchedule["operations"][number]): string {
+  const label = item.action.replaceAll("_", " ");
+  return `${label} · ${minutes(item.durationSeconds)} min`;
+}
 </script>
+
 <template>
   <section class="panel space-y-3">
     <div class="flex items-center justify-between">
       <div>
         <h3>Production schedule</h3>
-        <small v-if="schedule"
-          >Makespan {{ minutes(schedule.makespanSeconds) }} min · critical
-          {{ schedule.criticalPath.join(" → ") || "none" }}</small
-        >
+        <p v-if="schedule" class="schedule-summary">
+          About <strong>{{ minutes(schedule.makespanSeconds) }} min</strong> total ·
+          <strong>{{ minutes(activeLaborSeconds) }} min</strong> hands-on
+          <template v-if="firstStep">
+            · start with <strong>{{ firstStep.action.replaceAll("_", " ") }}</strong>
+          </template>
+        </p>
       </div>
-      <input v-model.number="zoom" type="range" min="0.5" max="3" step="0.25" />
+      <input v-model.number="zoom" type="range" min="0.5" max="3" step="0.25" aria-label="Zoom" />
     </div>
     <p v-if="error" class="diagnostic error">{{ error }}</p>
     <div v-else class="overflow-x-auto">
       <div class="gantt" :style="{ width: `${width}px` }">
         <div v-for="item in schedule?.operations" :key="item.symbol" class="gantt-row">
           <div class="gantt-label">
-            <strong>{{ item.symbol }}</strong
-            ><small>{{ item.process }}</small>
+            <strong>{{ formatAction(item) }}</strong>
+            <small>{{ item.process }}</small>
           </div>
           <div class="gantt-track">
             <div
@@ -67,10 +89,17 @@ function minutes(seconds: number) {
     </div>
   </section>
 </template>
+
 <style scoped>
+.schedule-summary {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #4a5a52;
+  line-height: 1.4;
+}
 .gantt-row {
   display: grid;
-  grid-template-columns: 10rem 1fr;
+  grid-template-columns: 12rem 1fr;
   min-height: 42px;
   border-bottom: 1px solid #e5e7eb;
 }
@@ -78,6 +107,11 @@ function minutes(seconds: number) {
   padding: 0.4rem;
   display: flex;
   flex-direction: column;
+}
+.gantt-label strong {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
 }
 .gantt-track {
   position: relative;

@@ -13,8 +13,10 @@ import {
   ImagePlus,
   Loader2,
 } from "lucide-vue-next";
-import type { RecipeBookSummary, ValidationResult } from "../../../domain/types";
+import type { Diagnostic, RecipeBookSummary, ValidationResult } from "../../../domain/types";
 import type { UiRecipeModel } from "../model";
+import type { InspectorTabId } from "./InspectorPanel.vue";
+import type { SaveStatus } from "../composables/useRecipeEditor";
 import { setRecipeProperty } from "../sourcePatch";
 import { fileToBase64, uploadRecipeImage } from "../../../services/api";
 import RecipeImage from "../../reading/components/RecipeImage.vue";
@@ -31,7 +33,11 @@ const props = defineProps<{
   currentBookId: string | null;
   dirty: boolean;
   saving: boolean;
+  saveStatus?: SaveStatus;
+  initialDrawerTab?: "details" | "source" | "tools";
+  initialInspectorTab?: InspectorTabId;
 }>();
+
 const emit = defineEmits<{
   (event: "update:source", value: string): void;
   (event: "save"): void;
@@ -43,10 +49,24 @@ const emit = defineEmits<{
 }>();
 
 type DrawerTab = "details" | "source" | "tools";
-const tab = ref<DrawerTab>("details");
+const tab = ref<DrawerTab>(props.initialDrawerTab ?? "details");
+const inspectorTab = ref<InspectorTabId | undefined>(props.initialInspectorTab);
+const sourceEditor = ref<InstanceType<typeof SourceEditor>>();
 
-// Structured fields patch the source in place; local refs keep the caret stable
-// while the live preview re-parses.
+watch(
+  () => props.initialDrawerTab,
+  (next) => {
+    if (next) tab.value = next;
+  },
+);
+
+watch(
+  () => props.initialInspectorTab,
+  (next) => {
+    if (next) inspectorTab.value = next;
+  },
+);
+
 const titleField = ref(props.model.title);
 const sectionField = ref(props.model.section ?? "");
 watch(
@@ -69,8 +89,6 @@ function commitSection(): void {
   emit("update:source", setRecipeProperty(props.source, "section", sectionField.value));
 }
 
-// Cover image: either an external URL (stored as-is in the .cg) or an uploaded
-// file (persisted, referenced by a generated asset handle).
 const coverUrl = ref("");
 const uploading = ref(false);
 function setCover(reference: string): void {
@@ -106,6 +124,30 @@ function removeCover(): void {
 
 const errorCount = () =>
   props.validation?.diagnostics.filter((d) => d.severity === "error").length ?? 0;
+
+function saveStatusLabel(): string {
+  switch (props.saveStatus) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "Saved";
+    case "error":
+      return "Save failed";
+    default:
+      return "";
+  }
+}
+
+function jumpToDiagnostic(diagnostic: Diagnostic): void {
+  tab.value = "source";
+  if (diagnostic.start != null) {
+    window.requestAnimationFrame(() => sourceEditor.value?.jumpToOffset(diagnostic.start!));
+  }
+}
+
+function onDiagnosticClick(diagnostic: Diagnostic): void {
+  jumpToDiagnostic(diagnostic);
+}
 </script>
 
 <template>
@@ -123,6 +165,9 @@ const errorCount = () =>
         </button>
       </nav>
       <div class="drawer-actions">
+        <span v-if="saveStatusLabel()" class="save-status" :class="saveStatus">{{
+          saveStatusLabel()
+        }}</span>
         <button
           class="primary"
           :disabled="!dirty || saving"
@@ -135,7 +180,6 @@ const errorCount = () =>
       </div>
     </header>
 
-    <!-- Details: structured edit-in-place fields -->
     <div v-show="tab === 'details'" class="drawer-body details">
       <label class="field">
         <span>Title</span>
@@ -217,23 +261,41 @@ const errorCount = () =>
       </button>
     </div>
 
-    <!-- Source: raw .cg editor -->
     <div v-show="tab === 'source'" class="drawer-body source">
-      <SourceEditor :model-value="source" @update:model-value="emit('update:source', $event)" />
-      <p v-if="errorCount()" class="diag error">
-        {{ errorCount() }} error{{ errorCount() === 1 ? "" : "s" }} — see Tools › Diagnostics
+      <SourceEditor
+        ref="sourceEditor"
+        :model-value="source"
+        :diagnostics="validation?.diagnostics"
+        @update:model-value="emit('update:source', $event)"
+      />
+      <ul v-if="validation?.diagnostics.length" class="diag-list">
+        <li
+          v-for="(item, index) in validation.diagnostics"
+          :key="`${item.message}-${index}`"
+          :class="item.severity"
+        >
+          <button type="button" @click="onDiagnosticClick(item)">
+            <strong>{{ item.severity }}</strong>
+            <span>{{ item.message }}</span>
+            <small v-if="item.start != null">Line {{ sourceEditor?.diagnosticLine(item) }}</small>
+          </button>
+        </li>
+      </ul>
+      <p v-else-if="errorCount()" class="diag error">
+        {{ errorCount() }} error{{ errorCount() === 1 ? "" : "s" }}
       </p>
       <p v-else-if="validation && !validation.valid" class="diag warn">Recipe has warnings.</p>
     </div>
 
-    <!-- Tools: advanced inspector (timeline, nutrition, HACCP, export…) -->
     <div v-show="tab === 'tools'" class="drawer-body tools">
       <InspectorPanel
         :model="model"
         :validation="validation"
         :recipe-id="recipeId"
         :source="source"
+        :initial-tab="inspectorTab"
         @update:source="emit('update:source', $event)"
+        @goto-source="jumpToDiagnostic"
       />
     </div>
   </aside>
@@ -280,6 +342,16 @@ const errorCount = () =>
   display: flex;
   align-items: center;
   gap: 6px;
+}
+.save-status {
+  font-size: 12px;
+  color: #6d7972;
+}
+.save-status.saved {
+  color: #28643b;
+}
+.save-status.error {
+  color: #a83737;
 }
 .drawer-actions button {
   height: 32px;
@@ -410,6 +482,38 @@ const errorCount = () =>
 .source .source-editor {
   flex: 1;
   min-height: 0;
+}
+.diag-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid #e2e6e1;
+  max-height: 140px;
+  overflow: auto;
+}
+.diag-list button {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  border: 0;
+  border-bottom: 1px solid #eef1ed;
+  background: transparent;
+  display: grid;
+  gap: 2px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.diag-list button:hover {
+  background: #f3f5f2;
+}
+.diag-list .error button {
+  color: #a83737;
+}
+.diag-list .warning button {
+  color: #8a6d1f;
+}
+.diag-list small {
+  opacity: 0.75;
 }
 .diag {
   margin: 0;

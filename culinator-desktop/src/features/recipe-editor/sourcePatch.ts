@@ -180,3 +180,10 @@ export async function convertRecipeQuantitiesInSource(
   if (!patches.length) return source;
   return applyPatches(source, patches);
 }
+
+/** Remove one operation or prep statement from source using its byte range. */
+export function deleteOperationFromSource(source: string, operation: UiOperation): string | null {
+  if (!operation.range) return null;
+  const { start, end } = operation.range;
+  return `${source.slice(0, start)}${source.slice(end)}`;
+}

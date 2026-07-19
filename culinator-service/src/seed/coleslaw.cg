@@ -1,0 +1,118 @@
+culinator 0.3;
+
+recipe coleslaw {
+    title "Coleslaw";
+    section "Salads";
+
+    source "declan-cash";
+    publisher "based.cooking";
+    source_url "https://based.cooking/coleslaw/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 25 min;
+    total_time 85 min;
+
+    ingredient mayonnaise measured by volume { quantity 0.75 cup; }
+    ingredient buttermilk measured by volume { quantity 0.5 cup; }
+    ingredient lemon_juice measured by volume { quantity 3 tbsp; }
+    ingredient cider_vinegar measured by volume {
+        name "apple cider vinegar";
+        quantity 3 tbsp;
+    }
+    ingredient distilled_vinegar measured by volume { quantity 4 tbsp; }
+    ingredient olive_oil measured by volume { quantity 0.33 cup; }
+    ingredient sugar measured by volume {
+        name "granulated sugar";
+        quantity 0.25 cup;
+    }
+    ingredient salt measured by volume {
+        name "kosher salt";
+        quantity 1.5 tsp;
+    }
+    ingredient pepper measured by volume {
+        name "ground black pepper";
+        quantity 1 tsp;
+    }
+    ingredient celery_seeds measured by volume { quantity 1 tsp; }
+    ingredient onion_powder measured by volume { quantity 0.5 tsp; }
+    ingredient granulated_garlic measured by volume { quantity 0.25 tsp; }
+    ingredient mustard_powder measured by volume { quantity 0.25 tsp; }
+    ingredient cabbage measured by count {
+        name "green cabbage";
+        quantity 1 head;
+        size "large";
+    }
+    ingredient carrot measured by count {
+        quantity 1 count;
+        size "large";
+    }
+
+    container dressing_bowl { name "mixing bowl"; }
+    container slaw_bowl { name "large bowl"; }
+    equipment whisk { name "whisk"; }
+    equipment food_processor { name "food processor"; }
+
+    material dressing_base measured by volume { }
+    material dressing measured by volume { }
+    material shredded_vegetables measured by mass { }
+
+    process preparation {
+        prep shred carrot into shredded_carrot {
+            note "finely shred, rinse, and drain";
+            duration 3 min;
+        }
+        prep shred cabbage into shredded_cabbage {
+            note "finely shred; a food processor makes short work of it";
+            duration 5 min;
+        }
+    }
+
+    process dressing_making {
+        operation whisk_base does mix {
+            input [mayonnaise, buttermilk, lemon_juice, cider_vinegar, distilled_vinegar, olive_oil, sugar];
+            container dressing_bowl;
+            tool whisk;
+            duration 3 min;
+            labor active;
+            produces dressing_base;
+        }
+        operation season does mix {
+            input [dressing_base, salt, pepper, celery_seeds, onion_powder, granulated_garlic, mustard_powder];
+            after whisk_base;
+            container dressing_bowl;
+            note "combine well";
+            duration 2 min;
+            labor active;
+            produces dressing;
+        }
+    }
+
+    process assembly {
+        operation combine_vegetables does mix {
+            input [shredded_cabbage, shredded_carrot];
+            after [shred_cabbage, shred_carrot];
+            container slaw_bowl;
+            duration 1 min;
+            labor active;
+            produces shredded_vegetables;
+        }
+        operation dress does coat {
+            input [shredded_vegetables, dressing];
+            after [combine_vegetables, season];
+            container slaw_bowl;
+            note "add the dressing slowly until it lightly coats the vegetables and toss well; this recipe makes more dressing than the slaw needs, so save the rest as a vegetable dip";
+            duration 3 min;
+            labor active;
+            produces dressed_slaw;
+        }
+        operation chill does rest {
+            input [dressed_slaw];
+            after dress;
+            duration 60 min;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 8 count to 10 count;
+    }
+}

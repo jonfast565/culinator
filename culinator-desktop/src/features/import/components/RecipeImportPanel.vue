@@ -1,11 +1,20 @@
 <script setup lang="ts">
 /* global File, Event, HTMLInputElement, btoa */
-import { onMounted, ref } from "vue";
-import { Camera, FileImage, KeyRound, LoaderCircle, X } from "lucide-vue-next";
+import { computed, onMounted, ref } from "vue";
+import {
+  Camera,
+  ChevronLeft,
+  ChevronRight,
+  FileImage,
+  KeyRound,
+  LoaderCircle,
+  X,
+} from "lucide-vue-next";
 import type {
   PublicImportSettings,
   RecipeImageInput,
   RecipeImportResult,
+  ValidationResult,
 } from "../../../domain/types";
 import {
   getImportSettings,
@@ -13,15 +22,26 @@ import {
   clearStoredApiKey,
   translateRecipeImages,
   updateImportSettings,
+  validateRecipe,
 } from "../../../services/api";
-const emit = defineEmits<{ close: []; accept: [source: string, title: string] }>();
-const tab = ref<"photos" | "structured">("photos");
+
+export interface ImportAcceptPayload {
+  source: string;
+  title: string;
+  hasDiagnostics: boolean;
+}
+
+const emit = defineEmits<{ close: []; accept: [payload: ImportAcceptPayload] }>();
+
+const step = ref(0);
+const sourceKind = ref<"photos" | "structured">("photos");
 const settings = ref<PublicImportSettings>({
   apiKeyConfigured: false,
   openaiModel: "gpt-4.1-mini",
   useLocalOcr: true,
   tesseractCommand: "tesseract",
 });
+const advancedOpen = ref(false);
 const apiKey = ref("");
 const targetLanguage = ref("English");
 const files = ref<File[]>([]);
@@ -30,8 +50,20 @@ const result = ref<RecipeImportResult>();
 const structuredDraft = ref<{ title: string; sourceText: string; warnings: string[] }>();
 const structuredFormat = ref<"json_ld" | "json" | "yaml">("json_ld");
 const structuredContent = ref("");
+const previewText = ref("");
+const previewValidation = ref<ValidationResult | null>(null);
 const busy = ref(false);
 const error = ref("");
+
+const previewTitle = computed(
+  () => structuredDraft.value?.title ?? result.value?.title ?? "Imported recipe",
+);
+const previewWarnings = computed(
+  () => structuredDraft.value?.warnings ?? result.value?.warnings ?? [],
+);
+
+const steps = ["Choose source", "Import", "Preview", "Confirm"];
+
 onMounted(async () => {
   try {
     settings.value = await getImportSettings();
@@ -39,14 +71,21 @@ onMounted(async () => {
     error.value = String(e);
   }
 });
-function selected(event: Event) {
+
+function chooseSource(kind: "photos" | "structured"): void {
+  sourceKind.value = kind;
+  step.value = 1;
+}
+
+function selected(event: Event): void {
   const input = event.target as HTMLInputElement;
   files.value = [...(input.files ?? [])];
   previews.value.forEach(URL.revokeObjectURL);
   previews.value = files.value.map(URL.createObjectURL);
   result.value = undefined;
 }
-async function saveSettings() {
+
+async function saveSettings(): Promise<void> {
   settings.value = await updateImportSettings({
     openaiApiKey: apiKey.value || undefined,
     openaiModel: settings.value.openaiModel,
@@ -55,224 +94,236 @@ async function saveSettings() {
   });
   apiKey.value = "";
 }
+
 async function clearKey(): Promise<void> {
   settings.value = await clearStoredApiKey();
 }
-async function importStructuredRecipe(): Promise<void> {
-  busy.value = true;
-  error.value = "";
-  try {
-    structuredDraft.value = await importStructured({
-      format: structuredFormat.value,
-      content: structuredContent.value,
-    });
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e);
-  } finally {
-    busy.value = false;
-  }
-}
+
 async function data(file: File): Promise<RecipeImageInput> {
   const buffer = await file.arrayBuffer();
   let binary = "";
   for (const byte of new Uint8Array(buffer)) binary += String.fromCharCode(byte);
   return { fileName: file.name, mediaType: file.type || "image/jpeg", dataBase64: btoa(binary) };
 }
-async function translate() {
+
+async function runImport(): Promise<void> {
   busy.value = true;
   error.value = "";
   try {
-    await saveSettings();
-    result.value = await translateRecipeImages(
-      await Promise.all(files.value.map(data)),
-      targetLanguage.value,
-    );
+    if (sourceKind.value === "structured") {
+      structuredDraft.value = await importStructured({
+        format: structuredFormat.value,
+        content: structuredContent.value,
+      });
+    } else {
+      await saveSettings();
+      result.value = await translateRecipeImages(
+        await Promise.all(files.value.map(data)),
+        targetLanguage.value,
+      );
+    }
+    previewText.value =
+      sourceKind.value === "structured"
+        ? (structuredDraft.value?.sourceText ?? "")
+        : (result.value?.sourceText ?? "");
+    previewValidation.value = await validateRecipe(previewText.value);
+    step.value = 2;
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e);
   } finally {
     busy.value = false;
   }
 }
+
+function goToConfirm(): void {
+  step.value = 3;
+}
+
+function confirmImport(): void {
+  const source = previewText.value;
+  if (!source.trim()) return;
+  const diagnostics = previewValidation.value?.diagnostics ?? [];
+  const hasDiagnostics =
+    !previewValidation.value?.valid ||
+    diagnostics.some((item) => item.severity === "error" || item.severity === "warning") ||
+    previewWarnings.value.length > 0;
+  emit("accept", {
+    source,
+    title: previewTitle.value,
+    hasDiagnostics,
+  });
+}
 </script>
+
 <template>
   <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-    <section
-      class="max-h-[92vh] w-full max-w-5xl overflow-auto rounded-2xl bg-white p-6 shadow-2xl"
-    >
-      <header class="mb-5 flex items-center justify-between">
+    <section class="import-modal">
+      <header class="import-head">
         <div>
-          <h2 class="text-xl font-semibold">Import recipe</h2>
-          <p class="text-sm text-slate-500">
-            Photos, JSON-LD, JSON, or YAML → validated Culinator DSL.
-          </p>
+          <h2>Import recipe</h2>
+          <p class="import-sub">Step {{ step + 1 }} of {{ steps.length }} — {{ steps[step] }}</p>
         </div>
-        <button @click="emit('close')"><X /></button>
+        <button type="button" aria-label="Close" @click="emit('close')"><X /></button>
       </header>
-      <div class="mb-4 flex gap-2">
-        <button :class="{ active: tab === 'photos' }" @click="tab = 'photos'">Photos / OCR</button>
-        <button :class="{ active: tab === 'structured' }" @click="tab = 'structured'">
-          Paste JSON-LD / JSON / YAML
-        </button>
+
+      <div class="step-track">
+        <span
+          v-for="(label, index) in steps"
+          :key="label"
+          class="step-dot"
+          :class="{ active: index === step, done: index < step }"
+        >
+          {{ label }}
+        </span>
       </div>
-      <div class="grid gap-6 lg:grid-cols-2">
-        <div class="space-y-4">
-          <div class="rounded-xl border p-4">
-            <h3 class="mb-3 flex items-center gap-2 font-medium">
-              <KeyRound :size="18" />AI settings
-            </h3>
-            <p v-if="settings.apiKeyConfigured" class="mb-2 text-xs text-green-700">
-              API key stored in
-              {{ settings.secretStoreBackend ?? "secure storage" }}.
-              <button class="underline" @click="clearKey">Clear stored key</button>
+
+      <div v-if="step === 0" class="step-body">
+        <p class="step-intro">How would you like to bring a recipe in?</p>
+        <div class="source-cards">
+          <button type="button" class="source-card" @click="chooseSource('photos')">
+            <Camera :size="28" />
+            <strong>Photos / OCR</strong>
+            <span>Scan a cookbook page or photo with AI translation</span>
+          </button>
+          <button type="button" class="source-card" @click="chooseSource('structured')">
+            <FileImage :size="28" />
+            <strong>Paste structured data</strong>
+            <span>JSON-LD, JSON, or YAML from the web</span>
+          </button>
+        </div>
+      </div>
+
+      <div v-else-if="step === 1" class="step-body">
+        <button type="button" class="back-link" @click="step = 0">
+          <ChevronLeft :size="15" /> Change source
+        </button>
+
+        <details class="advanced" :open="advancedOpen">
+          <summary @click.prevent="advancedOpen = !advancedOpen">
+            <KeyRound :size="16" /> Advanced settings (API key &amp; OCR)
+          </summary>
+          <div class="advanced-body">
+            <p v-if="settings.apiKeyConfigured" class="hint ok">
+              API key stored.
+              <button type="button" class="link" @click="clearKey">Clear stored key</button>
             </p>
-            <label class="block text-sm"
+            <label class="field"
               >OpenAI API key
               <input
                 v-model="apiKey"
                 type="password"
-                class="mt-1 w-full rounded border p-2"
-                :placeholder="
-                  settings.apiKeyConfigured ? 'Configured — enter to replace' : 'sk-…'
-                " /></label
-            ><label class="mt-3 block text-sm"
-              >Model
-              <input v-model="settings.openaiModel" class="mt-1 w-full rounded border p-2" /></label
-            ><label class="mt-3 flex items-center gap-2 text-sm"
-              ><input v-model="settings.useLocalOcr" type="checkbox" />Try local Tesseract OCR
+                :placeholder="settings.apiKeyConfigured ? 'Configured — enter to replace' : 'sk-…'"
+              />
+            </label>
+            <label class="field">Model <input v-model="settings.openaiModel" /> </label>
+            <label class="checkbox"
+              ><input v-model="settings.useLocalOcr" type="checkbox" /> Try local Tesseract OCR
               before AI</label
-            ><label v-if="settings.useLocalOcr" class="mt-3 block text-sm"
-              >Tesseract command
-              <input v-model="settings.tesseractCommand" class="mt-1 w-full rounded border p-2"
+            >
+            <label v-if="settings.useLocalOcr" class="field"
+              >Tesseract command <input v-model="settings.tesseractCommand"
             /></label>
           </div>
-          <template v-if="tab === 'photos'">
-            <div class="rounded-xl border border-dashed p-5 text-center">
-              <Camera class="mx-auto mb-2" />
-              <p class="mb-3 text-sm text-slate-600">
-                On phones, use the camera. On desktop, choose one or more images.
-              </p>
-              <label
-                class="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-white"
-                ><FileImage :size="17" />Camera or images<input
-                  type="file"
-                  accept="image/*"
-                  capture="environment"
-                  multiple
-                  class="hidden"
-                  @change="selected"
-              /></label>
-              <div v-if="previews.length" class="mt-4 grid grid-cols-3 gap-2">
-                <img
-                  v-for="src in previews"
-                  :key="src"
-                  :src="src"
-                  class="h-28 w-full rounded object-cover"
-                />
-              </div>
+        </details>
+
+        <template v-if="sourceKind === 'photos'">
+          <div class="drop-zone">
+            <Camera class="mx-auto mb-2" />
+            <p>Choose one or more recipe images.</p>
+            <label class="upload-btn"
+              ><FileImage :size="17" /> Select images<input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                hidden
+                @change="selected"
+            /></label>
+            <div v-if="previews.length" class="preview-grid">
+              <img v-for="src in previews" :key="src" :src="src" alt="" />
             </div>
-            <label class="block text-sm"
-              >Output language
-              <input v-model="targetLanguage" class="mt-1 w-full rounded border p-2" /></label
-            ><button
-              class="flex w-full items-center justify-center gap-2 rounded-lg bg-herb px-4 py-3 text-white disabled:opacity-50"
-              :disabled="busy || !files.length"
-              @click="translate"
-            >
-              <LoaderCircle v-if="busy" class="animate-spin" :size="18" />{{
-                busy ? "Reading and translating…" : "Convert to Culinator"
-              }}
-            </button>
-          </template>
-          <template v-else>
-            <label class="block text-sm"
-              >Format
-              <select v-model="structuredFormat" class="mt-1 w-full rounded border p-2">
-                <option value="json_ld">JSON-LD (schema.org)</option>
-                <option value="json">JSON</option>
-                <option value="yaml">YAML</option>
-              </select>
-            </label>
-            <textarea
-              v-model="structuredContent"
-              class="h-48 w-full rounded-xl border p-3 font-mono text-xs"
-              placeholder="Paste recipe JSON-LD, JSON, or YAML…"
-            />
-            <button
-              class="flex w-full items-center justify-center gap-2 rounded-lg bg-herb px-4 py-3 text-white disabled:opacity-50"
-              :disabled="busy || !structuredContent.trim()"
-              @click="importStructuredRecipe"
-            >
-              <LoaderCircle v-if="busy" class="animate-spin" :size="18" />Parse structured recipe
-            </button>
-          </template>
-          <p v-if="error" class="rounded bg-red-50 p-3 text-sm text-red-700">{{ error }}</p>
-        </div>
-        <div class="space-y-4">
-          <template v-if="tab === 'structured' && structuredDraft"
-            ><div class="rounded-xl border p-4">
-              <h3 class="font-semibold">{{ structuredDraft.title }}</h3>
-              <ul
-                v-if="structuredDraft.warnings.length"
-                class="mt-2 list-disc pl-5 text-sm text-amber-700"
-              >
-                <li v-for="warning in structuredDraft.warnings" :key="warning">{{ warning }}</li>
-              </ul>
-            </div>
-            <textarea
-              v-model="structuredDraft.sourceText"
-              class="h-96 w-full rounded-xl border p-3 font-mono text-xs"
-            ></textarea
-            ><button
-              class="w-full rounded-lg bg-slate-900 px-4 py-3 text-white"
-              @click="emit('accept', structuredDraft.sourceText, structuredDraft.title)"
-            >
-              Use this recipe
-            </button></template
-          >
-          <template v-else-if="tab === 'photos' && result"
-            ><div class="rounded-xl border p-4">
-              <h3 class="font-semibold">{{ result.title }}</h3>
-              <p
-                :class="result.validation.valid ? 'text-green-700' : 'text-amber-700'"
-                class="text-sm"
-              >
-                {{
-                  result.validation.valid
-                    ? "DSL validated successfully"
-                    : "Review validation diagnostics before saving"
-                }}
-              </p>
-              <ul v-if="result.warnings.length" class="mt-2 list-disc pl-5 text-sm text-amber-700">
-                <li v-for="warning in result.warnings" :key="warning">{{ warning }}</li>
-              </ul>
-            </div>
-            <textarea
-              v-model="result.sourceText"
-              class="h-96 w-full rounded-xl border p-3 font-mono text-xs"
-            ></textarea
-            ><button
-              class="w-full rounded-lg bg-slate-900 px-4 py-3 text-white"
-              @click="emit('accept', result.sourceText, result.title)"
-            >
-              Use this recipe
-            </button>
-            <details class="rounded border p-3">
-              <summary class="cursor-pointer text-sm font-medium">OCR transcript</summary>
-              <pre class="mt-2 whitespace-pre-wrap text-xs">{{
-                result.extractedText || "AI read the images directly."
-              }}</pre>
-            </details></template
-          >
-          <div
-            v-else
-            class="flex h-full min-h-80 items-center justify-center rounded-xl bg-slate-50 p-8 text-center text-slate-500"
-          >
-            {{
-              tab === "structured"
-                ? "Parsed DSL draft will appear here for review."
-                : "The translated DSL and validation report will appear here."
-            }}
           </div>
+          <label class="field">Output language <input v-model="targetLanguage" /> </label>
+        </template>
+
+        <template v-else>
+          <label class="field"
+            >Format
+            <select v-model="structuredFormat">
+              <option value="json_ld">JSON-LD (schema.org)</option>
+              <option value="json">JSON</option>
+              <option value="yaml">YAML</option>
+            </select>
+          </label>
+          <textarea
+            v-model="structuredContent"
+            class="paste-area"
+            placeholder="Paste recipe JSON-LD, JSON, or YAML…"
+          />
+        </template>
+
+        <p v-if="error" class="error">{{ error }}</p>
+        <button
+          type="button"
+          class="primary wide"
+          :disabled="busy || (sourceKind === 'photos' ? !files.length : !structuredContent.trim())"
+          @click="runImport"
+        >
+          <LoaderCircle v-if="busy" class="spin" :size="18" />
+          {{ busy ? "Importing…" : "Continue to preview" }}
+          <ChevronRight v-if="!busy" :size="16" />
+        </button>
+      </div>
+
+      <div v-else-if="step === 2" class="step-body">
+        <div class="preview-card">
+          <h3>{{ previewTitle }}</h3>
+          <p :class="previewValidation?.valid ? 'ok' : 'warn'">
+            {{
+              previewValidation?.valid
+                ? "DSL validated successfully"
+                : "Review validation diagnostics before saving"
+            }}
+          </p>
+          <ul v-if="previewWarnings.length" class="warnings">
+            <li v-for="warning in previewWarnings" :key="warning">{{ warning }}</li>
+          </ul>
+          <ul v-if="previewValidation?.diagnostics.length" class="warnings">
+            <li
+              v-for="(item, index) in previewValidation.diagnostics"
+              :key="`${item.message}-${index}`"
+            >
+              {{ item.severity }}: {{ item.message }}
+            </li>
+          </ul>
+        </div>
+        <textarea v-model="previewText" class="source-preview" />
+        <div class="step-actions">
+          <button type="button" class="ghost" @click="step = 1">
+            <ChevronLeft :size="15" /> Back
+          </button>
+          <button type="button" class="primary" @click="goToConfirm">
+            Continue <ChevronRight :size="15" />
+          </button>
+        </div>
+      </div>
+
+      <div v-else class="step-body">
+        <div class="confirm-card">
+          <h3>Ready to add “{{ previewTitle }}”?</h3>
+          <p>
+            The recipe will be saved to your library
+            <template v-if="previewValidation && !previewValidation.valid">
+              and opened in the editor to review diagnostics.
+            </template>
+            <template v-else> and opened for reading.</template>
+          </p>
+        </div>
+        <div class="step-actions">
+          <button type="button" class="ghost" @click="step = 2">
+            <ChevronLeft :size="15" /> Back
+          </button>
+          <button type="button" class="primary" @click="confirmImport">Add recipe</button>
         </div>
       </div>
     </section>
@@ -280,11 +331,241 @@ async function translate() {
 </template>
 
 <style scoped>
-button.active {
+.import-modal {
+  max-height: 92vh;
+  width: min(100%, 720px);
+  overflow: auto;
+  border-radius: 16px;
+  background: #fff;
+  padding: 24px;
+  box-shadow: 0 24px 60px -24px rgba(0, 0, 0, 0.45);
+}
+.import-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.import-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.import-sub {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #6d7972;
+}
+.step-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.step-dot {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  background: #eef1ed;
+  color: #6d7972;
+}
+.step-dot.active {
   background: #28643b;
-  color: white;
-  border-radius: 8px;
-  padding: 6px 12px;
+  color: #fff;
+}
+.step-dot.done {
+  background: #d9f0df;
+  color: #28643b;
+}
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.step-intro {
+  margin: 0;
+  color: #4a5a52;
+}
+.source-cards {
+  display: grid;
+  gap: 12px;
+}
+@media (min-width: 540px) {
+  .source-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.source-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 18px;
+  border: 1px solid #cbd3cd;
+  border-radius: 12px;
+  background: #fbf9f3;
+  text-align: left;
+  cursor: pointer;
+}
+.source-card:hover {
+  border-color: #28643b;
+  background: #f3faf4;
+}
+.source-card strong {
+  font-size: 15px;
+}
+.source-card span {
+  font-size: 13px;
+  color: #6d7972;
+  line-height: 1.4;
+}
+.back-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   border: 0;
+  background: transparent;
+  color: #28643b;
+  font-size: 13px;
+  cursor: pointer;
+}
+.advanced {
+  border: 1px solid #e2e6e1;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.advanced summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #4a5a52;
+}
+.advanced-body {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+.field input,
+.field select,
+.paste-area,
+.source-preview {
+  padding: 8px 10px;
+  border: 1px solid #cbd3cd;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.paste-area,
+.source-preview {
+  min-height: 180px;
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+}
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.drop-zone {
+  border: 1px dashed #cbd3cd;
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+}
+.upload-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  background: #23302a;
+  color: #fff;
+  cursor: pointer;
+}
+.preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+.preview-grid img {
+  height: 88px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.preview-card,
+.confirm-card {
+  padding: 14px;
+  border: 1px solid #e2e6e1;
+  border-radius: 10px;
+  background: #fbf9f3;
+}
+.preview-card h3,
+.confirm-card h3 {
+  margin: 0 0 6px;
+}
+.ok {
+  color: #28643b;
+  font-size: 13px;
+}
+.warn {
+  color: #8a6d1f;
+  font-size: 13px;
+}
+.warnings {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #8a6d1f;
+}
+.hint {
+  font-size: 12px;
+}
+.link {
+  border: 0;
+  background: transparent;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.error {
+  margin: 0;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fbeceb;
+  color: #a83737;
+  font-size: 13px;
+}
+.primary.wide {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 42px;
+}
+.step-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

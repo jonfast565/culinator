@@ -52,13 +52,25 @@ defineExpose({ leafCount: () => props.leaves.length });
     </div>
 
     <div v-if="!flip.failed.value" class="flip-controls">
-      <button class="flip-arrow" title="Previous page" @click="flip.prev()">
+      <button
+        type="button"
+        class="flip-arrow"
+        title="Previous page"
+        :disabled="flip.currentPage.value <= 0"
+        @click="flip.prev()"
+      >
         <ChevronLeft :size="20" />
       </button>
       <span class="page-indicator"
         >{{ flip.currentPage.value + 1 }} / {{ flip.pageCount.value }}</span
       >
-      <button class="flip-arrow" title="Next page" @click="flip.next()">
+      <button
+        type="button"
+        class="flip-arrow"
+        title="Next page"
+        :disabled="flip.currentPage.value >= flip.pageCount.value - 1"
+        @click="flip.next()"
+      >
         <ChevronRight :size="20" />
       </button>
     </div>
@@ -74,21 +86,28 @@ defineExpose({ leafCount: () => props.leaves.length });
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 0 12px;
+  padding: 8px 16px 16px;
+  overflow: hidden;
 }
 .book-flip {
+  flex: 1;
+  min-height: 0;
   width: min(96vw, 1280px);
-  height: min(88vh, 920px);
+  max-height: 100%;
 }
 .page {
   background: #fbf9f3;
 }
 
 .flip-controls {
+  flex-shrink: 0;
+  position: relative;
+  z-index: 5;
   display: flex;
   align-items: center;
   gap: 12px;
   margin-top: 12px;
+  padding-bottom: 4px;
 }
 .page-indicator {
   min-width: 72px;
@@ -108,9 +127,13 @@ defineExpose({ leafCount: () => props.leaves.length });
   color: #23302a;
   cursor: pointer;
 }
-.flip-arrow:hover {
+.flip-arrow:hover:not(:disabled) {
   background: #f0f3f0;
   color: #28643b;
+}
+.flip-arrow:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 
 .flip-fallback {

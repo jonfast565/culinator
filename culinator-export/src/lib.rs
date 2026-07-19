@@ -1,5 +1,4 @@
 mod book;
-mod content;
 mod csv;
 mod epub;
 mod html;

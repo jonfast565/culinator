@@ -8,6 +8,7 @@ rust-version.workspace = true
 [dependencies]
 culinator-core = { path = "../culinator-core" }
 culinator-models = { path = "../culinator-models" }
+culinator-narrative = { path = "../culinator-narrative" }
 serde_json.workspace = true
 zip.workspace = true
 uuid.workspace = true

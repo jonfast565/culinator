@@ -1,5 +1,5 @@
 use super::util::{escape, group_recipes};
-use crate::{content, method_html};
+use crate::method_html;
 use culinator_core::Recipe;
 use culinator_models::BookExportOptions;
 
@@ -78,7 +78,7 @@ pub(crate) fn render(
             ));
         }
         for entry in &section.recipes {
-            let content = content::extract(entry.recipe);
+            let content = culinator_narrative::extract(entry.recipe);
             let equipment = method_html::equipment_html(&content);
             let equipment_block = if equipment.is_empty() {
                 String::new()

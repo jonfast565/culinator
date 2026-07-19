@@ -1,0 +1,144 @@
+culinator 0.3;
+
+recipe naan_bread {
+    title "Naan Bread";
+    section "Breads & Baking";
+
+    source "nihar-samantaray";
+    publisher "based.cooking";
+    source_url "https://based.cooking/naan-bread/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 90 min;
+    total_time 120 min;
+
+    ingredient flour measured by volume {
+        name "all-purpose flour";
+        quantity 3 cup;
+        divided true;
+        note "3 cups in the dough, plus more for dusting and kneading";
+    }
+    ingredient yeast measured by volume {
+        name "active dry yeast";
+        quantity 1 tbsp;
+    }
+    ingredient sugar measured by volume { quantity 2 tbsp; }
+    ingredient milk measured by volume {
+        name "warm milk";
+        quantity 1 cup;
+    }
+    ingredient butter measured by volume {
+        quantity 2 tbsp;
+        state melted;
+        note "brushed on after baking";
+    }
+    ingredient oil measured by volume {
+        note "a little, to oil the dough before resting";
+    }
+    ingredient salt measured by volume { to_taste true; }
+
+    container mixing_bowl { name "large mixing bowl"; }
+    equipment whisk { name "whisk"; }
+    equipment cloth { name "soft cloth"; }
+    equipment rolling_pin { name "rolling pin"; }
+    equipment baking_tray { name "foil-lined baking tray"; }
+    equipment brush { name "pastry brush"; }
+    equipment oven { name "oven"; }
+
+    material yeast_mixture measured by volume { }
+    material dough measured by mass { }
+    material rested_dough measured by mass { }
+    material dough_balls measured by count { }
+
+    process dough_making {
+        operation proof_yeast does mix {
+            input [milk, yeast, sugar];
+            container mixing_bowl;
+            note "stir well and leave it to froth";
+            duration 3 min to 5 min;
+            labor passive;
+            produces yeast_mixture;
+        }
+        operation mix_dough does mix {
+            input [yeast_mixture, salt];
+            input flour 3 cup;
+            after proof_yeast;
+            container mixing_bowl;
+            tool whisk;
+            note "sprinkle in additional flour as needed to keep the dough from sticking to the sides";
+            until texture "soft";
+            duration 10 min;
+            labor active;
+            produces dough;
+        }
+        operation rest_dough does rest {
+            input [dough, oil];
+            after mix_dough;
+            container mixing_bowl;
+            tool cloth;
+            note "oil the dough, then cover it";
+            duration 2 hour to 3 hour;
+            labor passive;
+            produces rested_dough;
+        }
+        operation knead_again does mix {
+            input [rested_dough];
+            after rest_dough;
+            note "sprinkle with flour and knead";
+            until texture "smooth";
+            duration 5 min;
+            labor active;
+            produces smooth_dough;
+        }
+    }
+
+    process shaping {
+        operation divide does move {
+            input [smooth_dough];
+            after knead_again;
+            note "divide into 4 equal pieces and form them into balls";
+            duration 3 min;
+            labor active;
+            produces dough_balls;
+        }
+        operation roll_out does move {
+            input [dough_balls];
+            after divide;
+            tool rolling_pin;
+            note "roll to the thickness you like, about the size of a small tortilla";
+            duration 5 min;
+            repeat 4;
+            labor active;
+            produces rolled_naan;
+        }
+    }
+
+    process baking {
+        operation preheat does heat {
+            target oven;
+            temperature 180 celsius;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation bake does heat {
+            input [rolled_naan];
+            after [roll_out, preheat];
+            equipment baking_tray;
+            temperature 180 celsius;
+            duration 30 min to 35 min;
+            labor passive;
+            produces baked_naan;
+        }
+        operation brush_butter does coat {
+            input [baked_naan, butter];
+            after bake;
+            tool brush;
+            note "brush the tops, then cut each naan into four pieces to serve";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

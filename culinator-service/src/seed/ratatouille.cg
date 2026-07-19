@@ -1,0 +1,118 @@
+culinator 0.3;
+
+recipe ratatouille {
+    title "Ratatouille";
+    section "Sides";
+
+    source "joel-maxuel";
+    publisher "based.cooking";
+    source_url "https://based.cooking/ratatouille/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 12 min;
+    total_time 87 min;
+
+    ingredient tomatoes measured by mass { quantity 3.5 lb; }
+    ingredient eggplant measured by mass { quantity 1.5 lb; }
+    ingredient zucchini measured by mass { quantity 1 lb; }
+    ingredient bell_peppers measured by count { quantity 3 count; }
+    ingredient onions measured by mass { quantity 2 lb; }
+    ingredient garlic measured by count { quantity 6 clove; }
+    ingredient herbs measured by volume {
+        name "herbes de Provence";
+        note "basil, thyme, and parsley";
+        to_taste true;
+    }
+    ingredient olive_oil measured by volume {
+        divided true;
+        note "some at the start, plus more during cooking to prevent burning";
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pepper measured by volume { to_taste true; }
+    ingredient tomato_paste measured by mass {
+        quantity 140 g;
+        optional true;
+        note "only if the tomatoes lack flavor";
+    }
+
+    container pot { name "large thick-bottomed cooking pot"; }
+    container blanching_pot { name "pot of boiling water"; }
+    equipment colander { name "colander"; }
+
+    material peeled_tomatoes measured by mass { }
+    material aromatic_base measured by mass { }
+    material tomato_stew measured by mass { }
+
+    process preparation {
+        operation blanch_tomatoes does heat {
+            input [tomatoes];
+            container blanching_pot;
+            heat high;
+            note "cut out the stem cores first, then drop the whole tomatoes in";
+            duration 2 min;
+            labor active;
+            produces blanched_tomatoes;
+        }
+        operation peel_tomatoes does strain {
+            input [blanched_tomatoes];
+            after blanch_tomatoes;
+            equipment colander;
+            note "the skin should split for easy removal; otherwise cut an X in the top and peel it off. Don't mind the seeds";
+            duration 8 min;
+            labor active;
+            produces peeled_tomatoes;
+        }
+        prep chop onions into chopped_onions { duration 5 min; }
+        prep chop garlic into chopped_garlic { duration 2 min; }
+        prep slice bell_peppers into pepper_strips {
+            note "clean them first, then cut into small strips";
+            duration 4 min;
+        }
+    }
+
+    process stewing {
+        operation sweat_aromatics does heat {
+            input [olive_oil, chopped_onions, chopped_garlic, pepper_strips, salt, pepper];
+            after [chop_onions, chop_garlic, slice_bell_peppers];
+            container pot;
+            heat medium;
+            note "cover to keep the moisture in, stir frequently, and add more olive oil as needed to prevent burning";
+            duration 20 min;
+            labor monitor;
+            produces aromatic_base;
+        }
+        operation add_tomatoes does heat {
+            input [aromatic_base, peeled_tomatoes, herbs, tomato_paste];
+            after [sweat_aromatics, peel_tomatoes];
+            container pot;
+            heat medium;
+            note "stir well";
+            duration 15 min;
+            labor monitor;
+            produces tomato_stew;
+        }
+    }
+
+    process finishing {
+        prep slice eggplant into eggplant_disks {
+            note "cut into disks";
+            duration 4 min;
+        }
+        prep slice zucchini into zucchini_disks {
+            note "cut into disks";
+            duration 3 min;
+        }
+        operation simmer does heat {
+            input [tomato_stew, eggplant_disks, zucchini_disks];
+            after [add_tomatoes, slice_eggplant, slice_zucchini];
+            container pot;
+            heat medium_low;
+            duration estimated 30 min;
+            labor passive;
+            produces ratatouille_stew;
+        }
+    }
+
+    yield servings measured by count {
+        amount 12 count;
+    }
+}

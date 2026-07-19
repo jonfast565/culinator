@@ -1,0 +1,148 @@
+culinator 0.3;
+
+recipe chicken_tikka_masala {
+    title "Chicken Tikka Masala";
+    section "Mains";
+
+    publisher "based.cooking";
+    source_url "https://based.cooking/chicken-tikka-masala/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 25 min;
+    total_time 265 min;
+
+    ingredient tomato_puree measured by count {
+        name "canned tomato puree";
+        quantity 29 oz;
+    }
+    ingredient yogurt measured by volume {
+        name "plain yogurt";
+        quantity 1.5 cup;
+    }
+    ingredient onion measured by count {
+        quantity 0.5 count;
+        size "large";
+    }
+    ingredient olive_oil measured by volume { quantity 2 tbsp; }
+    ingredient ginger measured by volume {
+        name "fresh gingerroot";
+        quantity 4.5 tsp;
+    }
+    ingredient garlic measured by count { quantity 4 clove; }
+    ingredient garam_masala measured by volume { quantity 1 tbsp; }
+    ingredient salt measured by volume { quantity 2.5 tsp; }
+    ingredient cumin measured by volume {
+        name "ground cumin";
+        quantity 1.5 tsp;
+    }
+    ingredient paprika measured by volume { quantity 1 tsp; }
+    ingredient pepper measured by volume { quantity 0.75 tsp; }
+    ingredient cayenne measured by volume {
+        name "cayenne pepper";
+        quantity 0.5 tsp;
+    }
+    ingredient cinnamon measured by volume {
+        name "ground cinnamon";
+        quantity 0.25 tsp;
+    }
+    ingredient chicken measured by mass {
+        name "boneless skinless chicken breasts";
+        quantity 2.5 lb;
+    }
+    ingredient jalapeno measured by count {
+        quantity 1 count;
+        note "halved and seeded; removed before serving";
+    }
+    ingredient bay_leaf measured by count {
+        quantity 1 count;
+        note "removed before serving";
+    }
+    ingredient cornstarch measured by volume { quantity 1 tbsp; }
+    ingredient cream measured by volume {
+        name "heavy whipping cream";
+        quantity 1 cup;
+    }
+    ingredient rice measured by volume {
+        name "hot cooked basmati rice";
+        note "for serving";
+    }
+    ingredient cilantro measured by count {
+        name "fresh cilantro";
+        optional true;
+        note "chopped, for serving";
+    }
+
+    container slow_cooker { name "5-quart slow cooker"; }
+    container small_bowl { name "small bowl"; }
+
+    material spice_base measured by volume { }
+    material braised_curry measured by mass { }
+    material slurry measured by volume { }
+
+    process preparation {
+        prep chop onion into chopped_onion {
+            note "finely chopped";
+            duration 3 min;
+        }
+        prep mince ginger into minced_ginger { duration 2 min; }
+        prep mince garlic into minced_garlic { duration 2 min; }
+        prep cube chicken into cubed_chicken {
+            note "1 1/2-inch cubes";
+            duration 8 min;
+        }
+    }
+
+    process braising {
+        operation combine does mix {
+            input [tomato_puree, yogurt, chopped_onion, olive_oil, minced_ginger, minced_garlic, garam_masala, salt, cumin, paprika, pepper, cayenne, cinnamon];
+            after [chop_onion, mince_ginger, mince_garlic];
+            container slow_cooker;
+            note "blending these first is a convenient shortcut";
+            duration 5 min;
+            labor active;
+            produces spice_base;
+        }
+        operation braise does heat {
+            input [spice_base, cubed_chicken, jalapeno, bay_leaf];
+            after [combine, cube_chicken];
+            container slow_cooker;
+            heat low;
+            note "keep the cooker covered; lift out the jalapeno and bay leaf when the time is up";
+            until texture "the chicken is tender";
+            duration 4 hour;
+            labor passive;
+            produces braised_curry;
+        }
+    }
+
+    process finishing {
+        operation mix_slurry does mix {
+            input [cornstarch, cream];
+            container small_bowl;
+            until texture "smooth";
+            duration 2 min;
+            labor active;
+            produces slurry;
+        }
+        operation thicken does heat {
+            input [braised_curry, slurry];
+            after [braise, mix_slurry];
+            container slow_cooker;
+            heat high;
+            note "stir the slurry in gradually and keep the cooker covered";
+            until texture "the sauce is thickened";
+            duration 15 min to 20 min;
+            labor passive;
+            produces tikka_masala;
+        }
+        operation serve does move {
+            input [tikka_masala, rice, cilantro];
+            after thicken;
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 8 count;
+    }
+}

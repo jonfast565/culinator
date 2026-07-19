@@ -1,7 +1,7 @@
 //! Shared HTML fragments for the ingredient/equipment/method blocks, used by
 //! the web, print, and EPUB renderers so they all present the same structure.
 
-use crate::content::RecipeContent;
+use culinator_narrative::RecipeContent;
 
 pub(crate) fn escape(value: &str) -> String {
     value
@@ -17,7 +17,10 @@ pub(crate) fn ingredients_html(content: &RecipeContent) -> String {
     let mut out = String::new();
     for group in &content.ingredient_groups {
         if let Some(label) = &group.label {
-            out.push_str(&format!("<p class=\"variant\"><em>{}</em></p>", escape(label)));
+            out.push_str(&format!(
+                "<p class=\"variant\"><em>{}</em></p>",
+                escape(label)
+            ));
         }
         out.push_str("<ul>");
         for item in &group.items {

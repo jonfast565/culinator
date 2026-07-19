@@ -1,34 +1,62 @@
 <script setup lang="ts">
-/* global PointerEvent, HTMLElement */
-import { computed, onBeforeUnmount, provide, ref } from "vue";
-import { Trash2, Database, Pencil, BookOpen, ChevronLeft, Scale, Ruler } from "lucide-vue-next";
+/* global PointerEvent, HTMLElement, KeyboardEvent */
+import { computed, onBeforeUnmount, onMounted, provide, ref } from "vue";
+import {
+  Trash2,
+  Database,
+  Pencil,
+  BookOpen,
+  ChevronLeft,
+  Scale,
+  Ruler,
+  ChefHat,
+  PackageOpen,
+  ListChecks,
+  Divide,
+} from "lucide-vue-next";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
 import EditDrawer from "../features/recipe-editor/components/EditDrawer.vue";
+import type { InspectorTabId } from "../features/recipe-editor/components/InspectorPanel.vue";
 import { useRecipeEditor } from "../features/recipe-editor/composables/useRecipeEditor";
 import RecipePage from "../features/reading/components/RecipePage.vue";
+import ReadingToolsDrawer from "../features/reading/components/ReadingToolsDrawer.vue";
 import Bookshelf from "../features/bookshelf/components/Bookshelf.vue";
 import OpenBook from "../features/bookshelf/components/OpenBook.vue";
 import MeasuresView from "../features/units/components/MeasuresView.vue";
 import RecipeImportPanel from "../features/import/components/RecipeImportPanel.vue";
+import type { ImportAcceptPayload } from "../features/import/components/RecipeImportPanel.vue";
 import ConnectionBadge from "../shared/components/ConnectionBadge.vue";
+import { useAppDialog } from "../shared/composables/useAppDialog";
+import { isSearchShortcut, triggerSearch } from "../shared/composables/useGlobalSearch";
 import { useNavigation } from "./useNavigation";
 import { openRecipeFile } from "../services/api";
 import { onConnectionStatus, type ConnectionStatus } from "../services/transport/websocket-client";
 import { UNIT_DISPLAY_KEY, useUnitDisplay } from "../features/units/composables/useUnitDisplay";
+import {
+  VIEW_SETTINGS_KEY,
+  useViewSettings,
+} from "../features/reading/composables/useViewSettings";
 
 const library = useRecipeLibrary();
 const editor = useRecipeEditor(library.selectedRecipe);
 const nav = useNavigation();
 const unitDisplay = useUnitDisplay();
+const dialog = useAppDialog();
 provide(UNIT_DISPLAY_KEY, unitDisplay);
+const viewSettings = useViewSettings();
+provide(VIEW_SETTINGS_KEY, viewSettings);
+
 const connection = ref<ConnectionStatus>("connecting");
 const importing = ref(false);
+const readingToolsOpen = ref(false);
+const readingToolsTab = ref<"kitchen" | "export">("kitchen");
+const editDrawerTab = ref<"details" | "source" | "tools" | undefined>();
+const editInspectorTab = ref<InspectorTabId | undefined>();
+
 const stopStatus = onConnectionStatus((status) => {
   connection.value = status;
 });
-onBeforeUnmount(stopStatus);
 
-// The book currently open, and the recipes that belong to it (null = Unfiled).
 const openBookSummary = computed(
   () => library.books.value.find((book) => book.id === nav.bookId.value) ?? null,
 );
@@ -57,7 +85,20 @@ function stopResize(): void {
   window.removeEventListener("pointerup", stopResize);
   window.localStorage.setItem("cg:inspector-width", String(inspectorWidth.value));
 }
-onBeforeUnmount(stopResize);
+
+function onGlobalKeydown(event: KeyboardEvent): void {
+  if (!isSearchShortcut(event)) return;
+  event.preventDefault();
+  if (nav.view.value === "shelf") triggerSearch("shelf");
+  else if (nav.view.value === "book") triggerSearch("book");
+}
+
+onMounted(() => window.addEventListener("keydown", onGlobalKeydown));
+onBeforeUnmount(() => {
+  stopStatus();
+  stopResize();
+  window.removeEventListener("keydown", onGlobalKeydown);
+});
 
 function openBook(bookId: string | null): void {
   library.selectedBookId.value = bookId;
@@ -65,33 +106,54 @@ function openBook(bookId: string | null): void {
 }
 async function openRecipe(id: string): Promise<void> {
   await library.selectRecipe(id);
+  editDrawerTab.value = undefined;
+  editInspectorTab.value = undefined;
   nav.read();
 }
 async function bulkDelete(ids: string[]): Promise<void> {
   if (!ids.length) return;
-  if (!window.confirm(`Delete ${ids.length} recipe${ids.length === 1 ? "" : "s"}?`)) return;
+  if (!(await dialog.confirm(`Delete ${ids.length} recipe${ids.length === 1 ? "" : "s"}?`))) return;
   await library.deleteRecipes(ids);
 }
-function backToBook(): void {
+async function backToBook(): Promise<void> {
+  if (nav.view.value === "editing" && editor.dirty.value) {
+    const leave = await dialog.confirm("You have unsaved changes. Leave without saving?");
+    if (!leave) return;
+  }
   nav.openBook(library.selectedRecipe.value?.bookId ?? nav.bookId.value);
 }
 
 async function createBook(): Promise<void> {
-  const title = window.prompt("Recipe book name", "My Recipe Book")?.trim();
+  const title = await dialog.prompt("Recipe book name", {
+    defaultValue: "My Recipe Book",
+    title: "New book",
+    confirmLabel: "Create",
+  });
   if (title) await library.createBook(title);
 }
 async function renameBook(book: Parameters<typeof library.renameBook>[0]): Promise<void> {
-  const title = window.prompt("Rename recipe book", book.title)?.trim();
+  const title = await dialog.prompt("Rename recipe book", {
+    defaultValue: book.title,
+    title: "Rename book",
+    confirmLabel: "Save",
+  });
   if (title) await library.renameBook(book, title);
 }
 async function deleteBook(book: Parameters<typeof library.deleteBook>[0]): Promise<void> {
-  if (window.confirm(`Delete “${book.title}”? Recipes will become unfiled.`)) {
+  if (
+    await dialog.confirm(`Delete “${book.title}”? Recipes will become unfiled.`, {
+      title: "Delete book",
+      confirmLabel: "Delete",
+    })
+  ) {
     await library.deleteBook(book);
     nav.shelf();
   }
 }
 async function newRecipe(): Promise<void> {
   await library.createRecipe();
+  editDrawerTab.value = undefined;
+  editInspectorTab.value = undefined;
   nav.edit();
 }
 async function save(): Promise<void> {
@@ -104,7 +166,10 @@ async function save(): Promise<void> {
 async function remove(): Promise<void> {
   if (
     !library.selectedRecipe.value ||
-    !window.confirm(`Delete “${library.selectedRecipe.value.title}”?`)
+    !(await dialog.confirm(`Delete “${library.selectedRecipe.value.title}”?`, {
+      title: "Delete recipe",
+      confirmLabel: "Delete",
+    }))
   )
     return;
   const bookId = library.selectedRecipe.value.bookId ?? null;
@@ -112,18 +177,30 @@ async function remove(): Promise<void> {
   await library.refresh();
   nav.openBook(bookId);
 }
-async function acceptImport(source: string): Promise<void> {
+async function acceptImport(payload: ImportAcceptPayload): Promise<void> {
   await library.createRecipe();
   if (!library.selectedRecipe.value) return;
-  editor.source.value = source;
+  editor.source.value = payload.source;
   await save();
   importing.value = false;
-  nav.read();
+  if (payload.hasDiagnostics) {
+    editDrawerTab.value = "tools";
+    editInspectorTab.value = "diagnostics";
+    nav.edit();
+  } else {
+    editDrawerTab.value = undefined;
+    editInspectorTab.value = undefined;
+    nav.read();
+  }
 }
 async function importFromFile(): Promise<void> {
   const file = await openRecipeFile();
   if (!file) return;
-  await acceptImport(file.sourceText);
+  await acceptImport({
+    source: file.sourceText,
+    title: file.fileName.replace(/\.(cg|txt)$/i, ""),
+    hasDiagnostics: false,
+  });
 }
 function quickIngredient(): void {
   editor.appendSnippet(
@@ -139,25 +216,53 @@ async function convertRecipeUnits(): Promise<void> {
   if (!library.selectedRecipe.value) return;
   const target = unitDisplay.unitSystem.value === "metric" ? "metric" : "US customary";
   if (
-    !window.confirm(
+    !(await dialog.confirm(
       `Convert convertible ingredient quantities and step temperatures in this recipe to ${target} units? Count-based measures (cloves, sticks, etc.) will stay unchanged.`,
-    )
+      { title: "Convert units", confirmLabel: "Convert" },
+    ))
   ) {
     return;
   }
   const converted = await unitDisplay.convertRecipeSource(editor.source.value, editor.model.value);
   if (converted === editor.source.value) {
-    window.alert("No convertible quantities were found to update.");
+    await dialog.alert("No convertible quantities were found to update.");
     return;
   }
   editor.source.value = converted;
   await save();
 }
+function openReadingTools(tab: "kitchen" | "export"): void {
+  readingToolsTab.value = tab;
+  readingToolsOpen.value = true;
+}
+async function leaveEdit(): Promise<void> {
+  if (editor.dirty.value) {
+    const leave = await dialog.confirm("You have unsaved changes. Leave without saving?", {
+      title: "Unsaved changes",
+      confirmLabel: "Leave",
+    });
+    if (!leave) return;
+  }
+  editDrawerTab.value = undefined;
+  editInspectorTab.value = undefined;
+  nav.read();
+}
+function saveStatusText(): string {
+  switch (editor.saveStatus.value) {
+    case "saving":
+      return "Saving…";
+    case "saved":
+      return "All changes saved";
+    case "error":
+      return "Auto-save failed";
+    default:
+      return editor.dirty.value ? "Unsaved changes" : "";
+  }
+}
 </script>
 
 <template>
   <div class="app-root">
-    <!-- Home: the bookshelf -->
     <Bookshelf
       v-if="nav.view.value === 'shelf'"
       :books="library.books.value"
@@ -175,7 +280,6 @@ async function convertRecipeUnits(): Promise<void> {
 
     <MeasuresView v-else-if="nav.view.value === 'measures'" @back="nav.shelf()" />
 
-    <!-- An open book: flip through / search its recipes -->
     <OpenBook
       v-else-if="nav.view.value === 'book'"
       :book="openBookSummary"
@@ -187,7 +291,6 @@ async function convertRecipeUnits(): Promise<void> {
       @bulk-delete="bulkDelete"
     />
 
-    <!-- Reading a recipe as a book page -->
     <main
       v-else-if="library.selectedRecipe.value && nav.view.value === 'reading'"
       class="workspace"
@@ -201,6 +304,12 @@ async function convertRecipeUnits(): Promise<void> {
           /></small>
         </div>
         <div class="reading-bar-actions">
+          <button class="ghost" title="Cook with step timers" @click="openReadingTools('kitchen')">
+            <ChefHat :size="15" /> Cook
+          </button>
+          <button class="ghost" title="Export recipe" @click="openReadingTools('export')">
+            <PackageOpen :size="15" /> Export
+          </button>
           <button
             class="ghost unit-toggle"
             :title="
@@ -210,6 +319,30 @@ async function convertRecipeUnits(): Promise<void> {
           >
             <Scale :size="15" />
             {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+          </button>
+          <button
+            class="ghost unit-toggle"
+            :title="
+              viewSettings.misePlacement.value === 'colocated'
+                ? 'List ingredients and equipment once, above the method'
+                : 'Show ingredients and equipment beside the steps that use them'
+            "
+            @click="viewSettings.toggleMisePlacement()"
+          >
+            <ListChecks :size="15" />
+            {{ viewSettings.misePlacement.value === "colocated" ? "Mise" : "List" }}
+          </button>
+          <button
+            class="ghost unit-toggle"
+            :title="
+              viewSettings.numberStyle.value === 'fractions'
+                ? 'Show amounts as decimals (0.5 tsp)'
+                : 'Show amounts as cooking fractions (1/2 tsp)'
+            "
+            @click="viewSettings.toggleNumberStyle()"
+          >
+            <Divide :size="15" />
+            {{ viewSettings.numberStyle.value === "fractions" ? "1/2" : "0.5" }}
           </button>
           <button
             class="ghost"
@@ -226,25 +359,34 @@ async function convertRecipeUnits(): Promise<void> {
         </div>
       </header>
       <div class="reading-stage">
-        <RecipePage :model="editor.model.value" :recipe-id="library.selectedRecipe.value?.id" />
+        <RecipePage
+          :model="editor.model.value"
+          :source="editor.source.value"
+          :recipe-id="library.selectedRecipe.value?.id"
+        />
       </div>
+      <ReadingToolsDrawer
+        v-if="readingToolsOpen && library.selectedRecipe.value"
+        :model="editor.model.value"
+        :recipe-id="library.selectedRecipe.value.id"
+        :operations="editor.model.value.operations"
+        :initial-tab="readingToolsTab"
+        @close="readingToolsOpen = false"
+      />
     </main>
 
-    <!-- Editing: the recipe page as a live preview + edit drawer -->
     <main
       v-else-if="library.selectedRecipe.value && nav.view.value === 'editing'"
       class="workspace"
     >
       <header class="reading-bar">
-        <button class="ghost" @click="nav.read()"><ChevronLeft :size="16" /> Done</button>
+        <button class="ghost" @click="leaveEdit"><ChevronLeft :size="16" /> Done</button>
         <div class="reading-bar-title">
           <h1>
             {{ library.selectedRecipe.value.title
             }}<span v-if="editor.dirty.value" class="dirty" title="Unsaved changes">•</span>
           </h1>
-          <small
-            ><Database :size="13" /> SQLite · WebSocket <ConnectionBadge :status="connection"
-          /></small>
+          <small class="save-hint" :class="editor.saveStatus.value">{{ saveStatusText() }}</small>
         </div>
         <div class="reading-bar-actions">
           <button
@@ -258,6 +400,30 @@ async function convertRecipeUnits(): Promise<void> {
             {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
           </button>
           <button
+            class="ghost unit-toggle"
+            :title="
+              viewSettings.misePlacement.value === 'colocated'
+                ? 'List ingredients and equipment once, above the method'
+                : 'Show ingredients and equipment beside the steps that use them'
+            "
+            @click="viewSettings.toggleMisePlacement()"
+          >
+            <ListChecks :size="15" />
+            {{ viewSettings.misePlacement.value === "colocated" ? "Mise" : "List" }}
+          </button>
+          <button
+            class="ghost unit-toggle"
+            :title="
+              viewSettings.numberStyle.value === 'fractions'
+                ? 'Show amounts as decimals (0.5 tsp)'
+                : 'Show amounts as cooking fractions (1/2 tsp)'
+            "
+            @click="viewSettings.toggleNumberStyle()"
+          >
+            <Divide :size="15" />
+            {{ viewSettings.numberStyle.value === "fractions" ? "1/2" : "0.5" }}
+          </button>
+          <button
             class="ghost"
             title="Rewrite convertible quantities in the recipe source"
             @click="convertRecipeUnits"
@@ -269,7 +435,13 @@ async function convertRecipeUnits(): Promise<void> {
       </header>
       <section class="edit-layout" :style="{ '--inspector-w': inspectorWidth + 'px' }">
         <div class="reading-stage">
-          <RecipePage :model="editor.model.value" :recipe-id="library.selectedRecipe.value?.id" />
+          <RecipePage
+            :model="editor.model.value"
+            :recipe-id="library.selectedRecipe.value?.id"
+            editable
+            :source="editor.source.value"
+            @update:source="editor.source.value = $event"
+          />
         </div>
         <div
           class="pane-resizer"
@@ -287,9 +459,12 @@ async function convertRecipeUnits(): Promise<void> {
           :current-book-id="library.selectedRecipe.value.bookId ?? null"
           :dirty="editor.dirty.value"
           :saving="editor.saving.value"
+          :save-status="editor.saveStatus.value"
+          :initial-drawer-tab="editDrawerTab"
+          :initial-inspector-tab="editInspectorTab"
           @update:source="editor.source.value = $event"
           @save="save"
-          @close="nav.read()"
+          @close="leaveEdit"
           @move-book="library.moveSelected($event)"
           @delete="remove"
           @insert-ingredient="quickIngredient"
@@ -298,7 +473,6 @@ async function convertRecipeUnits(): Promise<void> {
       </section>
     </main>
 
-    <!-- Fallback: no recipe selected but not on shelf/book -->
     <section v-else class="empty-workspace">
       <h2>Nothing open</h2>
       <button class="primary" @click="nav.shelf()"><BookOpen :size="15" /> Back to shelf</button>
@@ -349,6 +523,17 @@ async function convertRecipeUnits(): Promise<void> {
   display: flex;
   align-items: center;
   gap: 5px;
+}
+.save-hint {
+  display: block;
+  font-size: 12px;
+  color: #6d7972;
+}
+.save-hint.saved {
+  color: #28643b;
+}
+.save-hint.error {
+  color: #a83737;
 }
 .reading-bar-actions {
   display: flex;

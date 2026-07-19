@@ -1,7 +1,19 @@
+use crate::syntax::TextRange;
 use culinator_core::*;
 use std::collections::{BTreeMap, HashSet};
 use thiserror::Error;
 use uuid::Uuid;
+
+/// A token plus the byte range it occupies in the source. Declarations record
+/// spans by remembering the token index they started at, then taking the range
+/// from that token's start to the last-consumed token's end — so a
+/// `Resource`/`Operation` span covers exactly its own text, which is what lets
+/// an editor patch one declaration in place.
+#[derive(Debug, Clone, PartialEq)]
+struct Spanned {
+    token: Token,
+    range: TextRange,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 enum Token {
@@ -37,9 +49,58 @@ impl From<crate::syntax::SyntaxError> for ParseError {
     }
 }
 
+/// A recoverable problem: the parser skipped some source and carried on.
+/// `span` points at the offending token so an editor can underline it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Diagnostic {
+    pub message: String,
+    pub span: SourceSpan,
+}
+
+/// The result of a recovering parse: whatever could be projected, plus every
+/// problem encountered. `value` is `None` only when even the document header
+/// was unusable.
+#[derive(Debug, Clone)]
+pub struct ParseOutcome<T> {
+    pub value: Option<T>,
+    pub diagnostics: Vec<Diagnostic>,
+}
+
+impl<T> ParseOutcome<T> {
+    /// Collapse to the strict result: any diagnostic at all is an error, so
+    /// validation, scheduling, and export keep exactly their old semantics.
+    fn into_strict(self) -> Result<T, ParseError> {
+        if let Some(first) = self.diagnostics.into_iter().next() {
+            return Err(ParseError::Syntax(first.span.start, first.message));
+        }
+        self.value
+            .ok_or_else(|| ParseError::Syntax(0, "empty document".into()))
+    }
+}
+
 pub(crate) fn parse_semantic_document(source: &str) -> Result<Document, ParseError> {
-    let tokens = lex(source)?;
-    Parser { tokens, at: 0 }.document()
+    parse_semantic_document_recovering(source).into_strict()
+}
+
+/// Parse as much as possible, collecting diagnostics rather than stopping at
+/// the first problem. This is what the editor uses: a half-typed declaration
+/// costs you that declaration, not the whole recipe.
+pub(crate) fn parse_semantic_document_recovering(source: &str) -> ParseOutcome<Document> {
+    let (tokens, mut diagnostics) = lex_recovering(source);
+    let mut parser = Parser {
+        tokens,
+        at: 0,
+        diagnostics: Vec::new(),
+    };
+    let value = match parser.document() {
+        Ok(document) => Some(document),
+        Err(error) => {
+            parser.diagnostics.push(parser.diagnostic_for(&error));
+            None
+        }
+    };
+    diagnostics.append(&mut parser.diagnostics);
+    ParseOutcome { value, diagnostics }
 }
 
 pub(crate) fn parse_semantic_recipe(source: &str) -> Result<Recipe, ParseError> {
@@ -62,10 +123,14 @@ pub(crate) fn parse_semantic_recipe_book(source: &str) -> Result<RecipeBook, Par
     }
 }
 
-fn lex(source: &str) -> Result<Vec<Token>, ParseError> {
+/// Tokenize, recording problems instead of stopping. An unterminated string or
+/// comment consumes the rest of the input (that is what the author is in the
+/// middle of typing); an unexpected byte is skipped.
+fn lex_recovering(source: &str) -> (Vec<Spanned>, Vec<Diagnostic>) {
     let b = source.as_bytes();
     let mut i = 0;
     let mut out = Vec::new();
+    let mut diagnostics: Vec<Diagnostic> = Vec::new();
     while i < b.len() {
         match b[i] as char {
             c if c.is_whitespace() => i += 1,
@@ -81,48 +146,86 @@ fn lex(source: &str) -> Result<Vec<Token>, ParseError> {
                     i += 1;
                 }
                 if i + 1 >= b.len() {
-                    return Err(ParseError::Lex(start, "unterminated block comment".into()));
+                    diagnostics.push(Diagnostic {
+                        message: "unterminated block comment".into(),
+                        span: SourceSpan {
+                            start,
+                            end: b.len(),
+                        },
+                    });
+                    i = b.len();
+                    continue;
                 }
                 i += 2;
             }
             '{' => {
-                out.push(Token::LBrace);
+                out.push(Spanned {
+                    token: Token::LBrace,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '}' => {
-                out.push(Token::RBrace);
+                out.push(Spanned {
+                    token: Token::RBrace,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '[' => {
-                out.push(Token::LBracket);
+                out.push(Spanned {
+                    token: Token::LBracket,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             ']' => {
-                out.push(Token::RBracket);
+                out.push(Spanned {
+                    token: Token::RBracket,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '<' => {
-                out.push(Token::Lt);
+                out.push(Spanned {
+                    token: Token::Lt,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '>' => {
-                out.push(Token::Gt);
+                out.push(Spanned {
+                    token: Token::Gt,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             ',' => {
-                out.push(Token::Comma);
+                out.push(Spanned {
+                    token: Token::Comma,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             ';' => {
-                out.push(Token::Semi);
+                out.push(Spanned {
+                    token: Token::Semi,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '=' => {
-                out.push(Token::Eq);
+                out.push(Spanned {
+                    token: Token::Eq,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '.' => {
-                out.push(Token::Dot);
+                out.push(Spanned {
+                    token: Token::Dot,
+                    range: TextRange::new(i, i + 1),
+                });
                 i += 1
             }
             '"' => {
@@ -135,9 +238,26 @@ fn lex(source: &str) -> Result<Vec<Token>, ParseError> {
                     i += 1;
                 }
                 if i >= b.len() {
-                    return Err(ParseError::Lex(start, "unterminated string".into()));
+                    diagnostics.push(Diagnostic {
+                        message: "unterminated string".into(),
+                        span: SourceSpan {
+                            start: start - 1,
+                            end: b.len(),
+                        },
+                    });
+                    // Emit what was typed so far so the property still projects.
+                    out.push(Spanned {
+                        token: Token::String(source[start..].to_string()),
+                        range: TextRange::new(start - 1, b.len()),
+                    });
+                    i = b.len();
+                    continue;
                 }
-                out.push(Token::String(source[start..i].to_string()));
+                // The span covers the quotes, not just the inner text.
+                out.push(Spanned {
+                    token: Token::String(source[start..i].to_string()),
+                    range: TextRange::new(start - 1, i + 1),
+                });
                 i += 1;
             }
             c if c.is_ascii_digit() || c == '-' => {
@@ -146,14 +266,24 @@ fn lex(source: &str) -> Result<Vec<Token>, ParseError> {
                 while i < b.len() && ((b[i] as char).is_ascii_digit() || b[i] == b'.') {
                     i += 1;
                 }
-                let n: f64 = source[start..i]
-                    .parse()
-                    .map_err(|_| ParseError::Lex(start, "invalid number".into()))?;
+                let Ok(n) = source[start..i].parse::<f64>() else {
+                    diagnostics.push(Diagnostic {
+                        message: format!("invalid number `{}`", &source[start..i]),
+                        span: SourceSpan { start, end: i },
+                    });
+                    continue;
+                };
                 if i < b.len() && b[i] == b'%' {
                     i += 1;
-                    out.push(Token::Percent(n));
+                    out.push(Spanned {
+                        token: Token::Percent(n),
+                        range: TextRange::new(start, i),
+                    });
                 } else {
-                    out.push(Token::Number(n));
+                    out.push(Spanned {
+                        token: Token::Number(n),
+                        range: TextRange::new(start, i),
+                    });
                 }
             }
             c if c.is_ascii_alphabetic() || c == '_' => {
@@ -162,20 +292,33 @@ fn lex(source: &str) -> Result<Vec<Token>, ParseError> {
                 while i < b.len() && ((b[i] as char).is_ascii_alphanumeric() || b[i] == b'_') {
                     i += 1;
                 }
-                out.push(Token::Ident(source[start..i].to_string()));
+                out.push(Spanned {
+                    token: Token::Ident(source[start..i].to_string()),
+                    range: TextRange::new(start, i),
+                });
             }
-            c => return Err(ParseError::Lex(i, format!("unexpected character `{c}`"))),
+            c => {
+                diagnostics.push(Diagnostic {
+                    message: format!("unexpected character `{c}`"),
+                    span: SourceSpan {
+                        start: i,
+                        end: i + c.len_utf8(),
+                    },
+                });
+                i += c.len_utf8();
+            }
         }
     }
-    Ok(out)
+    (out, diagnostics)
 }
 
 struct Parser {
-    tokens: Vec<Token>,
+    tokens: Vec<Spanned>,
     at: usize,
+    diagnostics: Vec<Diagnostic>,
 }
 impl Parser {
-    fn document(mut self) -> Result<Document, ParseError> {
+    fn document(&mut self) -> Result<Document, ParseError> {
         self.word("culinator")?;
         let version = self.scalar_text()?;
         self.take(Token::Semi)?;
@@ -267,40 +410,62 @@ impl Parser {
             yields: vec![],
             properties: BTreeMap::new(),
         };
-        while !self.peek_is(&Token::RBrace) {
-            let keyword = self.peek_ident()?.to_string();
-            match keyword.as_str() {
-                "title" => {
+        // Each iteration parses one member. A failure is recorded and the
+        // parser resynchronizes at the next declaration, so a half-typed
+        // ingredient does not cost the rest of the recipe.
+        while self.at < self.tokens.len() && !self.peek_is(&Token::RBrace) {
+            let before = self.at;
+            if let Err(error) = self.recipe_member(&mut recipe) {
+                let diagnostic = self.diagnostic_for(&error);
+                self.diagnostics.push(diagnostic);
+                // Always consume something, or a member that fails without
+                // advancing would spin forever.
+                if self.at == before {
                     self.at += 1;
-                    recipe.title = self.string()?;
-                    self.take(Token::Semi)?;
                 }
-                "type" => recipe.types.push(self.type_decl()?),
-                "resource" | "ingredient" | "material" | "container" | "equipment"
-                | "environment" | "labor" => recipe.resources.push(self.resource()?),
-                "process" => self.process(&mut recipe, None)?,
-                "operation" => {
-                    let op = self.operation("root".into())?;
-                    recipe.operations.push(op);
-                }
-                "prep" => {
-                    let op = self.prep("root".into())?;
-                    recipe.operations.push(op);
-                }
-                "serving" => recipe.servings.push(self.serving()?),
-                "yield" => recipe.yields.push(self.yield_def()?),
-                "formula" => recipe.formulas.push(self.formula()?),
-                _ => {
-                    let (k, v) = self.property()?;
-                    recipe.properties.insert(k, v);
-                }
+                self.synchronize();
             }
         }
-        self.take(Token::RBrace)?;
+        // A truncated document has no closing brace; that is already reported.
+        if self.peek_is(&Token::RBrace) {
+            self.at += 1;
+        }
         register_intermediates(&mut recipe);
         Ok(recipe)
     }
+
+    fn recipe_member(&mut self, recipe: &mut Recipe) -> Result<(), ParseError> {
+        let keyword = self.peek_ident()?.to_string();
+        match keyword.as_str() {
+            "title" => {
+                self.at += 1;
+                recipe.title = self.string()?;
+                self.take(Token::Semi)?;
+            }
+            "type" => recipe.types.push(self.type_decl()?),
+            "resource" | "ingredient" | "material" | "container" | "equipment" | "environment"
+            | "labor" => recipe.resources.push(self.resource()?),
+            "process" => self.process(recipe, None)?,
+            "operation" => {
+                let op = self.operation("root".into())?;
+                recipe.operations.push(op);
+            }
+            "prep" => {
+                let op = self.prep("root".into())?;
+                recipe.operations.push(op);
+            }
+            "serving" => recipe.servings.push(self.serving()?),
+            "yield" => recipe.yields.push(self.yield_def()?),
+            "formula" => recipe.formulas.push(self.formula()?),
+            _ => {
+                let (k, v) = self.property()?;
+                recipe.properties.insert(k, v);
+            }
+        }
+        Ok(())
+    }
     fn type_decl(&mut self) -> Result<TypeDeclaration, ParseError> {
+        let start_token = self.at;
         self.word("type")?;
         let name = self.ident()?;
         self.word("as")?;
@@ -312,10 +477,11 @@ impl Parser {
             base,
             states: BTreeMap::new(),
             properties: props,
-            span: None,
+            span: self.span_from(start_token),
         })
     }
     fn resource(&mut self) -> Result<Resource, ParseError> {
+        let start_token = self.at;
         let declaration = self.ident()?;
         let symbol = self.ident()?;
         let mut kind = match declaration.as_str() {
@@ -385,7 +551,7 @@ impl Parser {
             variant,
             notes,
             properties: props,
-            span: None,
+            span: self.span_from(start_token),
         })
     }
     fn process(&mut self, recipe: &mut Recipe, parent: Option<String>) -> Result<(), ParseError> {
@@ -430,6 +596,7 @@ impl Parser {
         Ok(())
     }
     fn operation(&mut self, process: String) -> Result<Operation, ParseError> {
+        let start_token = self.at;
         self.word("operation")?;
         let symbol = self.ident()?;
         let ty = if self.peek_ident().ok() == Some("as") {
@@ -443,6 +610,7 @@ impl Parser {
         };
         let mut op = self.blank_operation(symbol, ty, process);
         self.operation_body(&mut op)?;
+        op.span = self.span_from(start_token);
         Ok(op)
     }
     /// Desugar `prep <verb> <ingredient> [into <output>] (; | { ... })` into a
@@ -454,6 +622,7 @@ impl Parser {
     /// required. An optional block accepts the same properties as `operation`
     /// (duration, labor, after, additional inputs, ...).
     fn prep(&mut self, process: String) -> Result<Operation, ParseError> {
+        let start_token = self.at;
         self.word("prep")?;
         let verb = self.ident()?;
         let ingredient = self.ident()?;
@@ -487,7 +656,16 @@ impl Parser {
         } else {
             self.take(Token::Semi)?;
         }
+        op.span = self.span_from(start_token);
         Ok(op)
+    }
+    /// Byte span from the token that opened a declaration through the last
+    /// token consumed. Empty token streams yield `None` rather than a bogus
+    /// zero-length span at offset 0.
+    fn span_from(&self, start_token: usize) -> Option<SourceSpan> {
+        let start = self.tokens.get(start_token)?.range.start;
+        let end = self.tokens.get(self.at.saturating_sub(1))?.range.end;
+        (end >= start).then_some(SourceSpan { start, end })
     }
     fn blank_operation(&self, symbol: String, ty: TypeRef, process: String) -> Operation {
         Operation {
@@ -606,8 +784,10 @@ impl Parser {
                         // Single form may carry a per-step amount:
                         // `input butter 6 tbsp;` (divided ingredients).
                         let resource = self.path()?;
-                        let quantity = if matches!(self.tokens.get(self.at), Some(Token::Number(_)))
-                        {
+                        let quantity = if matches!(
+                            self.tokens.get(self.at).map(|s| &s.token),
+                            Some(Token::Number(_))
+                        ) {
                             Some(self.read_quantity()?)
                         } else {
                             None
@@ -852,7 +1032,7 @@ impl Parser {
         let first = self
             .tokens
             .get(self.at)
-            .cloned()
+            .map(|spanned| spanned.token.clone())
             .ok_or_else(|| self.err("expected value"))?;
         let v = match first {
             Token::String(s) => {
@@ -867,7 +1047,7 @@ impl Parser {
                 self.at += 1;
                 // A bare `to` after the number begins a range, so don't eat it
                 // as a unit (`2 to 3 clove`).
-                let first = match self.tokens.get(self.at).cloned() {
+                let first = match self.tokens.get(self.at).map(|s| s.token.clone()) {
                     Some(Token::Ident(unit)) if unit != "to" => {
                         self.at += 1;
                         Value::Quantity(Quantity {
@@ -906,7 +1086,7 @@ impl Parser {
             }
             let text = self.tokens[start..self.at]
                 .iter()
-                .map(|t| format!("{t:?}"))
+                .map(|spanned| format!("{:?}", spanned.token))
                 .collect::<Vec<_>>()
                 .join(" ");
             self.take(Token::Semi)?;
@@ -919,7 +1099,7 @@ impl Parser {
         self.take(Token::LBracket)?;
         let mut v = vec![];
         while !self.peek_is(&Token::RBracket) {
-            v.push(match self.tokens.get(self.at).cloned() {
+            v.push(match self.tokens.get(self.at).map(|s| s.token.clone()) {
                 Some(Token::Ident(s)) => {
                     self.at += 1;
                     Value::Symbol(s)
@@ -999,7 +1179,7 @@ impl Parser {
         Ok(ty)
     }
     fn scalar_text(&mut self) -> Result<String, ParseError> {
-        match self.tokens.get(self.at).cloned() {
+        match self.tokens.get(self.at).map(|s| s.token.clone()) {
             Some(Token::Number(n)) => {
                 self.at += 1;
                 Ok(n.to_string())
@@ -1012,7 +1192,7 @@ impl Parser {
         }
     }
     fn string(&mut self) -> Result<String, ParseError> {
-        match self.tokens.get(self.at).cloned() {
+        match self.tokens.get(self.at).map(|s| s.token.clone()) {
             Some(Token::String(s)) => {
                 self.at += 1;
                 Ok(s)
@@ -1021,7 +1201,7 @@ impl Parser {
         }
     }
     fn number(&mut self) -> Result<f64, ParseError> {
-        match self.tokens.get(self.at).cloned() {
+        match self.tokens.get(self.at).map(|s| s.token.clone()) {
             Some(Token::Number(n)) => {
                 self.at += 1;
                 Ok(n)
@@ -1034,7 +1214,7 @@ impl Parser {
         }
     }
     fn ident(&mut self) -> Result<String, ParseError> {
-        match self.tokens.get(self.at).cloned() {
+        match self.tokens.get(self.at).map(|s| s.token.clone()) {
             Some(Token::Ident(s)) => {
                 self.at += 1;
                 Ok(s)
@@ -1055,7 +1235,7 @@ impl Parser {
     /// Read the upper bound of a range: `<number>` with an optional unit.
     fn read_range_bound(&mut self) -> Result<Value, ParseError> {
         let n = self.number()?;
-        match self.tokens.get(self.at).cloned() {
+        match self.tokens.get(self.at).map(|s| s.token.clone()) {
             Some(Token::Ident(unit)) => {
                 self.at += 1;
                 Ok(Value::Quantity(Quantity {
@@ -1082,7 +1262,7 @@ impl Parser {
         }
     }
     fn take(&mut self, t: Token) -> Result<(), ParseError> {
-        if self.tokens.get(self.at) == Some(&t) {
+        if self.tokens.get(self.at).map(|s| &s.token) == Some(&t) {
             self.at += 1;
             Ok(())
         } else {
@@ -1090,10 +1270,10 @@ impl Parser {
         }
     }
     fn peek_is(&self, t: &Token) -> bool {
-        self.tokens.get(self.at) == Some(t)
+        self.tokens.get(self.at).map(|s| &s.token) == Some(t)
     }
     fn peek_ident(&self) -> Result<&str, ParseError> {
-        match self.tokens.get(self.at) {
+        match self.tokens.get(self.at).map(|spanned| &spanned.token) {
             Some(Token::Ident(s)) => Ok(s),
             _ => Err(self.err("expected declaration or property")),
         }
@@ -1101,7 +1281,7 @@ impl Parser {
     fn until_semi(&mut self) -> String {
         let mut s = String::new();
         while !self.peek_is(&Token::Semi) && self.at < self.tokens.len() {
-            s.push_str(&format!("{:?} ", self.tokens[self.at]));
+            s.push_str(&format!("{:?} ", self.tokens[self.at].token));
             self.at += 1;
         }
         self.at += 1;
@@ -1110,6 +1290,89 @@ impl Parser {
     fn err(&self, m: &str) -> ParseError {
         ParseError::Syntax(self.at, m.into())
     }
+
+    /// Byte span of the token the parser is sitting on, falling back to the end
+    /// of the source when it has run off the end.
+    fn current_span(&self) -> SourceSpan {
+        match self.tokens.get(self.at).or_else(|| self.tokens.last()) {
+            Some(spanned) => SourceSpan {
+                start: spanned.range.start,
+                end: spanned.range.end,
+            },
+            None => SourceSpan { start: 0, end: 0 },
+        }
+    }
+
+    /// Convert a thrown [`ParseError`] into a byte-addressed diagnostic.
+    /// `ParseError::Syntax` carries a *token index*, not an offset, so it has to
+    /// be resolved through the token table.
+    fn diagnostic_for(&self, error: &ParseError) -> Diagnostic {
+        let span = match error {
+            ParseError::Syntax(token_index, _) => match self.tokens.get(*token_index) {
+                Some(spanned) => SourceSpan {
+                    start: spanned.range.start,
+                    end: spanned.range.end,
+                },
+                None => self.current_span(),
+            },
+            ParseError::Lex(offset, _) => SourceSpan {
+                start: *offset,
+                end: *offset,
+            },
+            ParseError::Lossless(_) => SourceSpan { start: 0, end: 0 },
+        };
+        Diagnostic {
+            message: match error {
+                ParseError::Syntax(_, message) | ParseError::Lex(_, message) => message.clone(),
+                ParseError::Lossless(message) => message.clone(),
+            },
+            span,
+        }
+    }
+
+    /// Skip forward to somewhere it is safe to resume: the next declaration
+    /// keyword that begins a statement. Everything in between is reported as
+    /// skipped, so one broken block costs that block and nothing more.
+    fn synchronize(&mut self) {
+        while self.at < self.tokens.len() {
+            let starts_statement = match self.at.checked_sub(1).and_then(|i| self.tokens.get(i)) {
+                None => true,
+                Some(previous) => {
+                    matches!(previous.token, Token::Semi | Token::LBrace | Token::RBrace)
+                }
+            };
+            if starts_statement
+                && let Token::Ident(word) = &self.tokens[self.at].token
+                && is_declaration_keyword(word)
+            {
+                return;
+            }
+            self.at += 1;
+        }
+    }
+}
+
+/// Keywords that begin a recipe- or process-level declaration. Used only as a
+/// resynchronization hint after an error.
+fn is_declaration_keyword(word: &str) -> bool {
+    matches!(
+        word,
+        "type"
+            | "resource"
+            | "ingredient"
+            | "material"
+            | "container"
+            | "equipment"
+            | "environment"
+            | "labor"
+            | "process"
+            | "operation"
+            | "prep"
+            | "serving"
+            | "yield"
+            | "formula"
+            | "recipe"
+    )
 }
 /// Give any operation output that has no matching resource declaration an
 /// implicit [`ResourceKind::Intermediate`] resource. This lets a recipe wire

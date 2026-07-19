@@ -58,8 +58,7 @@ export async function searchNutritionFoods(
   query: string,
   limit = 20,
 ): Promise<NutritionSearchResult[]> {
-  if (hasConfiguredService())
-    return serviceRpc("nutrition.search", { query, limit });
+  if (hasConfiguredService()) return serviceRpc("nutrition.search", { query, limit });
   if (!query.trim()) return [];
   return [
     {

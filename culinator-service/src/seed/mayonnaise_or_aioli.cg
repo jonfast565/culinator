@@ -1,0 +1,91 @@
+culinator 0.3;
+
+recipe mayonnaise_or_aioli {
+    title "Mayonnaise or Aioli";
+    section "Sauces & Basics";
+
+    source "brox";
+    publisher "based.cooking";
+    source_url "https://based.cooking/mayonnaise-or-aioli/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 2 min;
+    total_time 3 min;
+
+    ingredient egg measured by count {
+        quantity 1 count;
+        note "or 2 egg yolks, preferably at room temperature; use pasteurized eggs if raw egg is a concern";
+    }
+    ingredient oil measured by volume {
+        name "neutral oil";
+        quantity 1 cup;
+    }
+    ingredient vinegar measured by volume {
+        name "vinegar or lemon juice";
+        quantity 1 tbsp to 2 tbsp;
+    }
+    ingredient pickle_juice measured by volume {
+        quantity 1 tbsp;
+        optional true;
+    }
+    ingredient garlic measured by count {
+        quantity 2 clove to 4 clove;
+        optional true;
+        variant "aioli";
+        note "diced; leave it out for plain mayonnaise";
+    }
+    ingredient mustard measured by volume {
+        name "dijon mustard";
+        quantity 1 tsp;
+        optional true;
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pepper measured by volume { to_taste true; }
+
+    container beaker { name "narrow, tall container"; }
+    equipment hand_blender { name "hand blender"; }
+
+    material emulsion_base measured by volume { }
+
+    process emulsifying {
+        operation layer_base does mix {
+            input [egg, vinegar, mustard, pickle_juice, garlic, salt, pepper];
+            container beaker;
+            note "for aioli, add the diced garlic here";
+            duration 1 min;
+            labor active;
+            produces emulsion_base;
+        }
+        operation add_oil does move {
+            input [emulsion_base, oil];
+            after layer_base;
+            container beaker;
+            note "the oil goes in last and must sit on top of everything else, or the emulsion can separate";
+            duration 1 min;
+            labor active;
+            produces layered_mixture;
+        }
+        operation blend does mix {
+            input [layered_mixture];
+            after add_oil;
+            container beaker;
+            tool hand_blender;
+            note "rest the blender on the very bottom before switching it on, then run it at full power and work upwards slowly";
+            until visual "all the oil is emulsified";
+            duration 1 min;
+            labor active;
+            produces mayonnaise;
+        }
+        operation adjust does mix {
+            input [mayonnaise];
+            after blend;
+            optional true;
+            note "taste and mix in extra spices or vinegar";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 8 count;
+    }
+}

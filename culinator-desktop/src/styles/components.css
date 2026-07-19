@@ -209,25 +209,12 @@
     display: flex;
     flex-direction: column;
   }
-  .ingredient-list li {
-    display: grid;
-    grid-template-columns: 96px 1fr;
-    gap: 10px;
-    align-items: baseline;
-    padding: 6px 0;
+  /* Legacy narrative styles — IngredientListRow carries its own grid layout. */
+  .ingredient-list .ingredient-row {
     border-bottom: 1px dashed #e2e6e1;
   }
-  .ingredient-list li:last-child {
+  .ingredient-list .ingredient-row:last-child {
     border-bottom: 0;
-  }
-  .ingredient-list .qty {
-    font-variant-numeric: tabular-nums;
-    font-weight: 600;
-    color: #27342d;
-    text-align: right;
-  }
-  .ingredient-list .name {
-    color: #35423b;
   }
   .method {
     display: flex;

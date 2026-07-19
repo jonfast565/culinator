@@ -816,6 +816,7 @@ version = "0.1.0"
 dependencies = [
  "culinator-core",
  "culinator-models",
+ "culinator-narrative",
  "serde_json",
  "uuid",
  "zip 2.4.2",
@@ -857,6 +858,14 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "culinator-narrative"
+version = "0.1.0"
+dependencies = [
+ "culinator-core",
  "uuid",
 ]
 
@@ -956,6 +965,19 @@ dependencies = [
  "culinator-models",
  "serde",
  "uuid",
+]
+
+[[package]]
+name = "culinator-wasm"
+version = "0.1.0"
+dependencies = [
+ "culinator-core",
+ "culinator-narrative",
+ "culinator-parser",
+ "serde",
+ "serde_json",
+ "uuid",
+ "wasm-bindgen",
 ]
 
 [[package]]

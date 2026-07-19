@@ -1,0 +1,149 @@
+culinator 0.3;
+
+recipe omelet {
+    title "Baked Tapioca Omelet";
+    section "Breakfast";
+
+    publisher "based.cooking";
+    source_url "https://based.cooking/omelet/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 40 min;
+
+    ingredient tapioca measured by volume {
+        name "quick-cooking tapioca";
+        quantity 2 tbsp;
+    }
+    ingredient salt measured by volume { quantity 0.5 tsp; }
+    ingredient pepper measured by volume { quantity 0.125 tsp; }
+    ingredient milk measured by volume {
+        quantity 0.75 cup;
+        state scalded;
+    }
+    ingredient butter measured by volume {
+        name "butter or margarine";
+        quantity 1 tbsp;
+        divided true;
+        note "1 tbsp into the base, plus more to butter the pan";
+    }
+    ingredient egg_yolks measured by count {
+        quantity 4 count;
+        note "beaten until thick";
+    }
+    ingredient egg_whites measured by count {
+        quantity 4 count;
+        note "beaten stiff";
+    }
+    ingredient cheddar measured by volume {
+        name "grated sharp cheddar";
+        quantity 1 cup;
+        divided true;
+        optional true;
+        variant "cheese omelet";
+        note "1/2 cup folded in with the whites, 1/2 cup sprinkled on top before baking";
+    }
+
+    container double_boiler { name "double boiler"; }
+    equipment frying_pan { name "oven-safe frying pan"; }
+    equipment knife { name "knife"; }
+    equipment oven { name "oven"; }
+    container platter { name "hot platter"; }
+
+    material tapioca_base measured by volume { }
+    material cooled_base measured by volume { }
+    material yolk_base measured by volume { }
+    material omelet_batter measured by volume { }
+
+    process base {
+        operation cook_tapioca does heat {
+            input [milk, tapioca, salt, pepper];
+            container double_boiler;
+            note "stir frequently";
+            until visual "the tapioca is clear and the mixture has thickened";
+            duration 15 min;
+            labor monitor;
+            produces tapioca_base;
+        }
+        operation add_butter does mix {
+            input [tapioca_base];
+            input butter 1 tbsp;
+            after cook_tapioca;
+            container double_boiler;
+            duration 1 min;
+            labor active;
+            produces buttered_base;
+        }
+        operation cool does rest {
+            input [buttered_base];
+            after add_butter;
+            note "stir occasionally as it cools";
+            duration estimated 10 min;
+            labor passive;
+            produces cooled_base;
+        }
+        operation combine_yolks does mix {
+            input [cooled_base, egg_yolks];
+            after cool;
+            duration 2 min;
+            labor active;
+            produces yolk_base;
+        }
+        operation fold_whites does mix {
+            input [yolk_base, egg_whites];
+            after combine_yolks;
+            note "for a cheese omelet, add 1/2 cup of the grated cheddar just before folding in the whites";
+            duration 2 min;
+            labor active;
+            produces omelet_batter;
+        }
+    }
+
+    process cooking {
+        operation preheat does heat {
+            target oven;
+            temperature 350 fahrenheit;
+            duration estimated 12 min;
+            labor automated;
+        }
+        operation butter_pan does coat {
+            equipment frying_pan;
+            heat low;
+            duration 1 min;
+            labor active;
+            produces buttered_pan;
+        }
+        operation cook_stovetop does heat {
+            input [omelet_batter];
+            after [fold_whites, butter_pan];
+            equipment frying_pan;
+            heat low;
+            duration 3 min;
+            labor monitor;
+            produces set_omelet;
+        }
+        operation bake does heat {
+            input [set_omelet];
+            after [cook_stovetop, preheat];
+            equipment oven;
+            temperature 350 fahrenheit;
+            note "for a cheese omelet, sprinkle the remaining 1/2 cup of cheddar over the top first";
+            until tester "an inserted knife comes out clean";
+            duration 15 min;
+            labor passive;
+            produces baked_omelet;
+        }
+        operation fold_and_serve does move {
+            input [baked_omelet];
+            after bake;
+            container platter;
+            tool knife;
+            note "cut across at right angles to the pan handle without cutting all the way through, then fold carefully from the handle to the opposite side";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield omelets measured by count {
+        amount 4 count;
+    }
+}

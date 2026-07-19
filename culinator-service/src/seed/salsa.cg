@@ -1,0 +1,69 @@
+culinator 0.3;
+
+recipe salsa {
+    title "Salsa";
+    section "Sauces & Basics";
+
+    source "Lars Henrik Bolstad";
+    publisher "based.cooking";
+    source_url "https://based.cooking/salsa/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 5 min;
+
+    ingredient tomatoes measured by mass {
+        name "fresh tomatoes";
+        quantity 600 g;
+    }
+    ingredient canned_tomatoes measured by mass {
+        quantity 400 g;
+    }
+    ingredient green_onion measured by count { quantity 1 count; }
+    ingredient red_onion measured by count { quantity 1 count; }
+    ingredient jalapeno measured by count { quantity 1 count; }
+    ingredient cilantro measured by count {
+        name "fresh cilantro";
+        quantity 1 handful;
+    }
+    ingredient garlic measured by count { quantity 1 clove; }
+    ingredient lime measured by count {
+        quantity 0.5 count;
+        optional true;
+        note "juice squeezed";
+    }
+    ingredient chili measured by count {
+        name "chili pepper";
+        quantity 1 count;
+        optional true;
+    }
+    ingredient cumin measured by volume {
+        name "ground cumin";
+        quantity 0.25 tsp;
+        optional true;
+    }
+
+    equipment food_processor { name "food processor"; }
+    container jar { name "airtight container"; }
+
+    process blending {
+        operation pulse does mix {
+            input [tomatoes, canned_tomatoes, green_onion, red_onion, jalapeno, cilantro, garlic, lime, chili, cumin];
+            equipment food_processor;
+            note "burst it briefly - stop at the chunkiness you like";
+            duration 2 min;
+            labor active;
+            produces fresh_salsa;
+        }
+        operation refrigerate does rest {
+            input [fresh_salsa];
+            after pulse;
+            container jar;
+            note "keeps up to a week";
+            duration up to 7 day;
+            labor passive;
+        }
+    }
+
+    yield servings measured by count {
+        amount 14 count;
+    }
+}

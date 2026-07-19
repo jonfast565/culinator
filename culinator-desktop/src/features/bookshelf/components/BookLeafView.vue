@@ -2,6 +2,7 @@
 import { Clock, ArrowRight } from "lucide-vue-next";
 import type { BookLeaf } from "../bookContents";
 import RecipeImage from "../../reading/components/RecipeImage.vue";
+import IngredientListRow from "../../reading/components/IngredientListRow.vue";
 
 defineProps<{ leaf: BookLeaf }>();
 const emit = defineEmits<{
@@ -58,7 +59,11 @@ const emit = defineEmits<{
       <section v-if="leaf.ingredients.length" class="recipe-block">
         <h3 class="block-label">Ingredients</h3>
         <ul class="recipe-ings">
-          <li v-for="(ingredient, index) in leaf.ingredients" :key="index">{{ ingredient }}</li>
+          <IngredientListRow
+            v-for="(ingredient, index) in leaf.ingredients"
+            :key="index"
+            :parts="ingredient"
+          />
         </ul>
       </section>
 
@@ -252,14 +257,20 @@ const emit = defineEmits<{
   list-style: none;
   margin: 0;
   padding: 0;
-  color: #3a463f;
-  font-size: 13px;
-  line-height: 1.65;
   overflow: auto;
 }
-.recipe-ings li {
+.recipe-ings :deep(.ingredient-row) {
   padding: 4px 0;
-  border-bottom: 1px dotted var(--rule);
+  border-bottom-color: var(--rule);
+  grid-template-columns: minmax(3.5rem, 5rem) 1fr;
+  gap: 8px;
+}
+.recipe-ings :deep(.ingredient-qty) {
+  font-size: 12px;
+}
+.recipe-ings :deep(.ingredient-name),
+.recipe-ings :deep(.ingredient-aside) {
+  font-size: 13px;
 }
 .recipe-steps {
   margin: 0;

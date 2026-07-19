@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   Plus,
   ScanLine,
@@ -12,6 +12,7 @@ import {
 } from "lucide-vue-next";
 import type { RecipeBookSummary, RecipeSummary } from "../../../domain/types";
 import RecipeSearchPanel from "../../search/components/RecipeSearchPanel.vue";
+import { registerSearchHandler } from "../../../shared/composables/useGlobalSearch";
 
 const props = defineProps<{
   books: RecipeBookSummary[];
@@ -29,17 +30,35 @@ const emit = defineEmits<{
   (event: "open-measures"): void;
 }>();
 
-const showSearch = ref(false);
+const showSearch = ref(window.localStorage.getItem("cg:shelf-search") === "1");
+const searchPanel = ref<InstanceType<typeof RecipeSearchPanel>>();
 
 const unfiledCount = computed(() => props.recipes.filter((recipe) => !recipe.bookId).length);
 
-// Deterministic book-cloth colour from the id so a book keeps its spine colour.
 const CLOTHS = ["#2f4b3a", "#8a5a44", "#43364f", "#2d3b52", "#5a2f3a", "#2f5551", "#7a5a1f"];
 function clothFor(id: string): string {
   let hash = 0;
   for (let index = 0; index < id.length; index += 1) hash = (hash * 31 + id.charCodeAt(index)) | 0;
   return CLOTHS[Math.abs(hash) % CLOTHS.length];
 }
+
+function toggleSearch(): void {
+  showSearch.value = !showSearch.value;
+  window.localStorage.setItem("cg:shelf-search", showSearch.value ? "1" : "0");
+  if (showSearch.value) window.requestAnimationFrame(() => searchPanel.value?.focus());
+}
+
+let unregisterSearch = () => {};
+onMounted(() => {
+  unregisterSearch = registerSearchHandler("shelf", () => {
+    if (!showSearch.value) {
+      showSearch.value = true;
+      window.localStorage.setItem("cg:shelf-search", "1");
+    }
+    window.requestAnimationFrame(() => searchPanel.value?.focus());
+  });
+});
+onBeforeUnmount(unregisterSearch);
 </script>
 
 <template>
@@ -54,7 +73,7 @@ function clothFor(id: string): string {
       </div>
       <div class="shelf-actions">
         <button @click="emit('open-measures')"><Ruler :size="15" /> Measures</button>
-        <button @click="showSearch = !showSearch">Search library</button>
+        <button :class="{ active: showSearch }" @click="toggleSearch">Search library</button>
         <button @click="emit('create-recipe')"><Plus :size="15" /> New recipe</button>
         <button @click="emit('import-recipe')"><ScanLine :size="15" /> Scan</button>
         <button @click="emit('import-file')"><FileUp :size="15" /> Import</button>
@@ -63,7 +82,11 @@ function clothFor(id: string): string {
     </header>
 
     <div v-if="showSearch" class="shelf-search">
-      <RecipeSearchPanel placeholder="Search all recipes…" @select="emit('open-recipe', $event)" />
+      <RecipeSearchPanel
+        ref="searchPanel"
+        placeholder="Search all recipes… (⌘K)"
+        @select="emit('open-recipe', $event)"
+      />
     </div>
 
     <div class="shelf">
@@ -92,7 +115,6 @@ function clothFor(id: string): string {
           </p>
         </div>
 
-        <!-- Unfiled recipes appear as their own book so nothing is unreachable -->
         <div
           v-if="unfiledCount"
           class="book unfiled"
@@ -179,6 +201,10 @@ function clothFor(id: string): string {
 .shelf-actions button:hover {
   background: #392c19;
 }
+.shelf-actions button.active {
+  background: #3d3020;
+  border-color: #5a4a32;
+}
 .shelf-actions button.primary {
   background: #28643b;
   border-color: #28643b;
@@ -195,7 +221,6 @@ function clothFor(id: string): string {
   min-height: 0;
   overflow: auto;
   padding: 40px 28px 60px;
-  /* Warm wood surface with faint plank grain. */
   background:
     repeating-linear-gradient(
       90deg,

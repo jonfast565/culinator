@@ -1,0 +1,118 @@
+culinator 0.3;
+
+recipe tabouleh {
+    title "Tabouleh";
+    section "Salads";
+
+    source "joel-maxuel";
+    publisher "based.cooking";
+    source_url "https://based.cooking/tabouleh/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 15 min;
+    total_time 45 min;
+
+    ingredient bulghur measured by volume {
+        name "cracked wheat (bulghur)";
+        quantity 2 cup;
+    }
+    ingredient hot_water measured by volume {
+        name "very hot water";
+        quantity 2 cup;
+        note "or as the package directs";
+    }
+    ingredient cucumber measured by count { quantity 1 count; }
+    ingredient tomatoes measured by count {
+        quantity 2 count;
+        size "small";
+    }
+    ingredient green_onions measured by count { quantity 1 bunch; }
+    ingredient mint measured by volume {
+        name "fresh mint";
+        quantity 0.5 cup;
+        note "measured after chopping";
+    }
+    ingredient parsley measured by volume {
+        name "fresh parsley";
+        quantity 2 cup;
+        note "measured after chopping";
+    }
+    ingredient garlic measured by count { quantity 1 clove; }
+    ingredient lemon_juice measured by volume {
+        name "fresh lemon juice";
+        quantity 0.5 cup;
+    }
+    ingredient olive_oil measured by volume { quantity 0.75 cup; }
+    ingredient pepper measured by volume { quantity 1 tbsp; }
+    ingredient salt measured by volume { quantity 2 tsp; }
+
+    container soaking_bowl { name "soaking bowl"; }
+    container salad_bowl { name "medium bowl"; }
+    container dressing_bowl { name "small bowl"; }
+    equipment strainer { name "strainer"; }
+
+    material soaked_bulghur measured by volume { }
+    material drained_bulghur measured by volume { }
+    material salad_mix measured by mass { }
+    material dressing measured by volume { }
+
+    process soaking {
+        operation soak does rest {
+            input [bulghur, hot_water];
+            container soaking_bowl;
+            until texture "the water is absorbed";
+            duration 30 min;
+            labor passive;
+            produces soaked_bulghur;
+        }
+        operation drain does strain {
+            input [soaked_bulghur];
+            after soak;
+            equipment strainer;
+            note "drain any excess water and squeeze dry";
+            duration 2 min;
+            labor active;
+            produces drained_bulghur;
+        }
+    }
+
+    process preparation {
+        prep chop cucumber into chopped_cucumber { duration 2 min; }
+        prep chop tomatoes into chopped_tomatoes { duration 2 min; }
+        prep slice green_onions into sliced_green_onions { duration 2 min; }
+        prep chop mint into chopped_mint { duration 2 min; }
+        prep chop parsley into chopped_parsley { duration 3 min; }
+        prep mince garlic into minced_garlic { duration 1 min; }
+    }
+
+    process assembly {
+        operation combine does mix {
+            input [drained_bulghur, chopped_cucumber, chopped_tomatoes, sliced_green_onions, chopped_mint, chopped_parsley];
+            after [drain, chop_cucumber, chop_tomatoes, slice_green_onions, chop_mint, chop_parsley];
+            container salad_bowl;
+            duration 2 min;
+            labor active;
+            produces salad_mix;
+        }
+        operation mix_dressing does mix {
+            input [olive_oil, lemon_juice, minced_garlic, salt, pepper];
+            after mince_garlic;
+            container dressing_bowl;
+            duration 2 min;
+            labor active;
+            produces dressing;
+        }
+        operation dress does coat {
+            input [salad_mix, dressing];
+            after [combine, mix_dressing];
+            container salad_bowl;
+            note "serve chilled or at room temperature";
+            duration 1 min;
+            labor active;
+            produces tabouleh_salad;
+        }
+    }
+
+    yield servings measured by count {
+        amount 12 count;
+    }
+}

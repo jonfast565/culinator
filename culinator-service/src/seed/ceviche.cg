@@ -1,0 +1,83 @@
+culinator 0.3;
+
+recipe ceviche {
+    title "Ceviche";
+    section "Starters";
+
+    source "jacob-smith";
+    publisher "based.cooking";
+    source_url "https://based.cooking/ceviche/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+
+    ingredient seafood measured by mass {
+        note "white-fleshed South American fish, shrimp, or octopus all work well";
+    }
+    ingredient red_onion measured by count { quantity 1 count; }
+    ingredient lime_juice measured by volume {
+        note "several limes' worth; the softer limes have the most juice. There is such a thing as too much lime";
+    }
+    ingredient soaking_water measured by volume {
+        name "cold water";
+        note "for soaking the onion";
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pepper measured by volume { to_taste true; }
+
+    container soaking_bowl { name "bowl of cold water"; }
+    container seafood_bowl { name "mixing bowl"; }
+
+    material soaked_onion measured by mass { }
+    material seasoned_seafood measured by mass { }
+
+    process preparation {
+        prep slice red_onion into sliced_onion {
+            note "as thinly as you can";
+            duration 4 min;
+        }
+        operation soak_onion does rest {
+            input [sliced_onion, soaking_water];
+            after slice_red_onion;
+            container soaking_bowl;
+            note "soaking mellows the onion so it doesn't overpower everything else";
+            duration estimated 20 min;
+            labor passive;
+            produces soaked_onion;
+        }
+        prep cube seafood into cubed_seafood { duration 5 min; }
+        operation season does coat {
+            input [cubed_seafood, salt, pepper];
+            after cube_seafood;
+            container seafood_bowl;
+            note "season generously";
+            duration 1 min;
+            labor active;
+            produces seasoned_seafood;
+        }
+    }
+
+    process curing {
+        operation add_lime does coat {
+            input [seasoned_seafood, lime_juice];
+            after season;
+            container seafood_bowl;
+            note "get good coverage over all the seafood";
+            duration 2 min;
+            labor active;
+            produces limed_seafood;
+        }
+        operation cure does rest {
+            input [limed_seafood, soaked_onion];
+            after [add_lime, soak_onion];
+            container seafood_bowl;
+            note "cover it; edible after an hour, but ceviche gets better as it ages, so overnight is better";
+            duration 1 hour to 12 hour;
+            labor passive;
+            produces ceviche_dish;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

@@ -1,0 +1,138 @@
+culinator 0.3;
+
+recipe creamy_mashed_potatoes {
+    title "Creamy Mashed Potatoes";
+    section "Sides";
+
+    source "yaroslav-smirnov";
+    publisher "based.cooking";
+    source_url "https://based.cooking/creamy-mashed-potatoes/";
+    attribution "From based.cooking; recipes there are public domain. Originally published at yaroslavps.com.";
+
+    ingredient potatoes measured by mass { quantity 1 kg; }
+    ingredient milk measured by volume {
+        quantity 200 ml;
+        note "play with the proportions depending on how creamy you want it";
+    }
+    ingredient mayonnaise measured by volume {
+        quantity 200 ml;
+        note "play with the proportions depending on how creamy you want it";
+    }
+    ingredient cheese measured by mass { quantity 100 g; }
+    ingredient garlic_powder measured by volume { to_taste true; }
+    ingredient bacon measured by count { quantity 12 count to 16 count; }
+    ingredient butter measured by volume { }
+    ingredient green_onions measured by count { quantity 3 count to 4 count; }
+    ingredient pepper measured by volume {
+        name "black pepper";
+        to_taste true;
+    }
+    ingredient salt measured by volume { to_taste true; }
+
+    container pot { name "pot"; }
+    container milk_pan { name "small saucepan"; }
+    equipment frying_pan { name "frying pan"; }
+    equipment masher { name "potato masher"; }
+    equipment grater { name "grater"; }
+
+    material boiled_potatoes measured by mass { }
+    material drained_potatoes measured by mass { }
+    material creamy_mixture measured by volume { }
+    material mashed_potatoes measured by mass { }
+
+    process potatoes_cooking {
+        prep cut potatoes into cut_potatoes {
+            note "peel first, then cut into medium-sized pieces";
+            duration 8 min;
+        }
+        operation boil does heat {
+            input [cut_potatoes];
+            after cut_potatoes;
+            container pot;
+            heat high;
+            note "cover the potatoes with water";
+            until texture "the potatoes are soft";
+            duration 20 min to 30 min;
+            labor monitor;
+            produces boiled_potatoes;
+        }
+        operation drain does strain {
+            input [boiled_potatoes];
+            after boil;
+            container pot;
+            note "remove all the water from the pot";
+            duration 1 min;
+            labor active;
+            produces drained_potatoes;
+        }
+    }
+
+    process additions {
+        prep cut bacon into cut_bacon {
+            note "little pieces";
+            duration 3 min;
+        }
+        operation fry_bacon does heat {
+            input [cut_bacon];
+            after cut_bacon;
+            equipment frying_pan;
+            heat medium;
+            note "start this about ten minutes before the potatoes come off the heat";
+            until visual "crisp";
+            duration 8 min;
+            labor monitor;
+            produces fried_bacon;
+        }
+        operation warm_dairy does heat {
+            input [milk, mayonnaise];
+            container milk_pan;
+            heat low;
+            duration 3 min;
+            labor monitor;
+            produces creamy_mixture;
+        }
+        prep grate cheese into grated_cheese { duration 3 min; }
+        prep chop green_onions into chopped_green_onions { duration 2 min; }
+    }
+
+    process mashing {
+        operation mash does mix {
+            input [drained_potatoes, creamy_mixture, butter];
+            after [drain, warm_dairy];
+            container pot;
+            tool masher;
+            duration 5 min;
+            labor active;
+            produces mashed_potatoes;
+        }
+        operation season does mix {
+            input [mashed_potatoes, salt, pepper, garlic_powder];
+            after mash;
+            container pot;
+            note "keep mashing as you season";
+            until texture "somewhat homogeneous and properly mashed";
+            duration 3 min;
+            labor active;
+            produces seasoned_potatoes;
+        }
+        operation fold_in does mix {
+            input [seasoned_potatoes, grated_cheese, fried_bacon];
+            after [season, grate_cheese, fry_bacon];
+            container pot;
+            note "mix just a little";
+            duration 2 min;
+            labor active;
+            produces loaded_potatoes;
+        }
+        operation garnish does coat {
+            input [loaded_potatoes, chopped_green_onions];
+            after [fold_in, chop_green_onions];
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

@@ -227,9 +227,14 @@ export async function serviceRequest<T>(path: string, init?: RequestInit): Promi
   const body = init?.body ? (JSON.parse(String(init.body)) as Record<string, unknown>) : {};
   const recipe = path.match(/^\/api\/v1\/recipes\/([^/]+)$/);
   const recipeBookMove = path.match(/^\/api\/v1\/recipes\/([^/]+)\/book$/);
+  const recipeTries = path.match(/^\/api\/v1\/recipes\/([^/]+)\/tries$/);
+  const recipeHaccp = path.match(/^\/api\/v1\/recipes\/([^/]+)\/haccp$/);
   const book = path.match(/^\/api\/v1\/books\/([^/]+)$/);
   const recipeExport = path.match(/^\/api\/v1\/recipes\/([^/]+)\/export$/);
   const recipeFormulas = path.match(/^\/api\/v1\/recipes\/([^/]+)\/formulas$/);
+  const recipeTry = path.match(/^\/api\/v1\/tries\/([^/]+)$/);
+  const haccpPlan = path.match(/^\/api\/v1\/haccp\/([^/]+)$/);
+  const haccpRecord = path.match(/^\/api\/v1\/haccp\/ccps\/([^/]+)\/records$/);
   if (path === "/api/v1/recipes" && method === "GET") return serviceRpc("recipes.list");
   if (path === "/api/v1/recipes" && method === "POST") return serviceRpc("recipes.create", body);
   if (path === "/api/v1/books" && method === "GET") return serviceRpc("books.list");
@@ -255,5 +260,23 @@ export async function serviceRequest<T>(path: string, init?: RequestInit): Promi
     return serviceRpc("formulas.save", { formula: body });
   if (recipeFormulas)
     return serviceRpc("formulas.list", { recipeId: decodeURIComponent(recipeFormulas[1]) });
+  if (recipeTries && method === "GET")
+    return serviceRpc("tries.list", { recipeId: decodeURIComponent(recipeTries[1]) });
+  if (recipeTry && method === "GET")
+    return serviceRpc("tries.get", { tryId: decodeURIComponent(recipeTry[1]) });
+  if (recipeTry && method === "DELETE")
+    return serviceRpc("tries.delete", { tryId: decodeURIComponent(recipeTry[1]) });
+  if (recipeHaccp && method === "GET")
+    return serviceRpc("haccp.list", { recipeId: decodeURIComponent(recipeHaccp[1]) });
+  if (recipeHaccp && method === "POST")
+    return serviceRpc("haccp.create", { recipeId: decodeURIComponent(recipeHaccp[1]), ...body });
+  if (haccpPlan && method === "GET")
+    return serviceRpc("haccp.get", { planId: decodeURIComponent(haccpPlan[1]) });
+  if (haccpPlan && method === "PUT")
+    return serviceRpc("haccp.save", { planId: decodeURIComponent(haccpPlan[1]), ...body });
+  if (haccpPlan && method === "DELETE")
+    return serviceRpc("haccp.delete", { planId: decodeURIComponent(haccpPlan[1]) });
+  if (haccpRecord && method === "POST")
+    return serviceRpc("haccp.record", { ccpId: decodeURIComponent(haccpRecord[1]), ...body });
   throw new Error(`No WebSocket RPC mapping for ${method} ${path}`);
 }

@@ -1,5 +1,5 @@
 use super::util::{escape, group_recipes};
-use crate::{content, label, method_html};
+use crate::{label, method_html};
 use culinator_core::Recipe;
 use culinator_models::{ApplicationError, BookExportOptions, NutritionFacts};
 use std::io::{Cursor, Write};
@@ -208,7 +208,7 @@ fn section_xhtml(title: &str) -> String {
 }
 
 fn recipe_xhtml(recipe: &Recipe, options: &BookExportOptions, label_svg: &str) -> String {
-    let content = content::extract(recipe);
+    let content = culinator_narrative::extract(recipe);
     let equipment = method_html::equipment_html(&content);
     let equipment_block = if equipment.is_empty() {
         String::new()

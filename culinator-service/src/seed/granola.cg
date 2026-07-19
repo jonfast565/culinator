@@ -1,0 +1,115 @@
+culinator 0.3;
+
+recipe granola {
+    title "Granola";
+    section "Breakfast";
+
+    source "hanlex";
+    publisher "based.cooking";
+    source_url "https://based.cooking/granola/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 50 min;
+
+    ingredient oats measured by volume { quantity 3 cup; }
+    ingredient olive_oil measured by volume { quantity 0.5 cup; }
+    ingredient maple_syrup measured by volume { quantity 0.5 cup; }
+    ingredient nuts measured by volume {
+        name "chopped nuts";
+        quantity 1 cup;
+        note "almonds, pumpkin seeds, or similar";
+    }
+    ingredient cloves measured by volume {
+        name "ground cloves";
+        quantity 1 tsp;
+    }
+    ingredient cardamom measured by volume {
+        name "ground cardamom";
+        quantity 1 tsp;
+    }
+    ingredient dried_fruit measured by volume {
+        quantity 1 cup;
+        note "apricots, unsweetened cranberries, dates, or similar";
+    }
+
+    container bowl { name "large bowl"; }
+    equipment baking_sheets { name "two large parchment-lined baking sheets"; }
+    equipment oven { name "oven"; }
+
+    material granola_mix measured by mass { }
+    material toasted_granola measured by mass { }
+
+    process mixing {
+        operation preheat does heat {
+            target oven;
+            temperature 315 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation combine does mix {
+            input [oats, olive_oil, maple_syrup, nuts, cloves, cardamom];
+            container bowl;
+            duration 3 min;
+            labor active;
+            produces granola_mix;
+        }
+        operation spread does move {
+            input [granola_mix];
+            after combine;
+            equipment baking_sheets;
+            note "spread thinly and evenly";
+            duration 3 min;
+            labor active;
+            produces spread_granola;
+        }
+    }
+
+    process baking {
+        operation bake_and_stir does heat {
+            input [spread_granola];
+            after [spread, preheat];
+            equipment baking_sheets;
+            temperature 315 fahrenheit;
+            note "stir between rounds and swap the sheets' oven positions so they cook evenly";
+            duration 15 min;
+            repeat 2;
+            labor passive;
+            produces stirred_granola;
+        }
+        operation bake_final does heat {
+            input [stirred_granola];
+            after bake_and_stir;
+            equipment baking_sheets;
+            temperature 315 fahrenheit;
+            note "do not stir this time - leaving it alone helps the clumps form";
+            duration 10 min;
+            labor passive;
+            produces toasted_granola;
+        }
+        operation cool does rest {
+            input [toasted_granola];
+            after bake_final;
+            duration estimated 20 min;
+            labor passive;
+            produces cooled_granola;
+        }
+    }
+
+    process finishing {
+        prep chop dried_fruit into chopped_fruit {
+            note "coarsely chopped";
+            duration 3 min;
+        }
+        operation mix_in_fruit does mix {
+            input [cooled_granola, chopped_fruit];
+            after [cool, chop_dried_fruit];
+            note "serve with yogurt, milk, or fresh fruit";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 5 count;
+    }
+}

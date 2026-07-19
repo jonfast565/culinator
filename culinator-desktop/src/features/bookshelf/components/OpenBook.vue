@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { ChevronLeft, Search, Loader2, BookOpen, ListChecks, X } from "lucide-vue-next";
 import { getRecipe } from "../../../services/api";
 import { parseUiModel } from "../../recipe-editor/model";
@@ -9,6 +9,7 @@ import BookFlip from "./BookFlip.vue";
 import BookManage from "./BookManage.vue";
 import BookExportPanel from "../../export/components/BookExportPanel.vue";
 import RecipeSearchPanel from "../../search/components/RecipeSearchPanel.vue";
+import { registerSearchHandler } from "../../../shared/composables/useGlobalSearch";
 
 const props = defineProps<{
   book: RecipeBookSummary | null;
@@ -25,6 +26,7 @@ const emit = defineEmits<{
 const mode = ref<"flip" | "manage">("flip");
 const useServiceSearch = ref(true);
 const searchOpen = ref(false);
+const searchPanel = ref<InstanceType<typeof RecipeSearchPanel>>();
 
 const bookTitle = computed(() => props.book?.title ?? "Unfiled recipes");
 const query = ref("");
@@ -39,7 +41,11 @@ watch(
       const documents = await Promise.all(props.recipes.map((recipe) => getRecipe(recipe.id)));
       loaded.value = documents
         .filter((document): document is NonNullable<typeof document> => Boolean(document))
-        .map((document) => ({ id: document.id, model: parseUiModel(document.sourceText) }));
+        .map((document) => ({
+          id: document.id,
+          model: parseUiModel(document.sourceText),
+          source: document.sourceText,
+        }));
     } finally {
       loading.value = false;
     }
@@ -63,6 +69,17 @@ function handleSearchSelect(recipeId: string): void {
   searchOpen.value = false;
   emit("open-recipe", recipeId);
 }
+
+let unregisterSearch = () => {};
+onMounted(() => {
+  unregisterSearch = registerSearchHandler("book", () => {
+    if (props.book) {
+      searchOpen.value = true;
+      window.requestAnimationFrame(() => searchPanel.value?.focus());
+    }
+  });
+});
+onBeforeUnmount(unregisterSearch);
 </script>
 
 <template>
@@ -127,8 +144,9 @@ function handleSearchSelect(recipeId: string): void {
         </button>
       </div>
       <RecipeSearchPanel
+        ref="searchPanel"
         :book-id="book.id"
-        placeholder="Search this book…"
+        placeholder="Search this book… (⌘K)"
         @select="handleSearchSelect"
       />
     </div>

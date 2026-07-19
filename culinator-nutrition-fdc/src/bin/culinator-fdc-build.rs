@@ -1,6 +1,8 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use culinator_nutrition_fdc::{BuildOptions, DEFAULT_FULL_DOWNLOAD_URL, FdcDatabaseBuilder, download_and_build};
+use culinator_nutrition_fdc::{
+    BuildOptions, DEFAULT_FULL_DOWNLOAD_URL, FdcDatabaseBuilder, download_and_build,
+};
 use std::path::PathBuf;
 
 #[derive(Debug, Parser)]

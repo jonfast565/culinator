@@ -17,9 +17,13 @@ export function usePageFlip(container: Ref<HTMLElement | null>) {
 
   function mount(): void {
     const el = container.value;
-    if (!el) return;
+    if (!el || instance.value) return;
     const pages = el.querySelectorAll<HTMLElement>(".page");
     if (!pages.length) return;
+    if (el.offsetHeight < 40) {
+      requestAnimationFrame(() => mount());
+      return;
+    }
     try {
       const flip = new PageFlip(el, {
         width: 520,
@@ -76,10 +80,16 @@ export function usePageFlip(container: Ref<HTMLElement | null>) {
   }
 
   function next(): void {
-    instance.value?.flipNext();
+    const flip = instance.value;
+    if (!flip) return;
+    if (flip.getCurrentPageIndex() >= flip.getPageCount() - 1) return;
+    flip.turnToNextPage();
   }
   function prev(): void {
-    instance.value?.flipPrev();
+    const flip = instance.value;
+    if (!flip) return;
+    if (flip.getCurrentPageIndex() <= 0) return;
+    flip.turnToPrevPage();
   }
   function flipTo(page: number): void {
     const flip = instance.value;

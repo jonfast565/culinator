@@ -4,7 +4,8 @@ import pluginVue from "eslint-plugin-vue";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "src-tauri/target"] },
+  // `src/generated` is wasm-bindgen output — machine-written, not ours to lint.
+  { ignores: ["dist", "node_modules", "src-tauri/target", "src/generated"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   ...pluginVue.configs["flat/recommended"],
@@ -38,6 +39,10 @@ export default tseslint.config(
       "vue/multi-word-component-names": "off",
       "vue/attribute-hyphenation": ["error", "always"],
     },
+  },
+  {
+    files: ["scripts/**/*.mjs"],
+    languageOptions: { globals: { console: "readonly", process: "readonly" } },
   },
   prettier,
 );

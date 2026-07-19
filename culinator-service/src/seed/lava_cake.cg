@@ -1,0 +1,93 @@
+culinator 0.3;
+
+recipe lava_cake {
+    title "Lava Cake";
+    section "Desserts";
+
+    source "benjamin-h";
+    publisher "based.cooking";
+    source_url "https://based.cooking/lavacake/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 15 min;
+    total_time 22 min;
+
+    ingredient egg measured by count { quantity 1 count; }
+    ingredient flour measured by mass { quantity 25 g; }
+    ingredient butter measured by mass {
+        quantity 25 g;
+        divided true;
+        note "25 g in the batter, plus more to grease the tin";
+    }
+    ingredient chocolate measured by mass { quantity 75 g; }
+    ingredient berries measured by mass {
+        optional true;
+        note "for serving";
+    }
+    ingredient ice_cream measured by volume {
+        name "vanilla ice cream";
+        optional true;
+        note "for serving";
+    }
+
+    equipment muffin_tin { name "baking tin with cupcake pits"; }
+    container bowl { name "mixing bowl"; }
+    equipment oven { name "oven"; }
+
+    material cake_batter measured by mass { }
+
+    process preparation {
+        operation grease does coat {
+            equipment muffin_tin;
+            note "butter the pits";
+            duration 2 min;
+            labor active;
+            produces greased_tin;
+        }
+        operation preheat does heat {
+            target oven;
+            temperature 200 celsius;
+            duration estimated 12 min;
+            labor automated;
+        }
+        operation mix does mix {
+            input [egg, flour, chocolate];
+            input butter 25 g;
+            container bowl;
+            duration 5 min;
+            labor active;
+            produces cake_batter;
+        }
+        operation fill does move {
+            input [cake_batter];
+            after [mix, grease];
+            equipment muffin_tin;
+            duration 3 min;
+            labor active;
+            produces filled_tin;
+        }
+    }
+
+    process baking {
+        operation bake does heat {
+            input [filled_tin];
+            after [fill, preheat];
+            equipment muffin_tin;
+            temperature 200 celsius;
+            note "the short bake is what keeps the centers fluid";
+            duration 7 min;
+            labor passive;
+            produces baked_cakes;
+        }
+        operation serve does move {
+            input [baked_cakes, berries, ice_cream];
+            after bake;
+            note "serve hot";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

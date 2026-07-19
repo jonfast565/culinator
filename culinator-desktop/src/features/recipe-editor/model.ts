@@ -1,4 +1,12 @@
+import { parseUiModelWasm } from "../../services/wasm/parser";
+
 export interface SourceRange {
+  start: number;
+  end: number;
+}
+/** A syntax problem the parser recovered from, with the byte range to underline. */
+export interface UiDiagnostic {
+  message: string;
   start: number;
   end: number;
 }
@@ -52,6 +60,8 @@ export interface UiOperation {
   inputs: string[];
   /** Full input bindings, including per-step amounts for divided ingredients. */
   inputBindings: UiInputBinding[];
+  /** Symbols this step binds as `tool`/`container`/`equipment`/`target`. */
+  equipment: string[];
   produces?: string;
   /** Numeric temperature setpoint, verbatim (e.g. "350 f"). */
   targetTemperature?: string;
@@ -80,260 +90,25 @@ export interface UiRecipeModel {
   section?: string;
   /** Cover image: an asset handle or an external URL, from `image "…";`. */
   coverImage?: string;
+  /** Problems the parser recovered from. Empty for well-formed source. */
+  diagnostics: UiDiagnostic[];
 }
 
-const DURATION_UNIT_MINUTES: Record<string, number> = {
-  s: 1 / 60,
-  sec: 1 / 60,
-  secs: 1 / 60,
-  second: 1 / 60,
-  seconds: 1 / 60,
-  min: 1,
-  mins: 1,
-  minute: 1,
-  minutes: 1,
-  h: 60,
-  hr: 60,
-  hrs: 60,
-  hour: 60,
-  hours: 60,
-  day: 1440,
-  days: 1440,
-  wk: 10080,
-  week: 10080,
-  weeks: 10080,
-};
-// Alternation of every recognized time unit, longest-first so e.g. "minutes"
-// matches before "min". Mirrors `time_unit_seconds` in culinator-core.
-const DURATION_UNIT_PATTERN = Object.keys(DURATION_UNIT_MINUTES)
-  .sort((a, b) => b.length - a.length)
-  .join("|");
-function unitToMinutes(value: string, unit: string): number {
-  return Number(value) * (DURATION_UNIT_MINUTES[unit.toLowerCase()] ?? 1);
-}
-/** Parse a step's `duration`, supporting `N unit`, `N unit to M unit`, and
- *  `up to N unit`. Returns the lower bound (or fixed value) plus an optional
- *  upper bound. Mirrors the Rust semantic parser's duration handling. */
-function parseDuration(body: string): { min: number; max?: number } {
-  const u = DURATION_UNIT_PATTERN;
-  const upTo = new RegExp(`\\bduration\\s+up\\s+to\\s+([\\d.]+)\\s*(${u})\\b`, "i").exec(body);
-  if (upTo) return { min: 0, max: unitToMinutes(upTo[1], upTo[2]) };
-  const range = new RegExp(
-    `\\bduration\\s+(?:estimated\\s+)?([\\d.]+)\\s*(${u})(?:\\s+to\\s+([\\d.]+)\\s*(${u}))?`,
-    "i",
-  ).exec(body);
-  if (!range) return { min: 1 };
-  const min = unitToMinutes(range[1], range[2]);
-  return range[3] ? { min, max: unitToMinutes(range[3], range[4]) } : { min };
-}
-/** Parse repeatable `note "…";` statements from a resource or operation body.
- *  Mirrors the Rust parser, which collects notes into a typed list. */
-function parseNotes(body: string): string[] | undefined {
-  const notes = [...body.matchAll(/\bnote\s+"([^"]+)"\s*;/g)].map((match) => match[1]);
-  return notes.length ? notes : undefined;
-}
-/** Parse structured `until <kind> <value>;` doneness cues from an operation body. */
-function parseDoneness(body: string): UiDonenessCue[] {
-  const cues: UiDonenessCue[] = [];
-  const pattern =
-    /\buntil\s+(internal_temp|visual|tester|texture|rise)\s+(?:"([^"]+)"|([^;]+))\s*;/g;
-  for (const match of body.matchAll(pattern)) {
-    cues.push({ kind: match[1], value: (match[2] ?? match[3] ?? "").trim() });
-  }
-  return cues;
-}
-/** Parse every `input` line in an operation body, preserving per-step amounts. */
-function parseInputBindings(body: string): UiInputBinding[] {
-  const bindings: UiInputBinding[] = [];
-  const pattern =
-    /\binput\s+(?:\[([^\]]+)\]|([A-Za-z_]\w*)(?:\s+([\d./]+\s*[\w-]+(?:\s+to\s+[\d./]+\s*[\w-]+)?)?))\s*;/g;
-  for (const match of body.matchAll(pattern)) {
-    if (match[1]) {
-      for (const item of match[1].split(",")) {
-        const symbol = item.trim().split(".").pop() ?? item.trim();
-        if (symbol) bindings.push({ symbol });
-      }
-    } else if (match[2]) {
-      bindings.push({ symbol: match[2], quantity: match[3]?.trim() });
-    }
-  }
-  return bindings;
-}
-
+/**
+ * Parse `.cg` source into the editor's UI model.
+ *
+ * This delegates to `culinator-parser` compiled to WebAssembly, so the DSL has
+ * exactly one grammar, one desugaring, and one set of semantics. There used to
+ * be a second regex parser here that had to be updated in lockstep with the
+ * Rust one; it drifted (a bare `input macaroni;` silently matched nothing, so
+ * the ingredient vanished from the step), which is why it is gone.
+ *
+ * The WASM parser recovers from syntax errors rather than throwing, so a
+ * half-typed declaration costs that declaration and nothing else — the live
+ * preview keeps rendering. Anything it had to skip is reported in
+ * `diagnostics`. `initParser()` must have resolved first; `main.ts` awaits it
+ * before mounting.
+ */
 export function parseUiModel(source: string): UiRecipeModel {
-  const symbol = source.match(/\brecipe\s+([A-Za-z_]\w*)/)?.[1] ?? "";
-  const title = source.match(/\btitle\s+"([^"]+)"\s*;/)?.[1] ?? symbol.replaceAll("_", " ");
-  const resources: UiResource[] = [];
-  const pattern =
-    /\b(ingredient|material|container|equipment|environment|labor|resource)\s+([A-Za-z_]\w*)(?:\s+as\s+([^\s{]+))?(?:\s+measured\s+by\s+(\w+))?\s*\{([^{}]*)\}/gms;
-  for (const match of source.matchAll(pattern)) {
-    const body = match[5];
-    resources.push({
-      kind: match[1],
-      symbol: match[2],
-      name: body.match(/\bname\s+"([^"]+)"\s*;/)?.[1] ?? match[2].replaceAll("_", " "),
-      measurement: match[4] ?? match[3]?.match(/<([^>]+)>/)?.[1]?.toLowerCase() ?? "unspecified",
-      quantity: body.match(/\b(?:quantity|mass|amount)\s+([^;]+);/)?.[1]?.trim(),
-      state: body
-        .match(/\bstate\s+(?:"([^"]+)"|([A-Za-z_]\w*))\s*;/)
-        ?.slice(1)
-        .find(Boolean),
-      optional: /\boptional\s+true\s*;/.test(body) || undefined,
-      divided: /\bdivided\s+true\s*;/.test(body) || undefined,
-      toTaste: /\bto_taste\s+true\s*;/.test(body) || undefined,
-      size: body
-        .match(/\bsize\s+(?:"([^"]+)"|([A-Za-z_]\w*))\s*;/)
-        ?.slice(1)
-        .find(Boolean),
-      variant: body
-        .match(/\bvariant\s+(?:"([^"]+)"|([A-Za-z_]\w*))\s*;/)
-        ?.slice(1)
-        .find(Boolean),
-      notes: parseNotes(body),
-      substitutes: body
-        .match(/\bsubstitutes\s+(?:\[([^\]]+)\]|([\w.]+))\s*;/)
-        ?.slice(1)
-        .find(Boolean)
-        ?.split(",")
-        .map((item) => item.trim())
-        .filter(Boolean),
-      range: { start: match.index ?? 0, end: (match.index ?? 0) + match[0].length },
-    });
-  }
-  const processes = [...source.matchAll(/^\s*process\s+([A-Za-z_]\w*)/gm)].map((match) => ({
-    symbol: match[1],
-  }));
-  const operations: UiOperation[] = [];
-  let process = "root";
-  const lines = source.split("\n");
-  const lineOffsets: number[] = [];
-  let offset = 0;
-  for (const line of lines) {
-    lineOffsets.push(offset);
-    offset += line.length + 1;
-  }
-  for (let index = 0; index < lines.length; index += 1) {
-    process = lines[index].match(/^\s*process\s+(\w+)/)?.[1] ?? process;
-    const header = lines[index].match(/^\s*operation\s+(\w+)(?:\s+(?:does|as)\s+([^\s{]+))?/);
-    if (!header) continue;
-    const operationStartLine = index;
-    let body = "";
-    let depth = 0;
-    let started = false;
-    for (; index < lines.length; index += 1) {
-      body += `${lines[index]}\n`;
-      for (const character of lines[index]) {
-        if (character === "{") {
-          depth += 1;
-          started = true;
-        } else if (character === "}") depth -= 1;
-      }
-      if (started && depth === 0) break;
-    }
-    const duration = parseDuration(body);
-    const afterText = body
-      .match(/\bafter\s+(?:\[([^\]]+)\]|([\w.]+))[^;]*;/)
-      ?.slice(1)
-      .find(Boolean);
-    const inputBindings = parseInputBindings(body);
-    const produces = body.match(/\bproduces\s+([\w.]+)\s*;/)?.[1];
-    const temperatureMatch = body.match(/\btemperature\s+([\d.]+)\s*([A-Za-z]+)\s*;/);
-    const repeatMatch = body.match(/\brepeat\s+(\d+)\s*;/);
-    const doneness = parseDoneness(body);
-    operations.push({
-      inputBindings,
-      inputs: inputBindings.map((binding) => binding.symbol),
-      produces: produces?.split(".").pop(),
-      symbol: header[1],
-      action: (header[2] ?? "operation").replace(/<.*$/, ""),
-      process,
-      durationMinutes: duration.min,
-      durationMaxMinutes: duration.max,
-      labor: body.match(/labor\s+(\w+)/)?.[1] ?? "unspecified",
-      after: afterText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
-      targetTemperature: temperatureMatch
-        ? `${temperatureMatch[1]} ${temperatureMatch[2]}`
-        : undefined,
-      heatLevel: body.match(/\bheat\s+(low|medium_low|medium|medium_high|high)\s*;/)?.[1],
-      doneness: doneness.length ? doneness : undefined,
-      photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
-      repeat: repeatMatch ? Number(repeatMatch[1]) : undefined,
-      notes: parseNotes(body),
-      range: {
-        start: lineOffsets[operationStartLine],
-        end: lineOffsets[index] + lines[index].length,
-      },
-    });
-  }
-  // Desugar `prep <verb> <ingredient> [into <output>] (; | { ... })` into the
-  // same UiOperation shape a hand-written `operation` would produce. Matching on
-  // the original source keeps `range` accurate so the inspector can still edit
-  // the underlying prep statement. Mirrors the Rust `prep` desugaring.
-  const prepPattern =
-    /\bprep\s+([A-Za-z_]\w*)\s+([A-Za-z_]\w*)(?:\s+into\s+([A-Za-z_]\w*))?\s*(\{[^{}]*\}|;)/gms;
-  for (const match of source.matchAll(prepPattern)) {
-    const [full, verb, ingredient, output, tail] = match;
-    const producedSymbol = output ?? `${ingredient}_${verb}`;
-    const body = tail.startsWith("{") ? tail : "";
-    const duration = parseDuration(body);
-    const repeatMatch = body.match(/\brepeat\s+(\d+)\s*;/);
-    const afterText = body
-      .match(/\bafter\s+(?:\[([^\]]+)\]|([\w.]+))[^;]*;/)
-      ?.slice(1)
-      .find(Boolean);
-    const extraBindings = parseInputBindings(body);
-    const inputBindings: UiInputBinding[] = [{ symbol: ingredient }, ...extraBindings];
-    const before = source.slice(0, match.index ?? 0);
-    const process = [...before.matchAll(/\bprocess\s+(\w+)/g)].pop()?.[1] ?? "root";
-    operations.push({
-      inputBindings,
-      inputs: inputBindings.map((binding) => binding.symbol),
-      produces: producedSymbol,
-      symbol: `${verb}_${ingredient}`,
-      action: verb,
-      process,
-      durationMinutes: duration.min,
-      durationMaxMinutes: duration.max,
-      labor: body.match(/labor\s+(\w+)/)?.[1] ?? "active",
-      after: afterText?.split(",").map((item) => item.trim().split(".").pop() ?? item.trim()) ?? [],
-      photo: body.match(/\bphoto\s+"([^"]+)"\s*;/)?.[1],
-      repeat: repeatMatch ? Number(repeatMatch[1]) : undefined,
-      notes: parseNotes(body),
-      range: { start: match.index ?? 0, end: (match.index ?? 0) + full.length },
-    });
-  }
-  // Give every operation output that lacks a declared resource an implicit
-  // intermediate material node, so the workflow graph can render it. Mirrors the
-  // Rust `register_intermediates` pass.
-  const declared = new Set(resources.map((resource) => resource.symbol));
-  for (const operation of operations) {
-    if (operation.produces && !declared.has(operation.produces)) {
-      declared.add(operation.produces);
-      resources.push({
-        kind: "intermediate",
-        symbol: operation.produces,
-        name: operation.produces.replaceAll("_", " "),
-        measurement: "unspecified",
-      });
-    }
-  }
-  operations.sort((a, b) => (a.range?.start ?? 0) - (b.range?.start ?? 0));
-
-  const source_ = source.match(/\bsource\s+"([^"]+)"\s*;/)?.[1];
-  const sourceUrl = source.match(/\bsource_url\s+"([^"]+)"\s*;/)?.[1];
-  const attribution = source.match(/\battribution\s+"([^"]+)"\s*;/)?.[1];
-  const section = source.match(/\bsection\s+"([^"]+)"\s*;/)?.[1];
-  const coverImage = source.match(/\bimage\s+"([^"]+)"\s*;/)?.[1];
-  return {
-    title,
-    symbol,
-    resources,
-    processes,
-    operations,
-    source: source_,
-    sourceUrl,
-    attribution,
-    section,
-    coverImage,
-  };
+  return parseUiModelWasm(source) as UiRecipeModel;
 }

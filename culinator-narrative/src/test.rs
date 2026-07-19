@@ -123,7 +123,7 @@ fn ingredient_line_includes_size_state_notes_and_to_taste() {
         properties: props,
         span: None,
     };
-    let line = format_ingredient(&resource);
+    let line = format_ingredient(&resource, NumberStyle::Fractions);
     assert!(line.contains("3 count"));
     assert!(line.contains("medium"));
     assert!(line.contains("ripe"));
@@ -137,7 +137,11 @@ fn step_uses_symbol_verb_for_generic_action_and_promotes_notes_to_sentences() {
     mash.notes = vec!["leave some larger chunks for texture".into()];
     mash.bindings = vec![binding("avocado_pulp", BindingRole::Input)];
     let content = extract(&recipe(
-        vec![resource("avocado_pulp", ResourceKind::Material, "avocado pulp")],
+        vec![resource(
+            "avocado_pulp",
+            ResourceKind::Material,
+            "avocado pulp",
+        )],
         vec![mash],
     ));
     let step = &content.sections[0].steps[0];
@@ -274,7 +278,10 @@ fn step_time_formats_ranges_ceilings_and_estimates() {
     let mut seconds_range = operation("cook", "heat", "main", &[]);
     seconds_range.duration_min_seconds = Some(45);
     seconds_range.duration_max_seconds = Some(90);
-    assert_eq!(step_time(&seconds_range).as_deref(), Some("45\u{2013}90 sec"));
+    assert_eq!(
+        step_time(&seconds_range).as_deref(),
+        Some("45\u{2013}90 sec")
+    );
 
     let mut ceiling = operation("store", "rest", "main", &[]);
     ceiling.duration_max_seconds = Some(8 * 3600);
@@ -339,23 +346,44 @@ fn quantity(value: f64, unit: &str) -> Value {
 fn quantities_render_cook_style() {
     // Bare counters drop their unit; quarters read as fractions; count nouns
     // pluralize; ranges collapse a shared unit.
-    assert_eq!(display_value(&quantity(2.0, "count")), "2");
-    assert_eq!(display_value(&quantity(0.5, "tsp")), "1/2 tsp");
-    assert_eq!(display_value(&quantity(1.5, "cup")), "1 1/2 cup");
-    assert_eq!(display_value(&quantity(3.0, "clove")), "3 cloves");
-    assert_eq!(display_value(&quantity(1.0, "clove")), "1 clove");
     assert_eq!(
-        display_value(&Value::Range {
-            min: Box::new(quantity(4.0, "count")),
-            max: Box::new(quantity(5.0, "count")),
-        }),
+        display_value(&quantity(2.0, "count"), NumberStyle::Fractions),
+        "2"
+    );
+    assert_eq!(
+        display_value(&quantity(0.5, "tsp"), NumberStyle::Fractions),
+        "1/2 tsp"
+    );
+    assert_eq!(
+        display_value(&quantity(1.5, "cup"), NumberStyle::Fractions),
+        "1 1/2 cup"
+    );
+    assert_eq!(
+        display_value(&quantity(3.0, "clove"), NumberStyle::Fractions),
+        "3 cloves"
+    );
+    assert_eq!(
+        display_value(&quantity(1.0, "clove"), NumberStyle::Fractions),
+        "1 clove"
+    );
+    assert_eq!(
+        display_value(
+            &Value::Range {
+                min: Box::new(quantity(4.0, "count")),
+                max: Box::new(quantity(5.0, "count")),
+            },
+            NumberStyle::Fractions
+        ),
         "4\u{2013}5"
     );
     assert_eq!(
-        display_value(&Value::Range {
-            min: Box::new(quantity(100.0, "g")),
-            max: Box::new(quantity(200.0, "g")),
-        }),
+        display_value(
+            &Value::Range {
+                min: Box::new(quantity(100.0, "g")),
+                max: Box::new(quantity(200.0, "g")),
+            },
+            NumberStyle::Fractions
+        ),
         "100\u{2013}200 g"
     );
 }
@@ -366,14 +394,23 @@ fn ingredient_drops_unit_already_in_name_and_bare_to_taste() {
     garlic
         .properties
         .insert("quantity".into(), quantity(1.0, "clove"));
-    assert_eq!(format_ingredient(&garlic), "1 garlic clove");
+    assert_eq!(
+        format_ingredient(&garlic, NumberStyle::Fractions),
+        "1 garlic clove"
+    );
 
     let mut salt = resource("salt", ResourceKind::Ingredient, "salt");
     salt.to_taste = true;
-    assert_eq!(format_ingredient(&salt), "salt, to taste");
+    assert_eq!(
+        format_ingredient(&salt, NumberStyle::Fractions),
+        "salt, to taste"
+    );
     salt.properties
         .insert("quantity".into(), quantity(0.5, "tsp"));
-    assert_eq!(format_ingredient(&salt), "1/2 tsp salt, plus more to taste");
+    assert_eq!(
+        format_ingredient(&salt, NumberStyle::Fractions),
+        "1/2 tsp salt, plus more to taste"
+    );
 }
 
 #[test]
@@ -569,4 +606,41 @@ fn summary_counts_ingredients_steps_and_time() {
         vec![mash, rest],
     ));
     assert_eq!(content.summary, "1 ingredient · 2 steps · ~2 h 3 min total");
+}
+
+#[test]
+fn number_style_switches_between_fractions_and_decimals() {
+    let mut resource = resource("milk", ResourceKind::Ingredient, "milk");
+    resource.properties.insert(
+        "quantity".into(),
+        Value::Quantity(Quantity {
+            value: 0.5,
+            unit: "cup".into(),
+            dimension: culinator_core::Dimension::Volume,
+        }),
+    );
+    let recipe = recipe(vec![resource], vec![]);
+
+    let fractions = extract_with(&recipe, NumberStyle::Fractions);
+    assert_eq!(fractions.ingredients, vec!["1/2 cup milk"]);
+
+    let decimals = extract_with(&recipe, NumberStyle::Decimals);
+    assert_eq!(decimals.ingredients, vec!["0.5 cup milk"]);
+
+    // The default is unchanged, and the guard restored the thread's style.
+    assert_eq!(extract(&recipe).ingredients, vec!["1/2 cup milk"]);
+}
+
+#[test]
+fn fractions_cover_kitchen_denominators_and_fall_back_to_decimals() {
+    assert_eq!(format_fraction(0.5), "1/2");
+    assert_eq!(format_fraction(0.25), "1/4");
+    assert_eq!(format_fraction(1.5), "1 1/2");
+    // Thirds are common in recipes and used to render as 0.33333.
+    assert_eq!(format_fraction(1.0 / 3.0), "1/3");
+    assert_eq!(format_fraction(2.0 / 3.0), "2/3");
+    assert_eq!(format_fraction(0.125), "1/8");
+    assert_eq!(format_fraction(3.0), "3");
+    // A converted metric amount has no sensible fraction.
+    assert_eq!(format_fraction(236.59), "236.59");
 }

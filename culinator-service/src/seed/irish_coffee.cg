@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe irish_coffee {
+    title "Irish Coffee";
+    section "Drinks";
+
+    source "front3ndninja";
+    publisher "based.cooking";
+    source_url "https://based.cooking/irish-coffee/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 5 min;
+    total_time 5 min;
+
+    ingredient irish_cream measured by volume {
+        name "Irish cream liqueur";
+        quantity 1.5 floz;
+    }
+    ingredient whiskey measured by volume {
+        name "Irish whiskey";
+        quantity 1.5 floz;
+    }
+    ingredient coffee measured by volume {
+        name "hot brewed coffee";
+        quantity 1 cup;
+    }
+    ingredient whipped_cream measured by volume { quantity 1 tbsp; }
+    ingredient nutmeg measured by volume {
+        name "ground nutmeg";
+        quantity 1 dash;
+    }
+
+    container mug { name "coffee mug"; }
+
+    material spirit_base measured by volume { }
+
+    process building {
+        operation combine_spirits does mix {
+            input [irish_cream, whiskey];
+            container mug;
+            duration 1 min;
+            labor active;
+            produces spirit_base;
+        }
+        operation add_coffee does move {
+            input [spirit_base, coffee];
+            after combine_spirits;
+            container mug;
+            note "fill the mug";
+            duration 1 min;
+            labor active;
+            produces coffee_drink;
+        }
+        operation top does coat {
+            input [coffee_drink, whipped_cream, nutmeg];
+            after add_coffee;
+            container mug;
+            note "a dab of cream and a dash of nutmeg";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 1 count;
+    }
+}

@@ -34,11 +34,9 @@ pub fn catalog_release(path: impl AsRef<Path>) -> Option<String> {
 fn metadata_value(path: impl AsRef<Path>, key: &str) -> Option<String> {
     let connection = Connection::open(path).ok()?;
     connection
-        .query_row(
-            "SELECT value FROM metadata WHERE key=?1",
-            [key],
-            |row| row.get(0),
-        )
+        .query_row("SELECT value FROM metadata WHERE key=?1", [key], |row| {
+            row.get(0)
+        })
         .optional()
         .ok()?
 }

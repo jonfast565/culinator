@@ -1,85 +1,55 @@
 <script setup lang="ts">
-import { computed, inject, ref, toRef, watch } from "vue";
-import { Clock } from "lucide-vue-next";
+import { computed, inject, toRef } from "vue";
 import type { UiOperation, UiRecipeModel } from "../../recipe-editor/model";
-import { useRecipeNarrative, formatIngredientDescription } from "../../recipe-editor/narrative";
-import {
-  formatOperationTemperature,
-  UNIT_DISPLAY_KEY,
-} from "../../units/composables/useUnitDisplay";
+import { useRecipeNarrative, type NarrativeStep } from "../../recipe-editor/narrative";
+import { deleteOperationFromSource } from "../../recipe-editor/sourcePatch";
+import { UNIT_DISPLAY_KEY } from "../../units/composables/useUnitDisplay";
+import { useAppDialog } from "../../../shared/composables/useAppDialog";
+import { VIEW_SETTINGS_KEY } from "../composables/useViewSettings";
 import RecipeImage from "./RecipeImage.vue";
+import MiseBlock from "./MiseBlock.vue";
+import IngredientGroupList from "./IngredientGroupList.vue";
+import RecipeStepRow from "./RecipeStepRow.vue";
 
-const props = defineProps<{ model: UiRecipeModel; recipeId?: string }>();
+const props = defineProps<{
+  model: UiRecipeModel;
+  source: string;
+  recipeId?: string;
+  editable?: boolean;
+}>();
 
+const emit = defineEmits<{ "update:source": [value: string] }>();
+
+const dialog = useAppDialog();
 const units = inject(UNIT_DISPLAY_KEY, null);
+const viewSettings = inject(VIEW_SETTINGS_KEY, null);
 
-const { ingredientGroups, operations, rows, summary, describe, stepTime, stepMeta } =
-  useRecipeNarrative(toRef(props, "model"));
-
-const formattedQuantities = ref<Record<string, string>>({});
-const formattedTemperatures = ref<Record<string, string>>({});
-
-watch(
-  [() => ingredientGroups.value.flatMap((group) => group.items), () => units?.unitSystem.value],
-  async () => {
-    if (!units) {
-      formattedQuantities.value = {};
-      return;
-    }
-    const map: Record<string, string> = {};
-    await Promise.all(
-      ingredientGroups.value.flatMap((group) =>
-        group.items.map(async (ingredient) => {
-          map[ingredient.symbol] = await units.formatQuantity(ingredient.quantity);
-        }),
-      ),
-    );
-    formattedQuantities.value = map;
+// Prose, amounts, times, and mise all come from the shared Rust generator, in
+// the reader's chosen units and number style. Nothing is derived here.
+const { summary, ingredientGroups, equipment, sections } = useRecipeNarrative(
+  toRef(props, "source"),
+  {
+    unitSystem: computed(() => units?.unitSystem.value ?? "as_authored"),
+    numberStyle: computed(() => viewSettings?.numberStyle.value ?? "fractions"),
   },
-  { immediate: true },
 );
 
-watch(
-  [operations, () => units?.unitSystem.value],
-  async () => {
-    if (!units) {
-      formattedTemperatures.value = {};
-      return;
-    }
-    const map: Record<string, string> = {};
-    await Promise.all(
-      operations.value.map(async (operation) => {
-        if (!operation.targetTemperature) return;
-        map[operation.symbol] = await formatOperationTemperature(
-          operation.targetTemperature,
-          units.unitSystem.value,
-        );
-      }),
-    );
-    formattedTemperatures.value = map;
-  },
-  { immediate: true },
-);
+const colocated = computed(() => viewSettings?.misePlacement.value === "colocated");
+const hasSteps = computed(() => sections.value.some((section) => section.steps.length > 0));
 
-function displayQuantity(symbol: string, fallback?: string): string {
-  return formattedQuantities.value[symbol] || fallback || "—";
+/** The parsed operation behind a step, for its photo and for source patching. */
+function operationFor(step: NarrativeStep): UiOperation | undefined {
+  return props.model.operations?.find((operation) => operation.symbol === step.symbol);
 }
 
-function ingredientLine(ingredient: (typeof ingredientGroups.value)[number]["items"][number]): string {
-  return formatIngredientDescription(
-    ingredient,
-    displayQuantity(ingredient.symbol, ingredient.quantity),
-  );
+async function removeStep(step: NarrativeStep): Promise<void> {
+  const operation = operationFor(step);
+  if (!props.editable || !operation) return;
+  if (!(await dialog.confirm(`Delete this step?\n\n${step.text}`))) return;
+  const next = deleteOperationFromSource(props.source, operation);
+  if (next != null) emit("update:source", next);
 }
 
-function describeStep(operation: UiOperation): string {
-  const base = describe(operation);
-  const formatted = formattedTemperatures.value[operation.symbol];
-  if (!formatted || !operation.targetTemperature) return base;
-  return base.replace(operation.targetTemperature, formatted);
-}
-
-const hasSteps = computed(() => operations.value.length > 0);
 const eyebrow = computed(() => props.model.attribution || props.model.source || "Recipe");
 </script>
 
@@ -94,41 +64,64 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
       <p class="leaf-summary">{{ summary }}</p>
     </header>
 
-    <section class="leaf-section ingredients">
-      <h2 class="section-label">Ingredients</h2>
-      <div v-if="ingredientGroups.length" class="ingredient-groups">
-        <div v-for="group in ingredientGroups" :key="group.label ?? 'base'" class="ingredient-group">
-          <h3 v-if="group.label" class="variant-heading">{{ group.label }} finish</h3>
-          <ul class="ingredient-list">
-            <li v-for="ingredient in group.items" :key="ingredient.symbol">
-              {{ ingredientLine(ingredient) }}
-            </li>
-          </ul>
-        </div>
-      </div>
-      <p v-else class="empty">No ingredients listed yet.</p>
-    </section>
+    <template v-if="!colocated">
+      <section class="leaf-section ingredients">
+        <h2 class="section-label">Ingredients</h2>
+        <IngredientGroupList v-if="ingredientGroups.length" :groups="ingredientGroups" />
+        <p v-else class="empty">No ingredients listed yet.</p>
+      </section>
 
-    <section class="leaf-section method">
-      <h2 class="section-label">Method</h2>
-      <div v-if="hasSteps" class="steps">
-        <template v-for="row in rows" :key="row.key">
-          <h3 v-if="row.kind === 'heading'" class="process-heading">{{ row.label }}</h3>
-          <div v-else class="step">
-            <span class="step-number">{{ row.number }}</span>
-            <div class="step-body">
-              <p class="step-text">{{ describeStep(row.operation!) }}</p>
-              <small v-if="stepMeta(row.operation!)" class="step-meta">{{
-                stepMeta(row.operation!)
-              }}</small>
-              <figure v-if="row.operation!.photo" class="step-photo">
-                <RecipeImage :image-ref="row.operation!.photo" :recipe-id="recipeId" />
-              </figure>
-            </div>
-            <span v-if="stepTime(row.operation!)" class="step-time">
-              <Clock :size="12" />{{ stepTime(row.operation!) }}
-            </span>
+      <section v-if="equipment.length" class="leaf-section equipment">
+        <h2 class="section-label">Equipment</h2>
+        <ul class="equipment-list">
+          <li v-for="item in equipment" :key="item">{{ item }}</li>
+        </ul>
+      </section>
+    </template>
+
+    <section class="leaf-section method" :class="{ colocated }">
+      <h2 v-if="!colocated" class="section-label">Method</h2>
+
+      <!-- Mise layout: each process is its own block (heading → mise → steps). -->
+      <template v-if="colocated && hasSteps">
+        <section v-for="section in sections" :key="section.process" class="method-section">
+          <h3 v-if="section.title" class="section-label process-heading">{{ section.title }}</h3>
+          <MiseBlock :mise="section.mise" />
+          <p v-if="section.note" class="section-note">{{ section.note }}</p>
+          <div class="steps">
+            <RecipeStepRow
+              v-for="step in section.steps"
+              :key="step.symbol"
+              :number="step.number"
+              :operation="operationFor(step)"
+              :text="step.text"
+              :meta="step.meta"
+              :time="step.time"
+              :recipe-id="recipeId"
+              :editable="editable"
+              @delete="removeStep(step)"
+            />
           </div>
+        </section>
+      </template>
+
+      <!-- List layout: one Method section, optional inline process headings. -->
+      <div v-else-if="hasSteps" class="steps">
+        <template v-for="section in sections" :key="section.process">
+          <h3 v-if="section.title" class="process-heading">{{ section.title }}</h3>
+          <p v-if="section.note" class="section-note">{{ section.note }}</p>
+          <RecipeStepRow
+            v-for="step in section.steps"
+            :key="step.symbol"
+            :number="step.number"
+            :operation="operationFor(step)"
+            :text="step.text"
+            :meta="step.meta"
+            :time="step.time"
+            :recipe-id="recipeId"
+            :editable="editable"
+            @delete="removeStep(step)"
+          />
         </template>
       </div>
       <p v-else class="empty">No steps yet.</p>
@@ -175,14 +168,6 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 .leaf-head {
   padding-bottom: 20px;
   border-bottom: 2px solid var(--ink);
-}
-.step-photo {
-  margin: 12px 0 2px;
-  max-width: 340px;
-  aspect-ratio: 4 / 3;
-  overflow: hidden;
-  border-radius: 4px;
-  box-shadow: 0 8px 20px -14px rgba(40, 40, 30, 0.5);
 }
 .eyebrow {
   margin: 0 0 10px;
@@ -234,21 +219,12 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   flex-direction: column;
   gap: 20px;
 }
-.variant-heading {
-  margin: 0 0 8px;
-  font-family: var(--serif);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-.ingredient-list {
+.equipment-list {
   list-style: none;
   margin: 0;
   padding: 0;
 }
-.ingredient-list li {
+.equipment-list li {
   padding: 7px 0;
   border-bottom: 1px dotted #e2e0d4;
   line-height: 1.45;
@@ -259,6 +235,22 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   flex-direction: column;
   gap: 20px;
 }
+.method.colocated {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+.method-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.method-section .section-label.process-heading {
+  margin-bottom: 0;
+}
+.method-section .steps {
+  gap: 16px;
+}
 .process-heading {
   margin: 8px 0 -4px;
   font-family: var(--serif);
@@ -266,51 +258,18 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   font-weight: 600;
   color: var(--ink);
 }
-.step {
-  display: grid;
-  grid-template-columns: 34px 1fr auto;
-  gap: 16px;
-  align-items: start;
-}
-.step-number {
-  font-family: var(--serif);
-  font-size: 26px;
-  font-weight: 600;
-  line-height: 1;
-  color: var(--herb);
-  text-align: right;
-  font-variant-numeric: lining-nums;
-}
-.step-text {
+.method-section .process-heading {
   margin: 0;
-  font-size: 16px;
-  line-height: 1.55;
-}
-.step-meta {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  text-transform: capitalize;
-  color: var(--muted);
-}
-.step-time {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  justify-self: end;
-  white-space: nowrap;
-  padding: 3px 11px;
-  border-radius: 999px;
-  background: #e8f0e6;
+  font-size: 15px;
   color: var(--herb);
-  font-size: 12px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-.step-time svg {
-  opacity: 0.7;
 }
 
+.section-note {
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--muted);
+}
 .empty {
   color: var(--muted);
   font-style: italic;

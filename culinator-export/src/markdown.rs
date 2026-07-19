@@ -1,9 +1,8 @@
-use crate::content;
 use culinator_core::Recipe;
 use culinator_models::RecipeExportOptions;
 
 pub(crate) fn render(recipe: &Recipe, options: &RecipeExportOptions) -> String {
-    let content = content::extract(recipe);
+    let content = culinator_narrative::extract(recipe);
     let mut out = format!("# {}\n\n", recipe.title);
     if !content.summary.is_empty() {
         out.push_str(&format!("{}\n\n", content.summary));

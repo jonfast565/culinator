@@ -1,6 +1,7 @@
 <script setup lang="ts">
+/* global HTMLInputElement */
 import { ref, watch } from "vue";
-import { Loader2, Search, X } from "lucide-vue-next";
+import { Loader2, Search, SlidersHorizontal, X } from "lucide-vue-next";
 import type { SearchHit, SearchQuery } from "../../../domain/types";
 import { searchRecipes } from "../../../services/api/search-api";
 
@@ -15,6 +16,8 @@ const excludeAllergens = ref("");
 const maxActive = ref<number | null>(null);
 const hits = ref<SearchHit[]>([]);
 const loading = ref(false);
+const filtersOpen = ref(false);
+const searchInput = ref<HTMLInputElement>();
 let timer = 0;
 
 function buildQuery(): SearchQuery {
@@ -49,6 +52,12 @@ function clearFilters(): void {
   excludeAllergens.value = "";
   maxActive.value = null;
 }
+
+function focus(): void {
+  searchInput.value?.focus();
+}
+
+defineExpose({ focus });
 </script>
 
 <template>
@@ -56,6 +65,7 @@ function clearFilters(): void {
     <label class="search-input">
       <Search :size="15" />
       <input
+        ref="searchInput"
         v-model="text"
         type="search"
         :placeholder="placeholder ?? 'Search recipes…'"
@@ -63,16 +73,28 @@ function clearFilters(): void {
       />
       <Loader2 v-if="loading" :size="15" class="spin" />
     </label>
-    <div class="chips">
+    <div class="filter-bar">
+      <button type="button" class="filter-toggle" @click="filtersOpen = !filtersOpen">
+        <SlidersHorizontal :size="14" />
+        Filters
+        <span v-if="excludeAllergens || maxActive" class="filter-badge">On</span>
+      </button>
+      <button
+        v-if="filtersOpen && (excludeAllergens || maxActive)"
+        type="button"
+        class="chip-clear"
+        @click="clearFilters"
+      >
+        <X :size="13" /> Clear filters
+      </button>
+    </div>
+    <div v-if="filtersOpen" class="chips">
       <label class="chip"
         >Exclude allergens<input v-model="excludeAllergens" placeholder="milk, egg"
       /></label>
       <label class="chip"
         >Max active min<input v-model.number="maxActive" type="number" min="1" placeholder="60"
       /></label>
-      <button v-if="excludeAllergens || maxActive" class="chip-clear" @click="clearFilters">
-        <X :size="13" /> Clear filters
-      </button>
     </div>
     <ul v-if="hits.length" class="results">
       <li v-for="hit in hits" :key="hit.recipeId">
@@ -107,6 +129,29 @@ function clearFilters(): void {
   background: transparent;
   outline: none;
   font-size: 13px;
+}
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #cbd3cd;
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  color: #4a5a52;
+}
+.filter-badge {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #28643b;
+  color: #fff;
+  font-size: 10px;
 }
 .chips {
   display: flex;

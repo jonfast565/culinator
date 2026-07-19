@@ -1,0 +1,112 @@
+culinator 0.3;
+
+recipe potato_leek_soup {
+    title "Potato Leek Soup";
+    section "Soups";
+
+    source "cactar";
+    publisher "based.cooking";
+    source_url "https://based.cooking/potato-leek-soup/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 15 min;
+    total_time 95 min;
+
+    ingredient butter measured by volume {
+        name "unsalted butter";
+        quantity 3 tbsp;
+    }
+    ingredient leeks measured by count {
+        quantity 2 count;
+        size "large";
+        note "white to light-green parts only; discard the dark-green ends";
+    }
+    ingredient stock measured by volume {
+        name "chicken or vegetable stock";
+        quantity 1 qt;
+    }
+    ingredient potatoes measured by mass {
+        name "waxy potatoes";
+        quantity 11 oz;
+        state "peeled and sliced";
+    }
+    ingredient bay_leaf measured by count {
+        quantity 1 count;
+        note "removed before blending";
+    }
+    ingredient cream measured by volume {
+        name "heavy cream";
+        quantity 0.75 cup;
+    }
+    ingredient white_pepper measured by volume { to_taste true; }
+    ingredient nutmeg measured by volume {
+        name "ground nutmeg";
+        quantity 0.5 tsp;
+        optional true;
+    }
+    ingredient dill measured by volume {
+        name "dill weed";
+        quantity 0.5 tbsp;
+        optional true;
+    }
+    ingredient salt measured by volume { to_taste true; }
+
+    container pot { name "soup pot"; }
+    equipment immersion_blender { name "immersion blender"; }
+
+    material sweated_base measured by mass { }
+    material simmered_soup measured by volume { }
+    material blended_soup measured by volume { }
+
+    process preparation {
+        prep chop leeks into chopped_leeks {
+            note "moderately sized pieces from the white to light-green part";
+            duration 5 min;
+        }
+    }
+
+    process cooking {
+        operation sweat does heat {
+            input [butter, chopped_leeks, potatoes];
+            after chop_leeks;
+            container pot;
+            heat medium_low;
+            note "stir until the leeks sweat";
+            until visual "the leeks are softened and translucent";
+            duration 10 min;
+            labor active;
+            produces sweated_base;
+        }
+        operation simmer does heat {
+            input [sweated_base, stock, bay_leaf, white_pepper, nutmeg, dill];
+            after sweat;
+            container pot;
+            heat medium_high;
+            until texture "the potatoes are tender";
+            duration estimated 60 min;
+            labor monitor;
+            produces simmered_soup;
+        }
+        operation blend does mix {
+            input [simmered_soup];
+            after simmer;
+            container pot;
+            tool immersion_blender;
+            note "take the pot off the heat and lift out the bay leaf first; blend to the consistency you like";
+            duration 3 min;
+            labor active;
+            produces blended_soup;
+        }
+        operation finish does mix {
+            input [blended_soup, cream, salt];
+            after blend;
+            container pot;
+            duration 2 min;
+            labor active;
+            produces potato_leek_soup;
+        }
+    }
+
+    yield servings measured by count {
+        amount 2 count;
+    }
+}

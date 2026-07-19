@@ -11,7 +11,7 @@
 mod semantic;
 pub mod syntax;
 
-pub use semantic::ParseError;
+pub use semantic::{Diagnostic, ParseError, ParseOutcome};
 pub use syntax::{
     CstElement, CstNode, CstNodeKind, LosslessDocument, SyntaxError, SyntaxKind, SyntaxToken,
     TextEdit, TextRange, apply_text_edits,
@@ -31,6 +31,31 @@ pub fn parse_document(source: &str) -> Result<Document, ParseError> {
 pub fn parse_recipe(source: &str) -> Result<Recipe, ParseError> {
     LosslessDocument::parse(source).map_err(ParseError::from)?;
     semantic::parse_semantic_recipe(source)
+}
+
+/// Parse a recipe, recovering from syntax errors instead of stopping at the
+/// first one. Returns whatever could be projected plus every problem found.
+///
+/// This is the editor path: while a declaration is half-typed you still get the
+/// rest of the recipe, so live previews and outlines do not blank out. The
+/// strict [`parse_recipe`] remains the source of truth for validation,
+/// scheduling, and export — it rejects anything that produces a diagnostic.
+///
+/// Note this deliberately skips the lossless pre-pass, whose whole job is to
+/// reject malformed input.
+pub fn parse_recipe_recovering(source: &str) -> ParseOutcome<Recipe> {
+    let outcome = semantic::parse_semantic_document_recovering(source);
+    let value = match outcome.value {
+        Some(Document::Recipe { recipe }) => Some(recipe),
+        // A book document still yields its first recipe, which is what an
+        // editor previewing one recipe out of a book wants.
+        Some(Document::RecipeBook { book }) => book.recipes.into_iter().next(),
+        None => None,
+    };
+    ParseOutcome {
+        value,
+        diagnostics: outcome.diagnostics,
+    }
 }
 
 pub fn parse_recipe_book(source: &str) -> Result<RecipeBook, ParseError> {

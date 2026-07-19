@@ -1,0 +1,140 @@
+culinator 0.3;
+
+recipe beef_and_broccoli {
+    title "Beef and Broccoli";
+    section "Mains";
+
+    source "joel-maxuel";
+    publisher "based.cooking";
+    source_url "https://based.cooking/beef-and-broccoli/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 15 min;
+    total_time 35 min;
+
+    ingredient beef measured by mass {
+        quantity 0.5 lb;
+        note "cut into strips";
+    }
+    ingredient vegetable_oil measured by volume { quantity 2 tbsp; }
+    ingredient ginger measured by volume {
+        quantity 1 tbsp;
+        note "measured after mincing";
+    }
+    ingredient garlic measured by count { quantity 2 clove; }
+    ingredient carrots measured by volume {
+        quantity 1 cup;
+        note "measured after slicing";
+    }
+    ingredient snow_peas measured by mass { }
+    ingredient bean_sprouts measured by mass { }
+    ingredient broccoli measured by volume {
+        name "broccoli pieces";
+        quantity 1 cup;
+    }
+    ingredient bouillon measured by volume {
+        name "beef bouillon";
+        quantity 0.5 cup;
+    }
+    ingredient cornstarch measured by volume { quantity 1 tbsp; }
+    ingredient soy_sauce measured by volume { quantity 1 tbsp; }
+    ingredient slurry_water measured by volume {
+        name "water";
+        quantity 2 tbsp;
+    }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient pepper measured by volume { to_taste true; }
+    ingredient rice measured by volume {
+        name "steamed rice";
+        note "for serving";
+    }
+
+    equipment wok { name "wok"; }
+    container vegetable_bowl { name "bowl"; }
+    container slurry_bowl { name "small bowl"; }
+
+    material browned_beef measured by mass { }
+    material steamed_vegetables measured by mass { }
+    material seasoned_beef measured by mass { }
+    material slurry measured by volume { }
+
+    process preparation {
+        prep slice beef into beef_strips { duration 5 min; }
+        prep mince ginger into minced_ginger { duration 2 min; }
+        prep mince garlic into minced_garlic { duration 2 min; }
+        prep slice carrots into sliced_carrots { duration 3 min; }
+    }
+
+    process stir_frying {
+        operation stir_fry_beef does heat {
+            input [vegetable_oil, beef_strips, minced_ginger, minced_garlic];
+            after [slice_beef, mince_ginger, mince_garlic];
+            equipment wok;
+            heat high;
+            note "push the beef to the sides of the pan when it is done";
+            until visual "the meat is browned";
+            duration 5 min;
+            labor active;
+            produces browned_beef;
+        }
+        operation steam_vegetables does heat {
+            input [browned_beef, broccoli, sliced_carrots, snow_peas, bean_sprouts];
+            after [stir_fry_beef, slice_carrots];
+            equipment wok;
+            heat medium;
+            note "keep the wok covered";
+            until texture "the vegetables are only slightly crunchy";
+            duration 5 min;
+            labor monitor;
+            produces steamed_vegetables;
+        }
+        operation remove_vegetables does move {
+            input [steamed_vegetables];
+            after steam_vegetables;
+            container vegetable_bowl;
+            duration 1 min;
+            labor active;
+            produces reserved_vegetables;
+        }
+        operation season_beef does mix {
+            input [browned_beef, bouillon, salt, pepper];
+            after remove_vegetables;
+            equipment wok;
+            duration 2 min;
+            labor active;
+            produces seasoned_beef;
+        }
+    }
+
+    process finishing {
+        operation mix_slurry does mix {
+            input [cornstarch, slurry_water, soy_sauce];
+            container slurry_bowl;
+            duration 1 min;
+            labor active;
+            produces slurry;
+        }
+        operation thicken does heat {
+            input [seasoned_beef, slurry];
+            after [season_beef, mix_slurry];
+            equipment wok;
+            heat medium;
+            until texture "the sauce thickens";
+            duration 2 min;
+            labor active;
+            produces thickened_sauce;
+        }
+        operation return_vegetables does heat {
+            input [thickened_sauce, reserved_vegetables, rice];
+            after [thicken, remove_vegetables];
+            equipment wok;
+            heat medium;
+            note "heat through and serve over rice";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 3 count;
+    }
+}

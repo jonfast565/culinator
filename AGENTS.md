@@ -19,14 +19,35 @@ something non-obvious. `CLAUDE.md` links here.
   to follow these; that doc's "seed bug" call-outs are worked before/after
   examples.
 
-## Two parsers that must stay in sync (easy to forget)
+## One parser, compiled to WebAssembly
 
-**Two parsers.** The Rust semantic parser (`culinator-parser/src/semantic.rs`)
-is the source of truth for validation, scheduling, export. The frontend has a
-*separate* regex parser (`culinator-desktop/src/features/recipe-editor/model.ts`,
-`parseUiModel`) that drives the editor UI (outline, ingredients, visual
-workflow graph). Any DSL syntax change usually needs to land in **both**, and
-they should desugar identically.
+There is exactly **one** grammar. `culinator-parser` is the source of truth for
+validation, scheduling, and export, and the desktop app calls that same parser
+compiled to WASM (`culinator-wasm` -> `culinator-desktop/src/generated/wasm/`).
+`parseUiModel` in `features/recipe-editor/model.ts` is now a thin delegation to
+it; the old regex parser is gone. A DSL change lands in `semantic.rs` only.
+
+- **Build:** `npm run build:wasm` (wired into `npm run dev` / `npm run build`).
+  One-time prerequisites: `rustup target add wasm32-unknown-unknown` and
+  `cargo install wasm-bindgen-cli --version 0.2.126`.
+- **Projection:** `culinator-wasm/src/ui_model.rs` maps the domain `Recipe` onto
+  the editor's `UiRecipeModel` shape. Field names are camelCase to match the
+  TypeScript interface exactly — if you add a field to `UiRecipeModel`, add it
+  there.
+- **Cost:** ~0.17 ms per parse, so it runs synchronously on every keystroke.
+  `main.ts` awaits `initParser()` before mounting so every consumer stays sync.
+
+**Error recovery.** `parse_recipe_recovering` returns a partial model plus
+`diagnostics` instead of failing on the first syntax error — that is what makes
+a live preview possible while a declaration is half-typed. Strict `parse_recipe`
+is unchanged and still rejects anything that produces a diagnostic, so
+validation/scheduling/export semantics are exactly as before.
+
+**Spans.** `semantic.rs` records byte spans on `Resource`/`Operation`/
+`TypeDeclaration` (they used to always be `None`). The inspector patches source
+by these ranges, so a `prep` op's span deliberately covers the `prep` text it
+was desugared from. Synthesized intermediates have no span — they have no
+source.
 
 **Seed recipes.** Sample recipes live only as Rust `.cg` files in
 `culinator-service/src/seed/*.cg` (loaded via `include_str!` in
@@ -34,26 +55,48 @@ they should desugar identically.
 backend, which seeds these on startup — the desktop app has no embedded copies.
 When new syntax lands, migrate the seeds to use it (user preference).
 
-## Two prose generators that must also stay in sync
+## One prose generator
 
-Step/ingredient prose is derived twice: the exporter
-(`culinator-export/src/content.rs`, used by plain text, markdown, web/print
-HTML, and EPUB) and the frontend narrative
-(`culinator-desktop/src/features/recipe-editor/narrative.ts`, used by the
-reading page, book previews, and kitchen mode). The sentence heuristics —
-multi-word symbol verbs ("mix_dry", "warm_up", "bake_covered"), lay-on verbs
-("Top X with Y", "Dip X in Y"), cook-style quantities (fractions, dropped
-`count` units, pluralized count nouns), `to_taste` phrasing, and °C/°F
-doneness — are mirrored between them; change both. The exporter additionally
-weaves in tools/containers/equipment, which the frontend doesn't model yet.
+Step sentences, ingredient lines, times, section grouping, and mise en place
+are all produced by **`culinator-narrative`**. The static exporters
+(`culinator-export`: plain text, markdown, web/print HTML, EPUB) and the desktop
+reading page (via `culinator-wasm`) both render from it, so a step reads
+identically wherever it appears.
 
-**Prose audit corpus:** `examples/prose-audit/*.cg` holds 18 real recipes
-(based.cooking, public domain) converted per `docs/AI_RECIPE_CONVERSION.md`,
-chosen to stress the generator (phrasal verbs, internal-temp doneness, repeat
-batches, variant groups, divided ingredients). To eyeball the generated prose,
-render them with a tiny bin that calls `parse_recipe` + `StaticRecipeExporter`
-with the single `PlainText` format (`include_source: false` makes the bundle
-archive the bare text file).
+This used to be duplicated in `narrative.ts` and drifted badly: the reading page
+dropped step destinations ("Transfer the sauce mix." instead of "…into the
+casserole"), omitted "Meanwhile" lead-ins and section parallelism notes
+entirely, and rendered "0.5 tsp" where the exporter said "1/2 tsp".
+`culinator-wasm/src/test.rs` asserts step-for-step parity against the exporter
+across all 43 seeds — if that test fails, the duplication is creeping back.
+
+- **Quantities** are converted and formatted in Rust. `convert_recipe_units`
+  restates every amount once, up front, so ingredient lines, per-step amounts,
+  oven temperatures, and internal-temp doneness cues all agree. The frontend no
+  longer makes a WebSocket round-trip per quantity.
+- **Number style** (`NumberStyle::Fractions` / `Decimals`) picks cooking
+  fractions ("1/2 tsp") or decimals ("0.5 tsp"), toggled in the reading bar. It
+  is an explicit parameter on every formatter down to `format_number`, so
+  rendering has no hidden state: `extract_with(recipe, style)` is the entry
+  point and `extract(recipe)` is the fractions default.
+- **Cost:** ~0.24 ms for a full narrative, so it recomputes on every keystroke.
+
+## Reading-page view settings (mise en place)
+
+`features/reading/composables/useViewSettings.ts` (localStorage + provide/inject,
+mirroring `useUnitDisplay`) carries `misePlacement`:
+
+- `top-matter` (default) — traditional recipe card: one ingredient list and one
+  equipment list above the method.
+- `colocated` — each method section gets a `MiseBlock.vue` listing only what its
+  own steps consume, and the top-matter lists are dropped.
+
+`section_mise` walks a section's steps, resolves input bindings against the
+resource table, and keeps only ingredients (a `material` input is an earlier
+step's product, not something to have on hand). A divided ingredient's
+**per-step** amount (`input jack 5 oz;`) wins over its whole-recipe total —
+that is the entire point of the layout. Both the layout and its per-step amounts are derived by
+`culinator-narrative::section_mise`, so the mise agrees with the prose.
 
 ## DSL specifics worth remembering
 
@@ -64,19 +107,20 @@ archive the bare text file).
   lists can reference.
 - **`register_intermediates`** (in `semantic.rs`) auto-creates a `Material`
   (kind `Intermediate`) for any operation output that isn't a declared resource,
-  so authors don't declare a `material` for every partial product. `parseUiModel`
-  mirrors this so the graph can render intermediate nodes.
+  so authors don't declare a `material` for every partial product. These reach
+  the UI through the WASM projection, so the graph renders intermediate nodes.
 - **`prep <verb> <ingredient> [into <output>] (; | { ... })`** desugars to an
   operation named `<verb>_<ingredient>` (`does <verb>`, `input [ingredient]`,
   `produces <output>`, default labor `active`). Default output symbol is
-  `<ingredient>_<verb>`. Implemented in both parsers.
+  `<ingredient>_<verb>`. The desugared op keeps a span pointing at the original
+  `prep` text so the inspector edits what the author wrote.
 - **Resource `state`** (`state ripe;`, `state grated;`, `state melted;`) is just a
   conventional property on a resource block — the generic property path stores it
-  in Rust with no special handling; `parseUiModel` lifts it to `UiResource.state`
-  and the UI shows a badge. Type-system `states` on `TypeDeclaration` exist but are
+  in Rust with no special handling; the WASM projection lifts it to
+  `UiResource.state` and the UI shows a badge. Type-system `states` on `TypeDeclaration` exist but are
   currently unused; a future state machine could formalize this.
 - **Prose-nuance fields are typed (not generic properties)** — unlike `state`,
-  these get real fields in both parsers and models: on a resource `to_taste`,
+  these get real fields on the domain types: on a resource `to_taste`,
   `size`, `variant`, and `notes` (from repeatable `note "…";`); on an operation
   `repeat` and `notes`. `repeat` is the only one with scheduling weight — the
   scheduler treats `duration` as per-repetition and counts `duration × repeat`

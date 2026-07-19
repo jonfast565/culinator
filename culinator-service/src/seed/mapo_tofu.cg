@@ -1,0 +1,170 @@
+culinator 0.3;
+
+recipe mapo_tofu {
+    title "Mapo Tofu";
+    section "Mains";
+
+    source "mfed3";
+    publisher "based.cooking";
+    source_url "https://based.cooking/mapo-tofu/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 25 min;
+
+    ingredient pork measured by mass {
+        name "ground pork";
+        quantity 450 g;
+    }
+    ingredient soy_sauce measured by volume {
+        quantity 1 tbsp;
+        divided true;
+        note "1 tbsp in the marinade, plus a splash with the stock";
+    }
+    ingredient shaoxing measured by volume {
+        name "Shaoxing cooking wine";
+        quantity 1 tbsp;
+    }
+    ingredient cornstarch measured by volume { quantity 1 tsp; }
+    ingredient white_pepper measured by volume {
+        name "white pepper powder";
+        quantity 1 tsp;
+    }
+    ingredient cooking_oil measured by volume {
+        divided true;
+        note "a splash in the marinade, plus more for the wok";
+    }
+    ingredient doubanjiang measured by volume {
+        name "spicy doubanjiang";
+        quantity 2 tbsp;
+    }
+    ingredient douchi measured by volume {
+        name "dou-chi";
+        quantity 1 tsp;
+    }
+    ingredient scallions measured by count {
+        quantity 2 count to 3 count;
+        divided true;
+        note "whites go in with the aromatics, greens at the very end";
+    }
+    ingredient garlic measured by count { quantity 2 clove to 4 clove; }
+    ingredient ginger measured by length {
+        quantity 2 inch;
+        note "a similar amount to the garlic";
+    }
+    ingredient broth measured by volume {
+        name "chicken broth or water";
+        quantity 400 ml;
+    }
+    ingredient tofu measured by mass {
+        name "soft tofu";
+        quantity 340 g;
+        note "1 package";
+    }
+    ingredient peppercorns measured by volume {
+        name "Sichuan peppercorns";
+        quantity 1 tbsp;
+        state crushed;
+    }
+    ingredient rice measured by volume {
+        name "steamed rice";
+        note "for serving";
+    }
+
+    equipment wok { name "wok"; }
+    container marinade_bowl { name "bowl"; }
+
+    material marinated_pork measured by mass { }
+    material seared_pork measured by mass { }
+    material chili_base measured by mass { }
+    material aromatic_base measured by mass { }
+    material braising_liquid measured by volume { }
+
+    process preparation {
+        prep chop scallions into chopped_scallions {
+            note "keep the whites and greens separate";
+            duration 2 min;
+        }
+        prep mince garlic into minced_garlic { duration 2 min; }
+        prep mince ginger into minced_ginger { duration 2 min; }
+        prep cube tofu into cubed_tofu {
+            note "1.5 cm (1/2 inch) cubes";
+            duration 3 min;
+        }
+        operation marinate does rest {
+            input [pork, shaoxing, cornstarch, white_pepper];
+            input soy_sauce 1 tbsp;
+            container marinade_bowl;
+            note "a splash of cooking oil goes in too";
+            duration 10 min;
+            labor passive;
+            produces marinated_pork;
+        }
+    }
+
+    process cooking {
+        operation sear_pork does heat {
+            input [marinated_pork, cooking_oil];
+            after marinate;
+            equipment wok;
+            heat high;
+            note "chop the pork up as it cooks";
+            until visual "browned";
+            duration 5 min;
+            labor active;
+            produces seared_pork;
+        }
+        operation fry_doubanjiang does heat {
+            input [seared_pork, doubanjiang];
+            after sear_pork;
+            equipment wok;
+            heat medium;
+            duration 1 min;
+            labor active;
+            produces chili_base;
+        }
+        operation add_aromatics does heat {
+            input [chili_base, minced_ginger, minced_garlic, chopped_scallions, douchi];
+            after [fry_doubanjiang, mince_ginger, mince_garlic, chop_scallions];
+            equipment wok;
+            heat medium;
+            note "the scallion whites go in here";
+            until visual "fragrant";
+            duration 2 min;
+            labor active;
+            produces aromatic_base;
+        }
+        operation add_stock does heat {
+            input [aromatic_base, broth];
+            after add_aromatics;
+            equipment wok;
+            heat high;
+            note "a splash of soy sauce goes in with the stock";
+            until visual "boiling";
+            duration 3 min;
+            labor monitor;
+            produces braising_liquid;
+        }
+        operation braise does heat {
+            input [braising_liquid, cubed_tofu];
+            after [add_stock, cube_tofu];
+            equipment wok;
+            heat low;
+            until visual "the tofu shows its trademark pockmarks and the seasoning clings to it";
+            duration 15 min;
+            labor monitor;
+            produces braised_tofu;
+        }
+        operation finish does mix {
+            input [braised_tofu, peppercorns, chopped_scallions, rice];
+            after braise;
+            equipment wok;
+            note "stir in the crushed peppercorns and scallion greens right before serving over rice";
+            duration 1 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

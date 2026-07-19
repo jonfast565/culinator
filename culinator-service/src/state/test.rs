@@ -16,8 +16,14 @@ fn initialize_makes_nutrition_catalog_available() {
     let state =
         ServiceState::sqlite(path.clone(), path.with_file_name("settings.json")).expect("state");
     let report = state.initialize().expect("initialize");
-    assert!(report.nutrition_ready, "starter nutrition catalog is available");
-    assert!(report.nutrition_starter, "full USDA import is still pending");
+    assert!(
+        report.nutrition_ready,
+        "starter nutrition catalog is available"
+    );
+    assert!(
+        report.nutrition_starter,
+        "full USDA import is still pending"
+    );
     let fdc_path = path.with_file_name("fdc.sqlite3");
     let _ = std::fs::remove_file(&path);
     let _ = std::fs::remove_file(fdc_path);
@@ -45,6 +51,26 @@ fn seeds_sample_recipes_only_once() {
         "re-seeding does not duplicate"
     );
     let _ = std::fs::remove_file(path);
+}
+
+#[test]
+fn every_seed_declares_a_book_section_and_a_source() {
+    // The book TOC groups recipes by `section`; a seed without one falls into an
+    // unlabeled chapter. The source credit is a licensing requirement, not a nicety.
+    for source in SEED_RECIPES {
+        let title = source
+            .lines()
+            .find_map(|line| line.trim().strip_prefix("title "))
+            .unwrap_or("<untitled>");
+        assert!(
+            source.contains("section \""),
+            "{title} is missing a `section` chapter"
+        );
+        assert!(
+            source.contains("attribution \""),
+            "{title} is missing an attribution credit"
+        );
+    }
 }
 
 #[test]

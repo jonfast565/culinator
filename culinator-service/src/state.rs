@@ -30,13 +30,55 @@ use uuid::Uuid;
 
 const FDC_RELEASE: &str = "2026-04";
 
-/// Sample recipes used to seed a fresh catalog. These are Alton Brown recipes
-/// converted into the Culinator DSL for demonstration; each carries a source
-/// credit. See the `source_url` in each document for the original.
+/// Sample recipes used to seed a fresh catalog, grouped into book chapters by
+/// each document's `section` property. Three are Alton Brown recipes converted
+/// into the Culinator DSL; the rest come from based.cooking, whose recipes are
+/// public domain. Each carries a source credit — see the `source_url` in the
+/// document for the original.
 const SEED_RECIPES: &[&str] = &[
+    include_str!("seed/apple_pie.cg"),
     include_str!("seed/baked_macaroni_and_cheese.cg"),
+    include_str!("seed/banana_bread.cg"),
+    include_str!("seed/banana_pancakes.cg"),
+    include_str!("seed/beef_and_broccoli.cg"),
+    include_str!("seed/beef_stew.cg"),
+    include_str!("seed/brigadeiro.cg"),
+    include_str!("seed/carbonara.cg"),
+    include_str!("seed/ceviche.cg"),
+    include_str!("seed/chicken_tikka_masala.cg"),
+    include_str!("seed/chicken_wings.cg"),
+    include_str!("seed/chocolate_chip_cookies.cg"),
+    include_str!("seed/coleslaw.cg"),
+    include_str!("seed/creamy_mashed_potatoes.cg"),
     include_str!("seed/easy_crepes.cg"),
+    include_str!("seed/french_onion_soup.cg"),
+    include_str!("seed/french_toast.cg"),
     include_str!("seed/fully_loaded_guacamole.cg"),
+    include_str!("seed/gluehwein.cg"),
+    include_str!("seed/granola.cg"),
+    include_str!("seed/greek_salad.cg"),
+    include_str!("seed/hummus.cg"),
+    include_str!("seed/irish_coffee.cg"),
+    include_str!("seed/lava_cake.cg"),
+    include_str!("seed/mapo_tofu.cg"),
+    include_str!("seed/mayonnaise_or_aioli.cg"),
+    include_str!("seed/meatloaf.cg"),
+    include_str!("seed/miso_soup.cg"),
+    include_str!("seed/mushroom_risotto.cg"),
+    include_str!("seed/naan_bread.cg"),
+    include_str!("seed/no_knead_bread.cg"),
+    include_str!("seed/omelet.cg"),
+    include_str!("seed/pickled_onions.cg"),
+    include_str!("seed/pizza_dough.cg"),
+    include_str!("seed/potato_leek_soup.cg"),
+    include_str!("seed/ratatouille.cg"),
+    include_str!("seed/red_lentil_dahl.cg"),
+    include_str!("seed/roasted_chicken_breast.cg"),
+    include_str!("seed/salsa.cg"),
+    include_str!("seed/shakshouka.cg"),
+    include_str!("seed/sweet_potato_fries.cg"),
+    include_str!("seed/tabouleh.cg"),
+    include_str!("seed/tzatziki.cg"),
 ];
 
 #[derive(Clone)]
@@ -271,7 +313,9 @@ impl ServiceState {
         let book = self.books.create(NewRecipeBook {
             title: "Sample Recipes".to_owned(),
             symbol: Some("sample_recipes".to_owned()),
-            description: Some("Alton Brown classics to get you started".to_owned()),
+            description: Some(
+                "A starter cookbook: breakfasts, mains, sides, breads, and drinks".to_owned(),
+            ),
         })?;
         for source in SEED_RECIPES {
             let created = self.recipes.create(Some(book.id))?;

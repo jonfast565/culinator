@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe chicken_wings {
+    title "Buffalo Chicken Wings";
+    section "Starters";
+
+    source "kyle-steger";
+    publisher "based.cooking";
+    source_url "https://based.cooking/chicken-wings/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient wings measured by mass {
+        name "chicken wings and drums";
+    }
+    ingredient hot_sauce measured by volume {
+        name "Frank's RedHot sauce";
+        divided true;
+        note "enough to marinate, plus a light top coat at the end; not the 'wing sauce' version";
+    }
+
+    equipment oven_bag { name "oven bag"; }
+    equipment grill { name "grill"; }
+    equipment oven { name "oven"; }
+    container marinade_dish { name "marinating dish"; }
+
+    material marinated_wings measured by mass { }
+    material baked_wings measured by mass { }
+
+    process marinating {
+        operation marinate does rest {
+            input [wings, hot_sauce];
+            container marinade_dish;
+            note "soak the wings overnight";
+            duration 12 hour;
+            labor passive;
+            produces marinated_wings;
+        }
+    }
+
+    process baking {
+        operation preheat does heat {
+            target oven;
+            temperature 350 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation bag_wings does move {
+            input [marinated_wings];
+            after marinate;
+            tool oven_bag;
+            note "seal the bag";
+            duration 3 min;
+            labor active;
+            produces bagged_wings;
+        }
+        operation bake does heat {
+            input [bagged_wings];
+            after [bag_wings, preheat];
+            equipment oven;
+            temperature 350 fahrenheit;
+            until texture "the meat falls off the bone";
+            duration 60 min;
+            labor passive;
+            produces baked_wings;
+        }
+    }
+
+    process grilling {
+        operation heat_grill does heat {
+            target grill;
+            note "a pan may work, but the grill is what this recipe was built on";
+            duration estimated 10 min;
+            labor automated;
+            produces hot_grill;
+        }
+        operation char does heat {
+            input [baked_wings];
+            after [bake, heat_grill];
+            equipment grill;
+            heat high;
+            until visual "the skin is charred";
+            duration estimated 6 min;
+            labor monitor;
+            produces charred_wings;
+        }
+        operation dress does coat {
+            input [charred_wings, hot_sauce];
+            after char;
+            note "a light top coat";
+            duration 2 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 4 count;
+    }
+}

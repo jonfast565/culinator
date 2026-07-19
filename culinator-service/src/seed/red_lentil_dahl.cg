@@ -1,0 +1,137 @@
+culinator 0.3;
+
+recipe red_lentil_dahl {
+    title "Red Lentil Dahl";
+    section "Mains";
+
+    source "joel-maxuel";
+    publisher "based.cooking";
+    source_url "https://based.cooking/red-lentil-dahl/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 60 min;
+
+    ingredient olive_oil measured by volume { quantity 3 tbsp; }
+    ingredient onion measured by count {
+        name "yellow onion";
+        quantity 1 count;
+        size "medium";
+    }
+    ingredient ginger measured by volume {
+        name "fresh ginger";
+        quantity 1 tbsp;
+        note "measured after grating";
+    }
+    ingredient garlic measured by count { quantity 4 clove; }
+    ingredient curry_powder measured by volume {
+        name "mild madras yellow curry powder";
+        quantity 2 tbsp;
+    }
+    ingredient salt measured by volume {
+        name "sea salt";
+        quantity 1 tsp;
+    }
+    ingredient lentils measured by volume {
+        name "dried red lentils";
+        quantity 1 cup;
+    }
+    ingredient water measured by volume {
+        quantity 4 cup to 5 cup;
+        divided true;
+        note "4 cups to start, the rest only if the dahl gets too thick";
+    }
+    ingredient tomatoes measured by count {
+        name "plum tomatoes";
+        quantity 5 count;
+    }
+    ingredient lemon measured by count {
+        quantity 1 count;
+        note "juiced";
+    }
+    ingredient cilantro measured by volume {
+        name "fresh cilantro";
+        quantity 1 cup;
+        note "chopped and lightly packed";
+    }
+    ingredient chili measured by volume {
+        name "dried red chilies or cayenne pepper";
+        to_taste true;
+    }
+    ingredient cinnamon measured by volume {
+        name "ground cinnamon";
+        quantity 0.25 tsp;
+    }
+
+    container soup_pot { name "soup pot"; }
+    equipment grater { name "grater"; }
+
+    material sauteed_onion measured by mass { }
+    material aromatic_base measured by mass { }
+    material spiced_base measured by mass { }
+    material simmered_dahl measured by mass { }
+
+    process preparation {
+        prep chop onion into chopped_onion { duration 3 min; }
+        prep grate ginger into grated_ginger { duration 2 min; }
+        prep mince garlic into minced_garlic { duration 2 min; }
+        prep chop tomatoes into chopped_tomatoes { duration 3 min; }
+        prep chop cilantro into chopped_cilantro { duration 2 min; }
+    }
+
+    process cooking {
+        operation saute_onion does heat {
+            input [olive_oil, chopped_onion];
+            after chop_onion;
+            container soup_pot;
+            heat medium;
+            duration 5 min;
+            labor active;
+            produces sauteed_onion;
+        }
+        operation saute_aromatics does heat {
+            input [sauteed_onion, minced_garlic, grated_ginger];
+            after [saute_onion, mince_garlic, grate_ginger];
+            container soup_pot;
+            heat medium;
+            duration 5 min;
+            labor active;
+            produces aromatic_base;
+        }
+        operation bloom_spices does heat {
+            input [aromatic_base, curry_powder, salt, chili, cinnamon];
+            after saute_aromatics;
+            container soup_pot;
+            heat medium;
+            until visual "fragrant";
+            duration 5 min;
+            labor active;
+            produces spiced_base;
+        }
+        operation simmer does heat {
+            input [spiced_base, chopped_tomatoes, lentils];
+            input water 4 cup;
+            after [bloom_spices, chop_tomatoes];
+            container soup_pot;
+            heat medium_low;
+            note "bring to a boil first, then lower the heat";
+            duration 20 min;
+            labor monitor;
+            produces simmered_dahl;
+        }
+        operation finish does heat {
+            input [simmered_dahl, lemon, chopped_cilantro];
+            after [simmer, chop_cilantro];
+            container soup_pot;
+            heat medium_low;
+            note "add more water if it is too thick; tender lentils can take a while";
+            until texture "the lentils are completely tender";
+            duration 10 min;
+            labor monitor;
+            produces red_lentil_dahl;
+        }
+    }
+
+    yield servings measured by count {
+        amount 6 count;
+    }
+}

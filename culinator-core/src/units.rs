@@ -403,6 +403,17 @@ fn us_length_unit(mm: f64) -> (&'static str, f64) {
     }
 }
 
+/// Convert a quantity into the unit this system would naturally state it in
+/// (grams vs ounces, ml vs cups, °C vs °F). Returns the value and unit rather
+/// than a rendered string so callers can apply their own presentation — the
+/// recipe narrative wants cooking fractions where a data readout wants decimals.
+pub fn convert_for_system(
+    quantity: &Quantity,
+    system: UnitSystem,
+) -> Result<(f64, String), UnitError> {
+    format_for_system(quantity, system)
+}
+
 fn format_for_system(quantity: &Quantity, system: UnitSystem) -> Result<(f64, String), UnitError> {
     let canonical = to_canonical(quantity)?;
     let (unit, value) = match (system, quantity.dimension) {

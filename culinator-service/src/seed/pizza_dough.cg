@@ -1,0 +1,80 @@
+culinator 0.3;
+
+recipe pizza_dough {
+    title "Pizza Dough";
+    section "Breads & Baking";
+
+    source "BeFe";
+    publisher "based.cooking";
+    source_url "https://based.cooking/pizza-dough/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 10 min;
+    total_time 45 min;
+
+    ingredient flour measured by mass {
+        name "wheat flour";
+        quantity 400 g;
+        divided true;
+        note "400 g in the dough, plus more for the work surface; rye or other flours may need more liquid";
+    }
+    ingredient water measured by volume {
+        name "lukewarm water";
+        quantity 200 ml;
+    }
+    ingredient yeast measured by mass {
+        name "dry yeast";
+        quantity 7 g;
+        note "1 package";
+    }
+    ingredient olive_oil measured by volume { quantity 1 tbsp; }
+    ingredient salt measured by volume { quantity 1 tsp; }
+    ingredient sugar measured by volume {
+        note "a teensy bit, to feed the yeast";
+    }
+
+    container bowl { name "mixing bowl"; }
+    equipment rolling_pin { name "rolling pin"; }
+    equipment work_surface { name "work surface"; }
+
+    material dough measured by mass { }
+    material risen_dough measured by mass { }
+
+    process mixing {
+        operation knead does mix {
+            input [water, yeast, olive_oil, salt, sugar];
+            input flour 400 g;
+            container bowl;
+            note "the ratio is roughly 2 parts flour to 1 part liquid by weight";
+            until texture "a smooth dough";
+            duration 8 min;
+            labor active;
+            produces dough;
+        }
+        operation rise does rest {
+            input [dough];
+            after knead;
+            container bowl;
+            note "somewhere lukewarm";
+            duration 30 min;
+            labor passive;
+            produces risen_dough;
+        }
+    }
+
+    process shaping {
+        operation roll_out does move {
+            input [risen_dough];
+            after rise;
+            tool rolling_pin;
+            equipment work_surface;
+            note "flour the surface first";
+            duration 5 min;
+            labor active;
+            produces pizza_base;
+        }
+    }
+
+    yield bases measured by count {
+        amount 2 count;
+    }
+}

@@ -298,6 +298,138 @@ pub trait SensorStream { /* typed observations */ }
 - Configurable telemetry with opt-in only.
 - Data export and complete deletion tools.
 
+## 21. Home-kitchen workflow features
+
+Concrete capabilities aimed at everyday cooking, meal planning, and library management. Several overlap with §2, §3, §10, §14, §15, and §18; this section captures the user-facing scope and suggested UI entry points.
+
+### Recipe scaling
+
+- Scale a recipe by serving count or an arbitrary multiplier from the reading page and kitchen mode.
+- Rewrite ingredient quantities in display and, optionally, persist a scaled copy or kitchen try.
+- Respect `divided` ingredients, variant groups, and count-based measures that should not scale.
+- Surface yield/serving metadata from the DSL `yield` block when present.
+
+### Shopping lists
+
+- Build checkbox-style shopping lists from one recipe, a selection, or an entire book.
+- Merge duplicate ingredients by symbol; show combined quantities with unit normalization.
+- Optional grouping by aisle or category (manual tags or heuristics).
+- Export or share as plain text, markdown, or CSV for use on a phone at the store.
+- See also §10 (inventory and purchasing).
+
+### Meal plans and menus
+
+- Plan recipes across days and meal slots (breakfast, lunch, dinner, etc.).
+- Calendar or week-grid view tied to the recipe library.
+- “Cook today” opens kitchen mode for the planned slot.
+- Aggregate shopping lists and nutrition across a plan.
+- See also §10 (menu costing) and §4 (schedule rollup for a day’s production).
+
+### Web and URL import
+
+- Paste a recipe URL and import via JSON-LD extraction when available.
+- AI or heuristic fallback for unstructured pages (complementing the existing photo/OCR and structured paste flows).
+- Optional browser extension or bookmarklet for one-click capture.
+- Preview, validate, and assign to a book before save — same wizard pattern as other import paths.
+- See also §1 and §18.
+
+### Pantry and “what can I make?”
+
+- User-maintained pantry: ingredients on hand (symbols or free text).
+- Search and rank recipes by pantry overlap (“uses only what I have”, “missing ≤ N items”).
+- Highlight gaps and suggest declared DSL `substitutes` where applicable.
+- See also §16 (substitutions).
+
+### Reusable ingredient catalog
+
+- Library-wide ingredient definitions reused across recipes (name, default units, nutrition facts).
+- Custom nutrition and allergen metadata per catalog entry, not only per-recipe resource links.
+- When authoring, pick from the catalog instead of re-entering quantities and facts.
+- See also §2 (nutrition database).
+
+### Cost analysis
+
+- Manual or imported price per ingredient; per-recipe, per-serving, and per-batch cost.
+- Menu and meal-plan cost rollups.
+- Optional labor and energy cost using scheduled active time from §4.
+- See also §10.
+
+### Nutrition search, filters, and allergen UX
+
+- Search filters: max calories, min protein, exclude food groups, nutrient ranges.
+- Allergen badges on the reading page and in search results when nutrition links exist.
+- Editor warnings when linked allergens appear in a recipe (complementing exclude-allergen search).
+- Menu- and meal-plan-level nutrition summaries.
+- See also §2 and §15.
+
+### Print and export templates
+
+- Preset layout themes for single recipes and books (compact card, full page with photo, index-at-back).
+- Template picker before export; extends existing print HTML, EPUB, and static-site output.
+- See also §3.
+
+### Sharing and lightweight collaboration
+
+- Share read-only recipe or book bundles (static export, signed link, or importable archive).
+- Async handoff before real-time multi-user editing.
+- See also §14 (full collaboration and sync).
+
+### Substitution assistant
+
+- “Out of this ingredient?” flow: show declared substitutes, pantry alternatives, and optional nutrition delta.
+- Surface DSL `substitutes` fields in reading and kitchen mode, not only in the inspector.
+- See also §16.
+
+### Beverage and pairing notes
+
+- Optional pairings section on recipes or book sections (wine, beer, non-alcoholic, serving suggestions).
+- Lightweight tags or prose fields; no separate product surface required initially.
+
+### Trash, recovery, and revision history
+
+- Soft-delete recipes and books with restore from trash.
+- Optional revision snapshots on save for diff and rollback.
+- Kitchen tries already reference `recipe_revision_id`; extend to general recipe history where useful.
+
+### Full library backup and restore
+
+- One-click backup of the entire library (SQLite, `.cg` sources, and recipe images).
+- Restore from backup on a new machine or after data loss.
+- Complements §20 (export and deletion) for local-first users without cloud sync.
+
+### Bundled recipe library and discovery
+
+- Curated or licensed recipe collections users can browse, preview, and copy into their own books.
+- Trending, seasonal, or editorially featured recipes on a home or discovery surface.
+- Requires content licensing, updates, and moderation — largely separate from the authoring engine.
+- Optional online catalog adapter; offline installs ship with seed recipes only.
+
+### Multi-device cloud sync
+
+- Automatic sync of recipes, books, images, shopping lists, and meal plans across computers.
+- Conflict resolution, sync status UI, and optional managed-cloud or self-hosted backend.
+- Subscription or infrastructure cost; complements but does not replace local backup (§ above).
+- See also §14 (collaboration and synchronization).
+
+### Real-time group cookbook editing
+
+- Shared cookbooks multiple users edit concurrently with live updates.
+- Roles, permissions, invitations, and optimistic concurrency or CRDT-style merging.
+- Heavier than read-only sharing bundles; likely builds on cloud sync and account model.
+- See also §14.
+
+### Dedicated wine and beverage lists
+
+- Standalone wine (and beverage) collections separate from per-recipe pairing notes.
+- Vintage, region, grape, food-pairing tags, and links to recipes or menus.
+- Extends § “Beverage and pairing notes” when users want a cellar-style catalog, not just inline prose.
+
+### Reading and list accessibility
+
+- Adjustable font size for the reading page, ingredient lists, and library search results.
+- Respect system text-size preferences where possible; optional compact vs. comfortable density.
+- Low implementation cost; polish for long cooking sessions and accessibility.
+
 ## Prioritization suggestion
 
 ### Near term
@@ -307,6 +439,29 @@ pub trait SensorStream { /* typed observations */ }
 4. OCR interface plus local OCR proof of concept.
 5. AI interpreter interface with strict validated output.
 6. Nutrition provider interface and basic per-serving calculation.
+
+### Suggested next wave (§21 home-kitchen workflows)
+
+Ordered by impact and reuse of existing ingredients, search, kitchen mode, and export infrastructure:
+
+1. Recipe scaling by servings.
+2. Shopping lists from recipes and books.
+3. Web URL import (JSON-LD first, AI fallback).
+4. Pantry list and “recipes I can make” search.
+5. Meal plans and menus with plan-level shopping and nutrition rollups.
+6. Cost analysis (mirror nutrition linking pattern).
+7. Allergen badges and nutrient search filters.
+8. Full library backup and restore; trash with restore.
+9. Print and export layout templates.
+10. Read-only recipe and book sharing bundles.
+
+### Longer term / lower priority (§21 heavier lift)
+
+1. Bundled recipe library and discovery catalog.
+2. Multi-device cloud sync.
+3. Real-time group cookbook editing.
+4. Dedicated wine and beverage lists.
+5. Reading and list font-size accessibility (quick win if pulled forward).
 
 ### Medium term
 1. Advanced scheduler and kitchen execution mode.
