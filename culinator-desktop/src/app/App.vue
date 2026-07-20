@@ -5,6 +5,7 @@ import {
   Trash2,
   Database,
   Pencil,
+  Blocks,
   BookOpen,
   ChevronLeft,
   Scale,
@@ -19,6 +20,7 @@ import EditDrawer from "../features/recipe-editor/components/EditDrawer.vue";
 import type { InspectorTabId } from "../features/recipe-editor/components/InspectorPanel.vue";
 import { useRecipeEditor } from "../features/recipe-editor/composables/useRecipeEditor";
 import RecipePage from "../features/reading/components/RecipePage.vue";
+import RecipeBuilderView from "../features/recipe-builder/components/RecipeBuilderView.vue";
 import ReadingToolsDrawer from "../features/reading/components/ReadingToolsDrawer.vue";
 import Bookshelf from "../features/bookshelf/components/Bookshelf.vue";
 import OpenBook from "../features/bookshelf/components/OpenBook.vue";
@@ -154,7 +156,9 @@ async function newRecipe(): Promise<void> {
   await library.createRecipe();
   editDrawerTab.value = undefined;
   editInspectorTab.value = undefined;
-  nav.edit();
+  // A brand-new recipe is a skeleton, which is exactly what the structured
+  // builder is for — no source to hand-write first.
+  nav.build();
 }
 async function save(): Promise<void> {
   const saved = await editor.save();
@@ -355,6 +359,9 @@ function saveStatusText(): string {
           <button class="danger" title="Delete recipe" @click="remove">
             <Trash2 :size="15" />
           </button>
+          <button class="ghost" title="Build with structured forms" @click="nav.build()">
+            <Blocks :size="15" /> Build
+          </button>
           <button class="primary" @click="nav.edit()"><Pencil :size="15" /> Edit</button>
         </div>
       </header>
@@ -431,6 +438,9 @@ function saveStatusText(): string {
             <Ruler :size="15" />
             Convert units
           </button>
+          <button class="ghost" title="Switch to the structured builder" @click="nav.build()">
+            <Blocks :size="15" /> Build
+          </button>
         </div>
       </header>
       <section class="edit-layout" :style="{ '--inspector-w': inspectorWidth + 'px' }">
@@ -472,6 +482,19 @@ function saveStatusText(): string {
         />
       </section>
     </main>
+
+    <RecipeBuilderView
+      v-else-if="library.selectedRecipe.value && nav.view.value === 'building'"
+      :source="editor.source.value"
+      :model="editor.model.value"
+      :recipe-id="library.selectedRecipe.value.id"
+      :title="library.selectedRecipe.value.title"
+      :dirty="editor.dirty.value"
+      :save-status="editor.saveStatus.value"
+      @update:source="editor.source.value = $event"
+      @close="leaveEdit"
+      @edit-source="nav.edit()"
+    />
 
     <section v-else class="empty-workspace">
       <h2>Nothing open</h2>

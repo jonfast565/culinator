@@ -59,6 +59,16 @@ fn projects_the_editor_model_from_a_real_seed() {
     assert!(equipment.contains(&"oven"), "got {equipment:?}");
     assert_eq!(preheat["targetTemperature"], "350 fahrenheit");
 
+    // `measured by` must survive even when the declaration carries no quantity.
+    // A divided ingredient puts its amounts on the step bindings, so deriving
+    // the dimension from the declared quantity reported "unspecified" here —
+    // and a structured editor writing that back would drop `measured by volume`.
+    let salt = resources.iter().find(|r| r["symbol"] == "salt").unwrap();
+    assert_eq!(salt["divided"], true);
+    assert!(salt.get("quantity").is_none(), "divided salt declares none");
+    assert_eq!(salt["measurement"], "volume");
+    assert_eq!(macaroni["measurement"], "mass");
+
     // Spans let the inspector patch a declaration in place.
     let range = &macaroni["range"];
     let (start, end) = (
@@ -66,6 +76,181 @@ fn projects_the_editor_model_from_a_real_seed() {
         range["end"].as_u64().unwrap() as usize,
     );
     assert!(SEED[start..end].starts_with("ingredient macaroni"));
+}
+
+/// The builder joins the two models by byte range: it renders a card from
+/// `UiResource`/`UiOperation` and edits through the matching outline node. If
+/// these ever disagree, an edit lands on the wrong declaration — so pin it.
+#[test]
+fn outline_spans_agree_with_the_ui_model_for_every_seed() {
+    let dir = concat!(env!("CARGO_MANIFEST_DIR"), "/../culinator-service/src/seed");
+    let mut joined = 0;
+    for entry in std::fs::read_dir(dir).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().map(|e| e != "cg").unwrap_or(true) {
+            continue;
+        }
+        let name = path.file_name().unwrap().to_string_lossy().to_string();
+        let source = std::fs::read_to_string(&path).unwrap();
+        let model = parse_ui_model_native(&source);
+        let outline = parse_outline_native(&source);
+        assert!(outline.parsed, "{name} has a walkable tree");
+
+        // Flatten the outline so nested operations inside processes are found.
+        fn flatten<'a>(
+            nodes: &'a [crate::outline::UiOutlineNode],
+            out: &mut Vec<&'a crate::outline::UiOutlineNode>,
+        ) {
+            for node in nodes {
+                out.push(node);
+                flatten(&node.children, out);
+            }
+        }
+        let mut all = Vec::new();
+        flatten(&outline.nodes, &mut all);
+
+        for resource in &model.resources {
+            let Some(range) = &resource.range else {
+                continue;
+            };
+            let node = all
+                .iter()
+                .find(|node| node.code_range.start == range.start)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{name}: no outline node at {} for {}",
+                        range.start, resource.symbol
+                    )
+                });
+            assert_eq!(
+                node.symbol.as_deref(),
+                Some(resource.symbol.as_str()),
+                "{name}: symbol mismatch at {}",
+                range.start
+            );
+            assert_eq!(
+                node.code_range.end, range.end,
+                "{name}: {}",
+                resource.symbol
+            );
+            joined += 1;
+        }
+        for operation in &model.operations {
+            let Some(range) = &operation.range else {
+                continue;
+            };
+            // `prep` desugars into an operation whose span is the prep
+            // statement, so match on position rather than on symbol.
+            let node = all
+                .iter()
+                .find(|node| node.code_range.start == range.start)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "{name}: no outline node at {} for {}",
+                        range.start, operation.symbol
+                    )
+                });
+            assert_eq!(
+                node.code_range.end, range.end,
+                "{name}: {}",
+                operation.symbol
+            );
+            assert!(
+                node.keyword == "operation" || node.keyword == "prep",
+                "{name}: {} is a {:?}",
+                operation.symbol,
+                node.keyword
+            );
+            joined += 1;
+        }
+    }
+    assert!(joined > 500, "joined {joined} declarations");
+}
+
+/// Spans are reported in UTF-16 units because JavaScript slices strings that
+/// way. Emitting raw byte offsets meant that in any recipe containing a
+/// non-ASCII character every later span pointed past its declaration — deleting
+/// a step from `fully_loaded_guacamole.cg` (two em-dashes in its comments)
+/// sliced `"ation rest does rest {…"`, orphaned an `oper`, and broke the file.
+#[test]
+fn spans_are_utf16_offsets_so_javascript_can_slice_them() {
+    let source = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../culinator-service/src/seed/fully_loaded_guacamole.cg"
+    ))
+    .unwrap();
+    assert!(
+        source.contains('—'),
+        "seed still has the multi-byte comment"
+    );
+    let utf16: Vec<u16> = source.encode_utf16().collect();
+
+    let model = parse_ui_model_native(&source);
+    let rest = model
+        .operations
+        .iter()
+        .find(|operation| operation.symbol == "rest")
+        .expect("rest step");
+    let range = rest.range.as_ref().expect("span");
+    let sliced = String::from_utf16(&utf16[range.start..range.end]).unwrap();
+    assert!(
+        sliced.starts_with("operation rest does rest"),
+        "got {sliced:?}"
+    );
+
+    // Same for the outline, and the two must still agree with each other.
+    let outline = parse_outline_native(&source);
+    fn flatten<'a>(
+        nodes: &'a [crate::outline::UiOutlineNode],
+        out: &mut Vec<&'a crate::outline::UiOutlineNode>,
+    ) {
+        for node in nodes {
+            out.push(node);
+            flatten(&node.children, out);
+        }
+    }
+    let mut all = Vec::new();
+    flatten(&outline.nodes, &mut all);
+    let node = all
+        .iter()
+        .find(|node| node.code_range.start == range.start)
+        .expect("outline node at the same offset");
+    assert_eq!(node.code_range.end, range.end);
+    assert_eq!(outline.source_len, utf16.len());
+
+    // Deleting by that span leaves source that still parses.
+    let mut remaining: Vec<u16> = utf16[..range.start].to_vec();
+    remaining.extend_from_slice(&utf16[range.end..]);
+    let edited = String::from_utf16(&remaining).unwrap();
+    assert!(
+        parse_ui_model_native(&edited).diagnostics.is_empty(),
+        "deleting a step must not corrupt the recipe"
+    );
+}
+
+#[test]
+fn outline_json_uses_camel_case_keys() {
+    let source = "culinator 0.3;\nrecipe demo {\n    title \"D\";\n    ingredient salt measured by volume { quantity 1 tsp; }\n}\n";
+    let json: serde_json::Value = serde_json::from_str(&parse_outline(source)).unwrap();
+    assert_eq!(json["parsed"], true);
+    assert_eq!(json["sourceLen"], source.len());
+    let recipe = &json["nodes"][1];
+    assert_eq!(recipe["keyword"], "recipe");
+    assert_eq!(recipe["form"], "declaration");
+    assert!(recipe["codeRange"]["start"].is_number());
+    assert!(recipe["blockInnerRange"]["end"].is_number());
+    // Absent optionals are omitted, not null, so the TS fields stay optional.
+    let title = &recipe["children"][0];
+    assert_eq!(title["form"], "statement");
+    assert!(title.get("blockInnerRange").is_none());
+    assert!(title.get("symbol").is_none());
+}
+
+#[test]
+fn unwalkable_source_reports_parsed_false() {
+    let outline = parse_outline_native("culinator 0.3;\nrecipe demo {\n  title \"D\";\n");
+    assert!(!outline.parsed);
+    assert!(outline.nodes.is_empty());
 }
 
 #[test]

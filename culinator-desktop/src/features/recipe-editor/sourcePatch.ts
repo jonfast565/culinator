@@ -30,11 +30,14 @@ function quantityPatchInSpan(
   const span = source.slice(spanStart, spanEnd);
   const match = propertyPattern.exec(span);
   if (!match || match.index == null) return null;
+  const [whole, boundary, gap, keyword] = match;
   const start = spanStart + match.index;
   return {
     start,
-    end: start + match[0].length,
-    replacement: `${match[1]} ${newQuantity};`,
+    end: start + whole.length,
+    // The match had to consume the preceding `{`/`;` and the statement's
+    // indentation to anchor itself; put both back verbatim.
+    replacement: `${boundary}${gap}${keyword} ${newQuantity};`,
   };
 }
 
@@ -77,6 +80,20 @@ export function setRecipeProperty(source: string, key: string, value: string): s
     return `${source.slice(0, insertAt)}\n    ${key} "${clean}";${source.slice(insertAt)}`;
   }
   return source;
+}
+
+/**
+ * Append a declaration just inside the recipe block's closing brace.
+ *
+ * Anything appended to the end of the file instead lands *outside* that brace,
+ * where the parser silently ignores it — no diagnostic, the declaration simply
+ * never appears — so callers must not hand-roll this.
+ */
+export function appendToRecipeBlock(source: string, declaration: string): string {
+  const close = source.lastIndexOf("}");
+  if (close === -1) return source;
+  const body = source.slice(0, close).replace(/\s*$/, "");
+  return `${body}\n\n${declaration}\n${source.slice(close)}`;
 }
 
 /**
@@ -131,7 +148,16 @@ export function setOperationPhoto(source: string, range: SourceRange, value: str
   return source;
 }
 
-const QUANTITY_PROPERTY = /\b(quantity|mass|amount)\s+([^;]+)\s*;/;
+// Only `quantity` and `amount` name a quantity property, and only at the start
+// of a statement. This used to be `\b(quantity|mass|amount)`, which matched the
+// `mass` in `measured by mass {` before ever reaching the real property, so
+// converting units rewrote the block header instead of the amount:
+// `ingredient salt measured by mass { quantity 5 g; }` became
+// `ingredient salt measured by mass 0.18 oz; }` and the recipe stopped parsing.
+// `mass` is a dimension in `measured by …`, never a property name.
+// A quantity value never spans a brace or a quoted string, so excluding those
+// also keeps the word `amount` inside a `note "…"` from matching.
+const QUANTITY_PROPERTY = /([{};]|^)(\s*)(quantity|amount)\s+([^;{}"]+);/;
 const TEMPERATURE_PROPERTY = /\btemperature\s+([\d.]+)\s+([A-Za-z_]+)\s*;/;
 
 /**

@@ -1,15 +1,23 @@
 //! WebAssembly bindings that let the desktop app reuse the Rust parser instead
 //! of maintaining a second, regex-based one in TypeScript.
 //!
-//! The single entry point is [`parse_ui_model`], which parses with error
+//! The main entry point is [`parse_ui_model`], which parses with error
 //! recovery and returns JSON shaped exactly like the editor's `UiRecipeModel`.
 //! Recovery is what makes this usable for a live editor: a half-typed
 //! declaration costs that declaration, not the whole preview.
+//!
+//! [`parse_outline`] is its structural counterpart: where the UI model says
+//! what a recipe *means* (and drops what it cannot model), the outline says
+//! where every declaration and statement physically *is*, so a structured
+//! editor can rewrite one in place without disturbing its neighbours.
 
 mod narrative;
+mod offsets;
+mod outline;
 mod ui_model;
 
 pub use narrative::UiNarrative;
+pub use outline::UiOutline;
 pub use ui_model::{UiDiagnostic, UiRecipeModel};
 
 use culinator_core::UnitSystem;
@@ -29,19 +37,37 @@ pub fn parse_ui_model(source: &str) -> String {
 /// native consumer that wants the editor's view of a recipe.
 pub fn parse_ui_model_native(source: &str) -> UiRecipeModel {
     let outcome = parse_recipe_recovering(source);
+    // Diagnostic spans are converted alongside declaration spans: the editor
+    // underlines and scrolls to them with JavaScript string indices.
+    let offsets = offsets::Utf16Offsets::new(source);
     let diagnostics: Vec<UiDiagnostic> = outcome
         .diagnostics
         .iter()
         .map(|diagnostic| UiDiagnostic {
             message: diagnostic.message.clone(),
-            start: diagnostic.span.start,
-            end: diagnostic.span.end,
+            start: offsets.at(diagnostic.span.start),
+            end: offsets.at(diagnostic.span.end),
         })
         .collect();
     match outcome.value {
-        Some(recipe) => ui_model::project(&recipe, diagnostics),
+        Some(recipe) => ui_model::project(source, &recipe, diagnostics),
         None => ui_model::empty(diagnostics),
     }
+}
+
+/// Map every declaration and statement in `source` to its byte range, so a
+/// structured editor can splice one statement without regenerating the block
+/// around it. Returns JSON; unwalkable source yields `parsed: false` rather
+/// than an error.
+#[wasm_bindgen]
+pub fn parse_outline(source: &str) -> String {
+    serde_json::to_string(&parse_outline_native(source))
+        .unwrap_or_else(|error| format!(r#"{{"error":"{error}"}}"#))
+}
+
+/// The same projection, without the JS boundary.
+pub fn parse_outline_native(source: &str) -> UiOutline {
+    outline::project(source)
 }
 
 /// Build the reading-page narrative: ingredient groups, method sections with

@@ -2,11 +2,12 @@ import { ref } from "vue";
 
 // The app's view-state machine. There is no router; the desktop app moves
 // between a small set of full-window views:
-//   shelf   → the bookshelf (home)
-//   book    → an open book: flip through / search its recipes
-//   reading → a recipe as a full-screen book page
-//   editing → the source + inspector workspace
-export type AppView = "shelf" | "book" | "reading" | "editing" | "measures";
+//   shelf    → the bookshelf (home)
+//   book     → an open book: flip through / search its recipes
+//   reading  → a recipe as a full-screen book page
+//   editing  → the source + inspector workspace
+//   building → the structured, form-based recipe builder
+export type AppView = "shelf" | "book" | "reading" | "editing" | "building" | "measures";
 
 export function useNavigation() {
   const view = ref<AppView>("shelf");
@@ -29,9 +30,12 @@ export function useNavigation() {
   function toggleEdit(): void {
     view.value = view.value === "editing" ? "reading" : "editing";
   }
+  function build(): void {
+    view.value = "building";
+  }
   function measures(): void {
     view.value = "measures";
   }
 
-  return { view, bookId, shelf, openBook, read, edit, toggleEdit, measures };
+  return { view, bookId, shelf, openBook, read, edit, toggleEdit, build, measures };
 }

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/* global HTMLElement, requestAnimationFrame */
-import { nextTick, onMounted, ref } from "vue";
+/* global HTMLElement, KeyboardEvent, EventTarget, requestAnimationFrame */
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { ChevronLeft, ChevronRight } from "lucide-vue-next";
 import { usePageFlip } from "../usePageFlip";
 import BookLeafView from "./BookLeafView.vue";
@@ -13,6 +13,29 @@ const container = ref<HTMLElement | null>(null);
 const fallbackRef = ref<HTMLElement | null>(null);
 const flip = usePageFlip(container);
 
+/**
+ * Which corner a leaf's folio belongs in. Landscape pairs leaves [0,1], [2,3],
+ * … so even indices sit on the left of the spread; portrait shows one leaf at
+ * a time, which reads as a right-hand page.
+ */
+function sideFor(index: number): "left" | "right" {
+  if (!flip.isLandscape.value) return "right";
+  return index % 2 === 0 ? "left" : "right";
+}
+
+/** "6" for a single page, "6–7" for a spread. */
+const pageLabel = computed(() => {
+  const pages = flip.visiblePages.value;
+  if (!pages.length) return "—";
+  const numbers = pages.map((page) => page + 1);
+  return numbers.length > 1 ? `${numbers[0]}–${numbers[numbers.length - 1]}` : `${numbers[0]}`;
+});
+
+function flipsLabel(count: number, direction: "back" | "forward"): string {
+  if (count <= 0) return direction === "back" ? "Start of the book" : "End of the book";
+  return `${direction === "back" ? "Back" : "Forward"} ${count} flip${count === 1 ? "" : "s"}`;
+}
+
 function openRecipe(recipeId: string): void {
   emit("open-recipe", recipeId);
 }
@@ -24,10 +47,35 @@ function fallbackFlipTo(page: number): void {
   target?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+// Arrow keys turn pages while the book is on screen. Ignored when the reader is
+// typing or driving another widget, and when a modifier implies a browser/OS
+// shortcut rather than a page turn.
+function isTypingTarget(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el?.tagName) return false;
+  return (
+    ["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName) ||
+    el.isContentEditable ||
+    Boolean(el.closest?.("[role='dialog'], [contenteditable='true']"))
+  );
+}
+
+function onKeydown(event: KeyboardEvent): void {
+  if (flip.failed.value) return;
+  if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+  if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+  if (isTypingTarget(event.target)) return;
+  event.preventDefault();
+  if (event.key === "ArrowRight") flip.next();
+  else flip.prev();
+}
+
 onMounted(async () => {
   await nextTick();
   requestAnimationFrame(() => flip.mount());
+  window.addEventListener("keydown", onKeydown);
 });
+onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 defineExpose({ leafCount: () => props.leaves.length });
 </script>
@@ -35,19 +83,31 @@ defineExpose({ leafCount: () => props.leaves.length });
 <template>
   <div class="book-flip-wrap">
     <div v-if="flip.failed.value" ref="fallbackRef" class="flip-fallback">
-      <div v-for="leaf in leaves" :key="leaf.key" class="fallback-page">
-        <BookLeafView :leaf="leaf" @open-recipe="openRecipe" @flip-to="fallbackFlipTo" />
+      <div v-for="(leaf, index) in leaves" :key="leaf.key" class="fallback-page">
+        <BookLeafView
+          :leaf="leaf"
+          :page-number="index + 1"
+          side="right"
+          @open-recipe="openRecipe"
+          @flip-to="fallbackFlipTo"
+        />
       </div>
     </div>
 
     <div v-show="!flip.failed.value" ref="container" class="book-flip">
       <div
-        v-for="leaf in leaves"
+        v-for="(leaf, index) in leaves"
         :key="leaf.key"
         class="page"
         :data-density="leaf.kind === 'cover' ? 'hard' : 'soft'"
       >
-        <BookLeafView :leaf="leaf" @open-recipe="openRecipe" @flip-to="flip.flipTo" />
+        <BookLeafView
+          :leaf="leaf"
+          :page-number="index + 1"
+          :side="sideFor(index)"
+          @open-recipe="openRecipe"
+          @flip-to="flip.flipTo"
+        />
       </div>
     </div>
 
@@ -55,23 +115,23 @@ defineExpose({ leafCount: () => props.leaves.length });
       <button
         type="button"
         class="flip-arrow"
-        title="Previous page"
-        :disabled="flip.currentPage.value <= 0"
+        :title="flipsLabel(flip.flipsBack.value, 'back') + ' (←)'"
+        :disabled="flip.flipsBack.value <= 0"
         @click="flip.prev()"
       >
         <ChevronLeft :size="20" />
+        <span class="flip-count">{{ flip.flipsBack.value }}</span>
       </button>
-      <span class="page-indicator"
-        >{{ flip.currentPage.value + 1 }} / {{ flip.pageCount.value }}</span
-      >
+      <span class="page-indicator">{{ pageLabel }} / {{ flip.pageCount.value }}</span>
       <button
         type="button"
         class="flip-arrow"
-        title="Next page"
-        :disabled="flip.currentPage.value >= flip.pageCount.value - 1"
+        :title="flipsLabel(flip.flipsForward.value, 'forward') + ' (→)'"
+        :disabled="flip.flipsForward.value <= 0"
         @click="flip.next()"
       >
         <ChevronRight :size="20" />
+        <span class="flip-count">{{ flip.flipsForward.value }}</span>
       </button>
     </div>
   </div>
@@ -110,13 +170,14 @@ defineExpose({ leafCount: () => props.leaves.length });
   padding-bottom: 4px;
 }
 .page-indicator {
-  min-width: 72px;
+  min-width: 96px;
   text-align: center;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
   color: #6d7972;
 }
 .flip-arrow {
+  position: relative;
   display: grid;
   place-items: center;
   width: 42px;
@@ -126,6 +187,24 @@ defineExpose({ leafCount: () => props.leaves.length });
   background: #fff;
   color: #23302a;
   cursor: pointer;
+}
+/* Remaining flips available in this direction. */
+.flip-count {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: #e7ece7;
+  color: #46574e;
+  font-size: 10px;
+  line-height: 17px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.flip-arrow:disabled .flip-count {
+  background: #eef0ee;
 }
 .flip-arrow:hover:not(:disabled) {
   background: #f0f3f0;

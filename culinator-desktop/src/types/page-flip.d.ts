@@ -26,7 +26,8 @@ declare module "page-flip" {
   }
 
   export interface FlipEvent {
-    data: number;
+    /** Page index for "flip", orientation/state name for the other events. */
+    data: number | string;
     object: PageFlip;
   }
 

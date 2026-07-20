@@ -1,14 +1,26 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { Clock, ArrowRight } from "lucide-vue-next";
 import type { BookLeaf } from "../bookContents";
 import RecipeImage from "../../reading/components/RecipeImage.vue";
 import IngredientListRow from "../../reading/components/IngredientListRow.vue";
 
-defineProps<{ leaf: BookLeaf }>();
+const props = defineProps<{
+  leaf: BookLeaf;
+  /** 1-based folio printed in the outer bottom corner. Omit to print none. */
+  pageNumber?: number;
+  /** Which corner the folio sits in — the outer edge of the spread. */
+  side?: "left" | "right";
+}>();
 const emit = defineEmits<{
   (event: "open-recipe", recipeId: string): void;
   (event: "flip-to", page: number): void;
 }>();
+
+// Covers are unnumbered, as in a printed book.
+const folio = computed(() =>
+  props.leaf.kind === "cover" || props.pageNumber === undefined ? null : props.pageNumber,
+);
 </script>
 
 <template>
@@ -37,6 +49,7 @@ const emit = defineEmits<{
       </li>
     </ul>
     <p v-else class="empty">This book has no recipes yet.</p>
+    <span v-if="folio" class="folio" :class="side ?? 'right'">{{ folio }}</span>
   </div>
 
   <!-- Section divider -->
@@ -44,6 +57,7 @@ const emit = defineEmits<{
     <span class="section-rule" aria-hidden="true"></span>
     <h2 class="section-title">{{ leaf.title }}</h2>
     <span class="section-rule" aria-hidden="true"></span>
+    <span v-if="folio" class="folio" :class="side ?? 'right'">{{ folio }}</span>
   </div>
 
   <!-- Recipe card -->
@@ -83,6 +97,7 @@ const emit = defineEmits<{
     <button type="button" class="open-recipe" @click="emit('open-recipe', leaf.recipeId)">
       Open full recipe <ArrowRight :size="15" />
     </button>
+    <span v-if="folio" class="folio" :class="side ?? 'right'">{{ folio }}</span>
   </div>
 </template>
 
@@ -94,13 +109,35 @@ const emit = defineEmits<{
   --muted: #6d7972;
   --herb: #28643b;
   --rule: #ddd9cc;
+  --pad: clamp(20px, 3.5vw, 36px);
+  position: relative;
   height: 100%;
-  padding: clamp(20px, 3.5vw, 36px);
+  /* Extra bottom padding reserves the folio line. */
+  padding: var(--pad) var(--pad) calc(var(--pad) + 16px);
   overflow: hidden;
   color: var(--ink);
   display: flex;
   flex-direction: column;
   box-shadow: inset 0 0 60px -40px rgba(60, 50, 30, 0.6);
+}
+
+/* Page number, printed in the outer bottom corner of the spread. */
+.folio {
+  position: absolute;
+  bottom: calc(var(--pad) - 6px);
+  font-family: var(--serif);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  pointer-events: none;
+  user-select: none;
+}
+.folio.left {
+  left: var(--pad);
+}
+.folio.right {
+  right: var(--pad);
 }
 
 /* Cover */
@@ -163,6 +200,14 @@ const emit = defineEmits<{
 }
 .toc-entry:hover {
   color: var(--herb);
+}
+/* StPageFlip's clickEventForward only spares clicks whose *target* is an <a> or
+   <button>; a click landing on a child element still counts as a page-turn
+   click, which turned every TOC jump into "target spread, then one flip on".
+   Keeping children out of hit-testing makes the button itself the target. */
+.toc-entry > *,
+.open-recipe > * {
+  pointer-events: none;
 }
 .toc-title {
   font-family: var(--serif);

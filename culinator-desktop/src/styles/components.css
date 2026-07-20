@@ -147,32 +147,6 @@
   .connection-badge.disconnected > span {
     background: #b74343;
   }
-  .formula-actions {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin: 12px 0;
-  }
-  .formula-table {
-    overflow-x: auto;
-  }
-  .formula-row {
-    display: grid;
-    grid-template-columns: minmax(120px, 1fr) 70px 80px 44px 34px;
-    gap: 5px;
-    align-items: center;
-    padding: 4px 0;
-  }
-  .formula-row.header {
-    color: #6d7972;
-    font-size: 11px;
-  }
-  .formula-row input[type="checkbox"] {
-    justify-self: center;
-  }
-  .metrics {
-    margin-top: 12px;
-  }
   .error {
     color: #a93434;
   }

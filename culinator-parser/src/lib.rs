@@ -13,8 +13,8 @@ pub mod syntax;
 
 pub use semantic::{Diagnostic, ParseError, ParseOutcome};
 pub use syntax::{
-    CstElement, CstNode, CstNodeKind, LosslessDocument, SyntaxError, SyntaxKind, SyntaxToken,
-    TextEdit, TextRange, apply_text_edits,
+    CstElement, CstNode, CstNodeKind, LosslessDocument, Outline, OutlineForm, OutlineNode,
+    SyntaxError, SyntaxKind, SyntaxToken, TextEdit, TextRange, apply_text_edits,
 };
 
 use culinator_core::{Document, Recipe, RecipeBook};

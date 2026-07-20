@@ -197,7 +197,12 @@ function openDiagnostic(diagnostic: Diagnostic): void {
       @update:source="emit('update:source', $event)"
     />
     <GanttSchedule v-else-if="tab === 'timeline'" :source="source" />
-    <FormulaCalculator v-else-if="tab === 'formula' && recipeId" :recipe-id="recipeId" />
+    <FormulaCalculator
+      v-else-if="tab === 'formula' && recipeId"
+      :recipe-id="recipeId"
+      :recipe-title="model.title"
+      :resources="model.resources"
+    />
     <HaccpPanel
       v-else-if="tab === 'haccp' && recipeId"
       :recipe-id="recipeId"

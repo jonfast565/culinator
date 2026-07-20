@@ -219,15 +219,33 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   flex-direction: column;
   gap: 20px;
 }
+/* Equipment names are short, so they flow in columns rather than stretching
+   across the leaf as full-width rules. */
 .equipment-list {
   list-style: none;
   margin: 0;
   padding: 0;
+  columns: 2;
+  column-gap: 36px;
+  font-size: 15px;
 }
 .equipment-list li {
-  padding: 7px 0;
-  border-bottom: 1px dotted #e2e0d4;
+  break-inside: avoid;
+  padding: 5px 0 5px 16px;
+  text-indent: -16px;
   line-height: 1.45;
+}
+.equipment-list li::before {
+  content: "·";
+  margin-right: 8px;
+  color: var(--herb);
+  font-weight: 700;
+}
+
+@media (max-width: 520px) {
+  .equipment-list {
+    columns: 1;
+  }
 }
 
 .steps {

@@ -1,4 +1,8 @@
-import init, { narrative, parse_ui_model } from "../../generated/wasm/culinator_wasm.js";
+import init, {
+  narrative,
+  parse_outline,
+  parse_ui_model,
+} from "../../generated/wasm/culinator_wasm.js";
 
 /**
  * Loader for the Rust parser compiled to WebAssembly.
@@ -42,6 +46,25 @@ export function parseUiModelWasm(source: string): unknown {
     throw new Error("culinator parser wasm used before initParser() resolved");
   }
   return JSON.parse(parse_ui_model(source));
+}
+
+/**
+ * Map every declaration and statement in `source` to its byte range.
+ *
+ * The structural counterpart to `parseUiModelWasm`: that says what a recipe
+ * means (and drops what it cannot model), this says where each piece physically
+ * is, so the builder can rewrite one statement without regenerating the block
+ * around it — leaving comments and unmodelled properties untouched rather than
+ * carefully reconstructed.
+ *
+ * Unlike the UI model, this has no partial answer for a document with an
+ * unbalanced brace: it reports `parsed: false` and no nodes.
+ */
+export function parseOutlineWasm(source: string): unknown {
+  if (!ready) {
+    throw new Error("culinator parser wasm used before initParser() resolved");
+  }
+  return JSON.parse(parse_outline(source));
 }
 
 /** Unit system for displayed amounts; anything else keeps them as authored. */

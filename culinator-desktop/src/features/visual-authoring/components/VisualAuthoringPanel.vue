@@ -2,6 +2,10 @@
 import { computed, ref } from "vue";
 import { Plus, Trash2 } from "lucide-vue-next";
 import type { UiRecipeModel, UiResource } from "../../recipe-editor/model";
+import { appendToRecipeBlock, setRecipeProperty } from "../../recipe-editor/sourcePatch";
+import { deleteDeclaration, setStatement } from "../../recipe-builder/edits";
+import { parseOutline, walk } from "../../recipe-builder/outline";
+import type { OutlineNode } from "../../recipe-builder/outline";
 import { useAppDialog } from "../../../shared/composables/useAppDialog";
 
 const props = defineProps<{ source: string; model: UiRecipeModel }>();
@@ -213,41 +217,52 @@ function selectNode(node: GraphNode): void {
 function eventValue(event: unknown): string {
   return (event as { target?: { value?: string } }).target?.value ?? "";
 }
-function replaceRange(start: number, end: number, text: string): void {
-  emit("update:source", props.source.slice(0, start) + text + props.source.slice(end));
+/** The current outline node for the selected operation, if the source parses. */
+function selectedOperationNode(): OutlineNode | undefined {
+  const symbol = selected.value;
+  if (!symbol) return undefined;
+  const outline = parseOutline(props.source);
+  if (!outline.parsed) return undefined;
+  for (const node of walk(outline.nodes)) {
+    if (node.keyword === "operation" && node.symbol === symbol) return node;
+  }
+  return undefined;
 }
 function renameTitle(event: unknown): void {
-  const value = eventValue(event).replaceAll('"', '\\"');
-  const regex = /\btitle\s+"[^"]*"\s*;/;
-  emit(
-    "update:source",
-    regex.test(props.source)
-      ? props.source.replace(regex, `title "${value}";`)
-      : props.source.replace(/(recipe\s+\w+[^{}]*{)/, `$1\n    title "${value}";`),
-  );
+  // `setRecipeProperty` anchors to the start of a line and sanitizes rather
+  // than backslash-escaping. This used to match `\btitle\s+"[^"]*"\s*;`
+  // anywhere in the file — including inside a `note "…"` — and to write `\"`,
+  // which the lexer consumes but never unescapes, so the backslashes ended up
+  // in the rendered title.
+  emit("update:source", setRecipeProperty(props.source, "title", eventValue(event)));
 }
 function updateOperation(field: "duration" | "labor", value: string): void {
-  const operation = selectedOperation.value;
-  if (!operation?.range) return;
-  let block = props.source.slice(operation.range.start, operation.range.end);
-  const pattern = field === "duration" ? /\bduration\s+[^;]+;/ : /\blabor\s+\w+\s*;/;
-  const line = field === "duration" ? `duration ${value || "5 min"};` : `labor ${value};`;
-  block = pattern.test(block)
-    ? block.replace(pattern, line)
-    : block.replace(/{/, `{\n            ${line}`);
-  replaceRange(operation.range.start, operation.range.end, block);
+  // Route through the builder's span-scoped `setStatement` rather than a regex
+  // on the operation block: it replaces the statement in place, or inserts one
+  // before the closing brace, without the fragile `block.replace(/{/…)`.
+  const node = selectedOperationNode();
+  if (!node) return;
+  const next = field === "duration" ? value || "5 min" : value;
+  emit("update:source", setStatement(props.source, node, field, next));
 }
 async function deleteOperation(): Promise<void> {
   const operation = selectedOperation.value;
-  if (operation?.range && (await dialog.confirm(`Delete ${operation.symbol}?`))) {
-    replaceRange(operation.range.start, operation.range.end, "");
+  if (!operation || !(await dialog.confirm(`Delete ${operation.symbol}?`))) return;
+  const node = selectedOperationNode();
+  if (node) {
+    // `deleteDeclaration` removes the operation with its own leading comment,
+    // rather than orphaning it above the next step as a raw range excision did.
+    emit("update:source", deleteDeclaration(props.source, node));
     selected.value = null;
   }
 }
 function addOperation(): void {
   const symbol = `operation_${props.model.operations.length + 1}`;
-  const snippet = `\n    process visual_workflow {\n        operation ${symbol} does prepare {\n            duration 5 min;\n            labor active;\n        }\n    }\n`;
-  emit("update:source", `${props.source.trimEnd()}\n${snippet}`);
+  const snippet = `    process visual_workflow {\n        operation ${symbol} does prepare {\n            duration 5 min;\n            labor active;\n        }\n    }`;
+  // Must land inside the recipe block: appending to the end of the file put it
+  // after the closing brace, where the parser ignored it without a diagnostic
+  // and the new step never showed up.
+  emit("update:source", appendToRecipeBlock(props.source, snippet));
   selected.value = symbol;
 }
 </script>

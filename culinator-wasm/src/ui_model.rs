@@ -5,6 +5,7 @@
 //! camelCase to match the TypeScript interface exactly; `Option::None` is
 //! skipped rather than serialized as `null` so optional TS fields stay optional.
 
+use crate::offsets::Utf16Offsets;
 use culinator_core::{
     BindingRole, DonenessCue, HeatLevel, LaborMode, Operation, Quantity, Recipe, Resource,
     ResourceKind, SourceSpan, Value,
@@ -18,11 +19,14 @@ pub struct UiRange {
     pub end: usize,
 }
 
-impl From<&SourceSpan> for UiRange {
-    fn from(span: &SourceSpan) -> Self {
+impl UiRange {
+    /// Offsets are converted to UTF-16 so `String.prototype.slice` on the JS
+    /// side lands where the parser meant. Emitting raw byte offsets used to
+    /// corrupt any recipe containing a non-ASCII character — see `offsets.rs`.
+    fn new(span: &SourceSpan, offsets: &Utf16Offsets) -> Self {
         Self {
-            start: span.start,
-            end: span.end,
+            start: offsets.at(span.start),
+            end: offsets.at(span.end),
         }
     }
 }
@@ -214,7 +218,7 @@ fn doneness_kind_text(cue: &DonenessCue) -> String {
         })
 }
 
-fn resource(resource: &Resource) -> UiResource {
+fn resource(resource: &Resource, offsets: &Utf16Offsets) -> UiResource {
     let properties = &resource.properties;
     UiResource {
         symbol: resource.symbol.clone(),
@@ -223,15 +227,24 @@ fn resource(resource: &Resource) -> UiResource {
             .and_then(value_text)
             .unwrap_or_else(|| resource.symbol.replace('_', " ")),
         kind: kind_text(resource.kind).to_owned(),
-        // `measured by` is not retained on the domain type; the dimension of a
-        // declared quantity is the closest faithful stand-in.
-        measurement: properties
-            .get("quantity")
-            .and_then(|value| match value {
-                Value::Quantity(quantity) => {
-                    Some(format!("{:?}", quantity.dimension).to_lowercase())
-                }
-                _ => None,
+        // `measured by <dim>` is parsed onto the declared type as a type
+        // argument (`ingredient salt measured by volume` -> `Ingredient<Volume>`,
+        // see `semantic.rs`), so read it back from there. This used to guess the
+        // dimension from the declared quantity instead, which reported
+        // "unspecified" for a divided ingredient — those carry `measured by`
+        // but no `quantity`, because the amounts live on the step bindings.
+        measurement: resource
+            .declared_type
+            .arguments
+            .first()
+            .map(|argument| argument.name.to_lowercase())
+            .or_else(|| {
+                properties.get("quantity").and_then(|value| match value {
+                    Value::Quantity(quantity) => {
+                        Some(format!("{:?}", quantity.dimension).to_lowercase())
+                    }
+                    _ => None,
+                })
             })
             .unwrap_or_else(|| "unspecified".to_owned()),
         quantity: properties.get("quantity").and_then(value_text),
@@ -249,11 +262,14 @@ fn resource(resource: &Resource) -> UiResource {
         size: resource.size.clone(),
         variant: resource.variant.clone(),
         notes: (!resource.notes.is_empty()).then(|| resource.notes.clone()),
-        range: resource.span.as_ref().map(UiRange::from),
+        range: resource
+            .span
+            .as_ref()
+            .map(|span| UiRange::new(span, offsets)),
     }
 }
 
-fn operation(operation: &Operation) -> UiOperation {
+fn operation(operation: &Operation, offsets: &Utf16Offsets) -> UiOperation {
     let inputs: Vec<&culinator_core::ResourceBinding> = operation
         .bindings
         .iter()
@@ -321,16 +337,24 @@ fn operation(operation: &Operation) -> UiOperation {
         photo: operation.properties.get("photo").and_then(value_text),
         repeat: operation.repeat,
         notes: (!operation.notes.is_empty()).then(|| operation.notes.clone()),
-        range: operation.span.as_ref().map(UiRange::from),
+        range: operation
+            .span
+            .as_ref()
+            .map(|span| UiRange::new(span, offsets)),
     }
 }
 
-pub fn project(recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel {
+pub fn project(source: &str, recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel {
+    let offsets = Utf16Offsets::new(source);
     let property = |key: &str| recipe.properties.get(key).and_then(value_text);
     UiRecipeModel {
         title: recipe.title.clone(),
         symbol: recipe.symbol.clone(),
-        resources: recipe.resources.iter().map(resource).collect(),
+        resources: recipe
+            .resources
+            .iter()
+            .map(|item| resource(item, &offsets))
+            .collect(),
         processes: recipe
             .processes
             .iter()
@@ -338,7 +362,11 @@ pub fn project(recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel
                 symbol: process.symbol.clone(),
             })
             .collect(),
-        operations: recipe.operations.iter().map(operation).collect(),
+        operations: recipe
+            .operations
+            .iter()
+            .map(|item| operation(item, &offsets))
+            .collect(),
         source: property("source"),
         source_url: property("source_url"),
         attribution: property("attribution"),
