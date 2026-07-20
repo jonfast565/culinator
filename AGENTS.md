@@ -55,6 +55,15 @@ source.
 backend, which seeds these on startup — the desktop app has no embedded copies.
 When new syntax lands, migrate the seeds to use it (user preference).
 
+## CLI and desktop use the same application runtime
+
+Catalog-backed `culinator` commands construct `culinator_service::ServiceState`
+in-process and call the same `culinator-application` services as the desktop's
+HTTP/WebSocket adapters. Keep new CLI catalog features on that path; do not add
+new direct calls to the legacy `culinator-sqlite` free functions. File-only
+commands such as `check` and `parse` may continue to call parser/validator
+adapters directly.
+
 ## One prose generator
 
 Step sentences, ingredient lines, times, section grouping, and mise en place

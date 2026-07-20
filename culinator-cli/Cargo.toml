@@ -3,6 +3,12 @@ name = "culinator-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+autobins = false
+
+[[bin]]
+name = "culinator"
+path = "src/main.rs"
+
 [dependencies]
 anyhow.workspace = true
 clap.workspace = true
@@ -14,8 +20,14 @@ culinator-validator = { path = "../culinator-validator" }
 culinator-sqlite = { path = "../culinator-sqlite" }
 culinator-import = { path = "../culinator-import" }
 culinator-application = { path = "../culinator-application" }
+culinator-service = { path = "../culinator-service" }
+culinator-narrative = { path = "../culinator-narrative" }
 rusqlite.workspace = true
+serde.workspace = true
 serde_json.workspace = true
+base64.workspace = true
+tempfile.workspace = true
+tokio.workspace = true
 
 uuid.workspace = true
 

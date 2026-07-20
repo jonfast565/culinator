@@ -8,9 +8,10 @@ pub fn check_recipe(file: &Path) -> Result<()> {
     if diagnostics.is_empty() {
         println!("OK: {}", recipe.title);
     } else {
-        for diagnostic in diagnostics {
+        for diagnostic in &diagnostics {
             println!("{}: {}", diagnostic.code, diagnostic.message);
         }
+        anyhow::bail!("validation failed with {} diagnostic(s)", diagnostics.len());
     }
     Ok(())
 }

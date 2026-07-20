@@ -767,17 +767,23 @@ name = "culinator-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "base64 0.22.1",
  "clap",
  "culinator-application",
  "culinator-core",
  "culinator-export",
  "culinator-import",
  "culinator-models",
+ "culinator-narrative",
  "culinator-parser",
+ "culinator-service",
  "culinator-sqlite",
  "culinator-validator",
  "rusqlite",
+ "serde",
  "serde_json",
+ "tempfile",
+ "tokio",
  "uuid",
 ]
 
