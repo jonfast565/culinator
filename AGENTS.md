@@ -58,11 +58,30 @@ When new syntax lands, migrate the seeds to use it (user preference).
 ## CLI and desktop use the same application runtime
 
 Catalog-backed `culinator` commands construct `culinator_service::ServiceState`
-in-process and call the same `culinator-application` services as the desktop's
-HTTP/WebSocket adapters. Keep new CLI catalog features on that path; do not add
-new direct calls to the legacy `culinator-sqlite` free functions. File-only
-commands such as `check` and `parse` may continue to call parser/validator
-adapters directly.
+in-process (`culinator-cli/src/runtime.rs`) and call the same
+`culinator-application` services as the desktop's HTTP/WebSocket adapters. Keep
+new CLI catalog features on that path; do not add new direct calls to the legacy
+`culinator-sqlite` free functions. File-only commands such as `check` and
+`parse` may continue to call parser/validator adapters directly.
+
+**Keep the CLI and desktop in sync as best you can.** Both are just front ends
+over the same `ServiceState` services, so a capability exposed in one should be
+reachable from the other. When you add or change an application-service workflow,
+surface it on **both** surfaces:
+
+- **Desktop** — a WS RPC in `culinator-service/src/ws.rs` plus its
+  `services/api/*` caller and UI.
+- **CLI** — a subcommand in `culinator-cli/src/main.rs`, wired through
+  `catalog.rs` / `workflows.rs` / `imports.rs`. The CLI command surface
+  deliberately mirrors the desktop: catalog, import, formula, nutrition, HACCP,
+  kitchen (`cook`), image, scheduling, and unit workflows all run the same
+  runtime (see the `Bring CLI into application-service parity` commit). Its
+  `search` even advertises "the same filters as the desktop."
+
+CLI commands should accept/emit the same request/response structs the WS layer
+uses (JSON in, JSON/JSONL/human out via `output.rs`) so the two stay behaviorally
+identical. When one surface gains a workflow the other lacks, treat that as drift
+to close, not an intentional asymmetry.
 
 ## One prose generator
 
