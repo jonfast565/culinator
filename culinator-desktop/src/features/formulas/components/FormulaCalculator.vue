@@ -91,6 +91,19 @@ function sourceHint(item: FormulaIngredient): string | null {
   const declared = item.properties?.sourceQuantity;
   return typeof declared === "string" ? declared : null;
 }
+function ingredientName(item: FormulaIngredient): string {
+  const savedName = item.name.trim();
+  if (savedName) return savedName;
+  const recipeName = props.resources
+    ?.find((resource) => resource.symbol === item.symbol)
+    ?.name.trim();
+  return recipeName || item.symbol.replaceAll("_", " ");
+}
+function fillMissingIngredientNames(): void {
+  formula.ingredients.forEach((item) => {
+    if (!item.name.trim()) item.name = ingredientName(item);
+  });
+}
 function decimal(value: number | null | undefined, places = 1): string {
   if (value == null || !Number.isFinite(value)) return "—";
   return value.toFixed(places).replace(/\.0+$/, "");
@@ -190,10 +203,11 @@ async function setRole(item: FormulaIngredient, role: Role): Promise<void> {
 }
 
 function add(): void {
+  const number = formula.ingredients.length + 1;
   formula.ingredients.push({
     id: crypto.randomUUID(),
-    symbol: `ingredient_${formula.ingredients.length + 1}`,
-    name: "",
+    symbol: `ingredient_${number}`,
+    name: `Ingredient ${number}`,
     stage: "final",
     basis: "reference_percent",
     percentage: null,
@@ -283,6 +297,7 @@ onMounted(async () => {
   const existing = await api.listRecipeFormulas(props.recipeId);
   if (existing[0]) {
     Object.assign(formula, existing[0]);
+    fillMissingIngredientNames();
     await calculate();
   } else if ((props.resources ?? []).some((resource) => resource.kind === "ingredient")) {
     await reseed();
@@ -369,16 +384,17 @@ onMounted(async () => {
               type="radio"
               :checked="item.is_reference"
               :name="`reference-${formula.id}`"
-              :aria-label="`Use ${item.name || item.symbol} as the reference`"
-              :title="`Use ${item.name || item.symbol} as the reference`"
+              :aria-label="`Use ${ingredientName(item)} as the reference`"
+              :title="`Use ${ingredientName(item)} as the reference`"
               @change="makeReference(item)"
             />
-            <input v-model="item.name" class="row-name" :placeholder="item.symbol" />
-            <button
-              class="icon"
-              :title="`Remove ${item.name || item.symbol}`"
-              @click="remove(index)"
-            >
+            <input
+              v-model="item.name"
+              class="row-name"
+              :aria-label="`Ingredient name: ${ingredientName(item)}`"
+              :placeholder="ingredientName(item)"
+            />
+            <button class="icon" :title="`Remove ${ingredientName(item)}`" @click="remove(index)">
               <Trash2 :size="14" />
             </button>
           </div>
@@ -658,6 +674,11 @@ onMounted(async () => {
   border-radius: 5px;
   background: transparent;
   font-size: 13px;
+  color: #27342d;
+}
+.row-name::placeholder {
+  color: #657169;
+  opacity: 1;
 }
 .row-name:hover {
   border-color: #e0e4e0;
