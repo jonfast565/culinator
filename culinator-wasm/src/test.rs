@@ -21,6 +21,7 @@ fn projects_the_editor_model_from_a_real_seed() {
     let jack = resources.iter().find(|r| r["symbol"] == "jack").unwrap();
     assert_eq!(jack["divided"], true);
     assert_eq!(jack["state"], "grated");
+    assert_eq!(jack["allergen"], "milk");
 
     let operations = json["operations"].as_array().unwrap();
     let boil = operations.iter().find(|o| o["symbol"] == "boil").unwrap();

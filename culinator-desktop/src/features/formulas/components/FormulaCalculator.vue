@@ -5,7 +5,12 @@ import type { Formula, FormulaIngredient, FormulaResult } from "../../../domain/
 import type { UiResource } from "../../recipe-editor/model";
 import * as api from "../../../services/api";
 import UnitConverter from "../../units/components/UnitConverter.vue";
-import { percentagesFromWeights, seedFormulaFromRecipe, weighedCount } from "../seedFromRecipe";
+import {
+  chooseReference,
+  percentagesFromWeights,
+  seedFormulaFromRecipe,
+  weighedCount,
+} from "../seedFromRecipe";
 
 const props = defineProps<{
   recipeId: string;
@@ -58,10 +63,29 @@ function grams(item: FormulaIngredient): number | null {
   if (item.percentage == null) return item.mass_grams ?? null;
   return massByIngredient.value.get(item.id) ?? item.mass_grams ?? null;
 }
-function roleOf(item: FormulaIngredient): "flour" | "liquid" | "other" {
+/** Band colour for the composition ribbon: flour and liquid are the two roles
+ *  the ribbon distinguishes, everything else is neutral. */
+function bandOf(item: FormulaIngredient): "flour" | "liquid" | "other" {
   if (item.is_flour) return "flour";
   if (item.water_fraction > 0) return "liquid";
   return "other";
+}
+
+/**
+ * The role a row is tagged with. `flour` and `liquid` drive hydration; `salt`,
+ * `fat` and `sugar` drive their baker's-percent metrics (via the core's `role`
+ * property); `solid` is the neutral default for everything else — the "no
+ * solids" gap this control closes.
+ */
+type Role = "solid" | "flour" | "liquid" | "salt" | "fat" | "sugar";
+const ROLE_OPTIONS: Role[] = ["solid", "flour", "liquid", "salt", "fat", "sugar"];
+
+function roleValue(item: FormulaIngredient): Role {
+  if (item.is_flour) return "flour";
+  if (item.water_fraction > 0) return "liquid";
+  const tagged = item.properties?.role;
+  if (tagged === "salt" || tagged === "fat" || tagged === "sugar") return tagged;
+  return "solid";
 }
 function sourceHint(item: FormulaIngredient): string | null {
   const declared = item.properties?.sourceQuantity;
@@ -72,21 +96,49 @@ function decimal(value: number | null | undefined, places = 1): string {
   return value.toFixed(places).replace(/\.0+$/, "");
 }
 
+/**
+ * A row the solver can actually place: its basis has the number it needs. Rows
+ * that are still missing a weight (volume/count ingredients the recipe never
+ * gave a gram figure for) have no percentage yet — including them would make
+ * the whole solve fail with "missing a percentage", blanking the ribbon and
+ * every metric. They stay visible in the list with a "needs a weight" hint.
+ */
+function isSolvable(item: FormulaIngredient): boolean {
+  if (item.basis === "absolute_mass") {
+    return item.mass_grams != null && Number.isFinite(item.mass_grams);
+  }
+  return item.percentage != null && Number.isFinite(item.percentage);
+}
+
 async function calculate(): Promise<void> {
-  if (!formula.ingredients.length) {
+  const ready = formula.ingredients.filter(isSolvable);
+  if (!ready.length) {
     result.value = null;
+    error.value = "";
     return;
   }
   try {
     error.value = "";
-    result.value = await api.calculateFormula(formula, targetMass.value);
+    result.value = await api.calculateFormula({ ...formula, ingredients: ready }, targetMass.value);
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause);
   }
 }
 
+/** Give the formula a reference row if it has none yet, so percentages have
+ *  something to be stated against. Picks the heaviest flour, else the heaviest
+ *  row — the same rule the seed uses. */
+function ensureReference(): void {
+  if (formula.ingredients.some((item) => item.is_reference)) return;
+  const reference = chooseReference(formula.ingredients);
+  if (reference) reference.is_reference = true;
+}
+
 /** Weights mode: the weights are authoritative, so restate the ratio from them. */
 async function syncFromWeights(): Promise<void> {
+  // A seed that could not weigh anything leaves no reference; once the cook
+  // supplies weights there is finally one to choose.
+  ensureReference();
   percentagesFromWeights(formula.ingredients);
   const total = formula.ingredients.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0);
   if (total > 0) targetMass.value = Math.round(total);
@@ -105,21 +157,35 @@ async function setMode(next: Mode): Promise<void> {
 
 async function makeReference(item: FormulaIngredient): Promise<void> {
   formula.ingredients.forEach((row) => (row.is_reference = row.id === item.id));
-  // Percentages are stated against the reference, so moving it restates them.
+  // Percentages are stated against the reference at 100%, so moving it restates
+  // them. Prefer the weights when every row has one; otherwise rescale the
+  // existing percentages so the new reference reads 100%. With neither to go on
+  // (a formula with no weights yet), simply define the reference as 100%.
   if (formula.ingredients.every((row) => row.mass_grams != null)) {
     percentagesFromWeights(formula.ingredients);
+  } else if (item.percentage && item.percentage > 0) {
+    const factor = 100 / item.percentage;
+    formula.ingredients.forEach((row) => {
+      if (row.percentage != null) row.percentage *= factor;
+    });
+  } else {
+    item.percentage = 100;
   }
   await changed();
 }
 
-async function setRole(item: FormulaIngredient, role: "flour" | "liquid"): Promise<void> {
-  if (role === "flour") {
-    item.is_flour = !item.is_flour;
-    if (item.is_flour) item.water_fraction = 0;
+/** Apply a role to a row, clearing the flags of whatever it was before so the
+ *  three drivers (flour flag, water fraction, `role` property) stay in sync. */
+async function setRole(item: FormulaIngredient, role: Role): Promise<void> {
+  item.is_flour = role === "flour";
+  item.water_fraction = role === "liquid" ? 1 : 0;
+  const properties = { ...item.properties };
+  if (role === "salt" || role === "fat" || role === "sugar") {
+    properties.role = role;
   } else {
-    item.water_fraction = item.water_fraction > 0 ? 0 : 1;
-    if (item.water_fraction > 0) item.is_flour = false;
+    delete properties.role;
   }
+  item.properties = properties;
   await changed();
 }
 
@@ -265,7 +331,7 @@ onMounted(async () => {
         <span
           v-for="item in formula.ingredients"
           :key="item.id"
-          :class="['band', roleOf(item)]"
+          :class="['band', bandOf(item)]"
           :style="{ flexGrow: shareByIngredient.get(item.id) ?? 0 }"
           :title="`${item.name || item.symbol} — ${decimal(shareByIngredient.get(item.id))}% of batch`"
         />
@@ -342,24 +408,15 @@ onMounted(async () => {
             </span>
             <span v-else class="derived">{{ decimal(grams(item)) }} g</span>
 
-            <span class="roles">
-              <button
-                :class="{ on: item.is_flour }"
-                :aria-pressed="item.is_flour"
-                title="Counts as flour"
-                @click="setRole(item, 'flour')"
-              >
-                flour
-              </button>
-              <button
-                :class="{ on: item.water_fraction > 0 }"
-                :aria-pressed="item.water_fraction > 0"
-                title="Counts as liquid"
-                @click="setRole(item, 'liquid')"
-              >
-                liquid
-              </button>
-            </span>
+            <select
+              :class="['role-select', roleValue(item)]"
+              :value="roleValue(item)"
+              :aria-label="`Role of ${item.name || item.symbol}`"
+              title="What this ingredient counts as"
+              @change="setRole(item, ($event.target as HTMLSelectElement).value as Role)"
+            >
+              <option v-for="role in ROLE_OPTIONS" :key="role" :value="role">{{ role }}</option>
+            </select>
           </div>
           <p v-if="item.mass_grams == null && sourceHint(item)" class="row-hint">
             Needs a weight — recipe says {{ sourceHint(item) }}
@@ -392,15 +449,15 @@ onMounted(async () => {
             <dd>{{ decimal(result.prefermented_flour_percent) }}%</dd>
           </div>
         </template>
-        <div v-if="result.salt_percent != null">
+        <div v-if="result.salt_percent">
           <dt>Salt</dt>
           <dd>{{ decimal(result.salt_percent, 2) }}%</dd>
         </div>
-        <div v-if="result.fat_percent != null">
+        <div v-if="result.fat_percent">
           <dt>Fat</dt>
           <dd>{{ decimal(result.fat_percent, 2) }}%</dd>
         </div>
-        <div v-if="result.sugar_percent != null">
+        <div v-if="result.sugar_percent">
           <dt>Sugar</dt>
           <dd>{{ decimal(result.sugar_percent, 2) }}%</dd>
         </div>
@@ -634,28 +691,31 @@ onMounted(async () => {
   color: #5c6862;
   font-variant-numeric: tabular-nums;
 }
-.roles {
-  display: flex;
-  gap: 4px;
+.role-select {
   margin-left: auto;
-}
-.roles button {
-  padding: 2px 7px;
+  padding: 2px 6px;
   border: 1px solid #dde1dd;
   border-radius: 999px;
   background: transparent;
   font-size: 10px;
   color: #8a938c;
+  text-transform: capitalize;
 }
-.roles button.on {
+.role-select.flour {
   border-color: transparent;
+  background: var(--flour);
   color: white;
 }
-.roles button:first-child.on {
-  background: var(--flour);
-}
-.roles button:last-child.on {
+.role-select.liquid {
+  border-color: transparent;
   background: var(--liquid);
+  color: white;
+}
+.role-select.salt,
+.role-select.fat,
+.role-select.sugar {
+  border-color: #c8cdc7;
+  color: #4a544d;
 }
 .row-hint {
   margin: 6px 0 0;
@@ -740,7 +800,7 @@ onMounted(async () => {
 
 @media (prefers-reduced-motion: no-preference) {
   .mode button,
-  .roles button {
+  .role-select {
     transition:
       background 0.12s ease,
       color 0.12s ease;

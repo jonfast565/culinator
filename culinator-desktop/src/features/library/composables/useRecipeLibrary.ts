@@ -53,9 +53,10 @@ export function useRecipeLibrary() {
         recipes.value = nextRecipes;
         selectedBookId.value ??= nextBooks[0]?.id ?? null;
         const wanted = intendedRecipeId.value ?? selectedRecipe.value?.id;
-        // Honour the intended recipe when it still exists, else fall back to the
-        // first — a pinned id that was just deleted must not strand the view.
-        const id = wanted && nextRecipes.some((r) => r.id === wanted) ? wanted : nextRecipes[0]?.id;
+        // A recipe becomes active only through an explicit open/create action.
+        // If that recipe was deleted, clear the selection instead of silently
+        // making the first recipe in the catalog editable.
+        const id = wanted && nextRecipes.some((r) => r.id === wanted) ? wanted : undefined;
         selectedRecipe.value = id ? await api.getRecipe(id) : null;
         intendedRecipeId.value = id ?? null;
       } while (refreshAgain);

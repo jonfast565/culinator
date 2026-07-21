@@ -44,7 +44,7 @@ defineProps<{ mise: SectionMise }>();
 }
 .mise-label {
   margin: 0 0 6px;
-  font-size: 10px;
+  font-size: calc(10px * var(--reading-scale, 1));
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -65,13 +65,13 @@ defineProps<{ mise: SectionMise }>();
   font-size: 0.88em;
 }
 .mise-list :deep(.ingredient-name) {
-  font-size: 14px;
+  font-size: calc(14px * var(--reading-scale, 1));
 }
 .equipment-list {
   list-style: none;
   margin: 0;
   padding: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--reading-scale, 1));
   line-height: 1.5;
 }
 .equipment-list li {

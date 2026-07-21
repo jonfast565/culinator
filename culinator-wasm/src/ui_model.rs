@@ -43,6 +43,8 @@ pub struct UiResource {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub state: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub allergen: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub optional: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub divided: Option<bool>,
@@ -249,6 +251,7 @@ fn resource(resource: &Resource, offsets: &Utf16Offsets) -> UiResource {
             .unwrap_or_else(|| "unspecified".to_owned()),
         quantity: properties.get("quantity").and_then(value_text),
         state: properties.get("state").and_then(value_text),
+        allergen: properties.get("allergen").and_then(value_text),
         optional: resource.optional.then_some(true),
         divided: resource.divided.then_some(true),
         substitutes: (!resource.substitutes.is_empty()).then(|| {

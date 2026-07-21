@@ -43,7 +43,7 @@ watch(
           <KitchenModePanel
             v-if="tab === 'kitchen'"
             :recipe-id="recipeId"
-            :operations="operations"
+            @started="emit('close')"
           />
           <ExportPanel v-else :recipe-id="recipeId" :recipe-title="model.title" />
         </div>

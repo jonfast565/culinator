@@ -18,6 +18,8 @@ export interface UiResource {
   quantity?: string;
   /** Qualitative state annotation, e.g. "ripe", "mushy", "chilled". */
   state?: string;
+  /** Declared food allergen, e.g. "milk", "egg", or "tree_nut". */
+  allergen?: string;
   /** Optional ingredient (e.g. an optional garnish, or "plus more for serving"). */
   optional?: boolean;
   /** One ingredient split across multiple steps ("divided"). */

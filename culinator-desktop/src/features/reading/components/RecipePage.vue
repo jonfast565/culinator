@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { computed, inject, toRef } from "vue";
+import { computed, inject, toRef, watch } from "vue";
+import { CheckCircle2, ChefHat } from "lucide-vue-next";
+import type { TryOperation } from "../../../domain/types";
+import {
+  useKitchenExecution,
+  type LiveTimerState,
+} from "../../kitchen-mode/composables/useKitchenExecution";
 import type { UiOperation, UiRecipeModel } from "../../recipe-editor/model";
 import { useRecipeNarrative, type NarrativeStep } from "../../recipe-editor/narrative";
 import { deleteOperationFromSource } from "../../recipe-editor/sourcePatch";
 import { UNIT_DISPLAY_KEY } from "../../units/composables/useUnitDisplay";
 import { useAppDialog } from "../../../shared/composables/useAppDialog";
 import { VIEW_SETTINGS_KEY } from "../composables/useViewSettings";
+import { collectRecipeAllergens } from "../allergens";
+import AllergenBadges from "./AllergenBadges.vue";
+import SubstitutionAssistant from "./SubstitutionAssistant.vue";
 import RecipeImage from "./RecipeImage.vue";
 import MiseBlock from "./MiseBlock.vue";
 import IngredientGroupList from "./IngredientGroupList.vue";
@@ -16,9 +25,13 @@ const props = defineProps<{
   source: string;
   recipeId?: string;
   editable?: boolean;
+  kitchenMode?: boolean;
 }>();
 
-const emit = defineEmits<{ "update:source": [value: string] }>();
+const emit = defineEmits<{
+  "update:source": [value: string];
+  "kitchen-finished": [];
+}>();
 
 const dialog = useAppDialog();
 const units = inject(UNIT_DISPLAY_KEY, null);
@@ -36,10 +49,59 @@ const { summary, ingredientGroups, equipment, sections } = useRecipeNarrative(
 
 const colocated = computed(() => viewSettings?.misePlacement.value === "colocated");
 const hasSteps = computed(() => sections.value.some((section) => section.steps.length > 0));
+const allergens = computed(() => collectRecipeAllergens(props.model));
+const {
+  activeTry,
+  error: kitchenError,
+  liveTimers,
+  refresh: refreshKitchen,
+  startOperation,
+  completeOperation,
+  completeTry,
+  startClock,
+} = useKitchenExecution(toRef(props, "recipeId"));
+
+watch(
+  [() => props.kitchenMode, () => props.recipeId],
+  async ([enabled]) => {
+    if (!enabled) return;
+    try {
+      await refreshKitchen();
+      if (activeTry.value?.status === "active") startClock();
+    } catch (cause) {
+      kitchenError.value = cause instanceof Error ? cause.message : String(cause);
+    }
+  },
+  { immediate: true },
+);
 
 /** The parsed operation behind a step, for its photo and for source patching. */
 function operationFor(step: NarrativeStep): UiOperation | undefined {
   return props.model.operations?.find((operation) => operation.symbol === step.symbol);
+}
+
+function kitchenOperationFor(step: NarrativeStep): TryOperation | undefined {
+  if (!props.kitchenMode) return undefined;
+  return activeTry.value?.operations.find((operation) => operation.operationSymbol === step.symbol);
+}
+
+function kitchenTimerFor(step: NarrativeStep): LiveTimerState | undefined {
+  const operation = kitchenOperationFor(step);
+  return operation ? liveTimers.value[operation.operationId] : undefined;
+}
+
+async function runKitchenAction(action: () => Promise<void>): Promise<void> {
+  kitchenError.value = "";
+  try {
+    await action();
+  } catch (cause) {
+    kitchenError.value = cause instanceof Error ? cause.message : String(cause);
+  }
+}
+
+async function finishKitchen(): Promise<void> {
+  await runKitchenAction(completeTry);
+  if (!kitchenError.value) emit("kitchen-finished");
 }
 
 async function removeStep(step: NarrativeStep): Promise<void> {
@@ -54,7 +116,14 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 </script>
 
 <template>
-  <article class="leaf">
+  <article class="leaf" :class="{ 'kitchen-leaf': kitchenMode }">
+    <div v-if="kitchenMode" class="kitchen-strip">
+      <span><ChefHat :size="15" /> Kitchen mode</span>
+      <button type="button" class="finish-kitchen" :disabled="!activeTry" @click="finishKitchen">
+        <CheckCircle2 :size="14" /> Finish cooking
+      </button>
+    </div>
+    <p v-if="kitchenMode && kitchenError" class="kitchen-error">{{ kitchenError }}</p>
     <figure v-if="model.coverImage" class="leaf-cover">
       <RecipeImage :image-ref="model.coverImage" :recipe-id="recipeId" :alt="model.title" />
     </figure>
@@ -62,6 +131,8 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
       <p class="eyebrow">{{ eyebrow }}</p>
       <h1 class="leaf-title">{{ model.title || "Untitled recipe" }}</h1>
       <p class="leaf-summary">{{ summary }}</p>
+      <AllergenBadges v-if="allergens.length" :allergens="allergens" />
+      <SubstitutionAssistant v-if="!kitchenMode" :resources="model.resources" />
     </header>
 
     <template v-if="!colocated">
@@ -99,7 +170,11 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
               :time="step.time"
               :recipe-id="recipeId"
               :editable="editable"
+              :kitchen-operation="kitchenOperationFor(step)"
+              :kitchen-timer="kitchenTimerFor(step)"
               @delete="removeStep(step)"
+              @start-timer="runKitchenAction(() => startOperation($event))"
+              @complete-timer="runKitchenAction(() => completeOperation($event))"
             />
           </div>
         </section>
@@ -120,7 +195,11 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
             :time="step.time"
             :recipe-id="recipeId"
             :editable="editable"
+            :kitchen-operation="kitchenOperationFor(step)"
+            :kitchen-timer="kitchenTimerFor(step)"
             @delete="removeStep(step)"
+            @start-timer="runKitchenAction(() => startOperation($event))"
+            @complete-timer="runKitchenAction(() => completeOperation($event))"
           />
         </template>
       </div>
@@ -150,6 +229,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   padding: clamp(28px, 5vw, 60px) clamp(24px, 5vw, 64px);
   background: #fbf9f3;
   color: var(--ink);
+  font-size: calc(16px * var(--reading-scale, 1));
   border-radius: 3px;
   /* A paper leaf: soft outer drop + a faint binding shadow down the left edge. */
   box-shadow:
@@ -165,13 +245,57 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   border-radius: 4px;
   box-shadow: 0 12px 30px -18px rgba(40, 40, 30, 0.5);
 }
+.kitchen-leaf {
+  padding-top: 22px;
+  box-shadow:
+    inset 5px 0 0 #28643b,
+    inset 14px 0 22px -18px rgba(60, 50, 30, 0.45),
+    0 1px 2px rgba(40, 40, 30, 0.1),
+    0 22px 50px -28px rgba(40, 40, 30, 0.45);
+}
+.kitchen-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--rule);
+}
+.kitchen-strip > span,
+.finish-kitchen {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.kitchen-strip > span {
+  color: var(--herb);
+  font-size: calc(12px * var(--reading-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.finish-kitchen {
+  padding: 6px 10px;
+  border: 1px solid #b9cbbd;
+  border-radius: 7px;
+  background: #f1f6ef;
+  color: var(--herb);
+  font-size: 12px;
+  font-weight: 700;
+}
+.kitchen-error {
+  margin: -10px 0 18px;
+  color: #a83737;
+  font-size: 13px;
+}
 .leaf-head {
   padding-bottom: 20px;
   border-bottom: 2px solid var(--ink);
 }
 .eyebrow {
   margin: 0 0 10px;
-  font-size: 11px;
+  font-size: calc(11px * var(--reading-scale, 1));
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--herb);
@@ -181,13 +305,17 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   margin: 0;
   font-family: var(--serif);
   font-weight: 600;
-  font-size: clamp(30px, 5vw, 46px);
+  font-size: clamp(
+    calc(30px * var(--reading-scale, 1)),
+    calc(5vw * var(--reading-scale, 1)),
+    calc(46px * var(--reading-scale, 1))
+  );
   line-height: 1.05;
   letter-spacing: -0.01em;
 }
 .leaf-summary {
   margin: 12px 0 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--reading-scale, 1));
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--muted);
@@ -199,7 +327,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 .section-label {
   margin: 0 0 16px;
   font-family: var(--serif);
-  font-size: 15px;
+  font-size: calc(15px * var(--reading-scale, 1));
   font-weight: 600;
   letter-spacing: 0.02em;
   color: var(--herb);
@@ -227,7 +355,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   padding: 0;
   columns: 2;
   column-gap: 36px;
-  font-size: 15px;
+  font-size: calc(15px * var(--reading-scale, 1));
 }
 .equipment-list li {
   break-inside: avoid;
@@ -272,19 +400,19 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 .process-heading {
   margin: 8px 0 -4px;
   font-family: var(--serif);
-  font-size: 16px;
+  font-size: calc(16px * var(--reading-scale, 1));
   font-weight: 600;
   color: var(--ink);
 }
 .method-section .process-heading {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--reading-scale, 1));
   color: var(--herb);
 }
 
 .section-note {
   margin: 0 0 4px;
-  font-size: 13px;
+  font-size: calc(13px * var(--reading-scale, 1));
   font-style: italic;
   color: var(--muted);
 }
@@ -297,7 +425,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   margin-top: 40px;
   padding-top: 18px;
   border-top: 1px solid var(--rule);
-  font-size: 12px;
+  font-size: calc(12px * var(--reading-scale, 1));
   color: var(--muted);
 }
 .leaf-credit p {

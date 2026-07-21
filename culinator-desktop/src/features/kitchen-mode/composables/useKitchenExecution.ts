@@ -1,4 +1,4 @@
-import { computed, onUnmounted, ref } from "vue";
+import { computed, onUnmounted, ref, unref, type MaybeRef } from "vue";
 import type { RecipeTryDocument, TryOperation } from "../../../domain/types";
 import * as api from "../../../services/api";
 
@@ -11,7 +11,7 @@ export interface LiveTimerState {
   overdue: boolean;
 }
 
-export function useKitchenExecution(recipeId: string) {
+export function useKitchenExecution(recipeId: MaybeRef<string | undefined>) {
   const tries = ref<RecipeTryDocument[]>([]);
   const activeTry = ref<RecipeTryDocument | null>(null);
   const error = ref("");
@@ -31,16 +31,25 @@ export function useKitchenExecution(recipeId: string) {
   }
 
   async function refresh(): Promise<void> {
-    const summaries = await api.listRecipeTries(recipeId);
-    tries.value = await Promise.all(summaries.map((item) => api.getRecipeTry(item.id)));
-    if (!activeTry.value && tries.value[0]?.status === "active") {
-      activeTry.value = tries.value[0];
+    const id = unref(recipeId);
+    if (!id) {
+      tries.value = [];
+      activeTry.value = null;
+      return;
     }
+    const summaries = await api.listRecipeTries(id);
+    tries.value = await Promise.all(summaries.map((item) => api.getRecipeTry(item.id)));
+    const selected = activeTry.value
+      ? tries.value.find((item) => item.id === activeTry.value?.id)
+      : undefined;
+    activeTry.value = selected ?? tries.value.find((item) => item.status === "active") ?? null;
   }
 
   async function startTry(title?: string, notes?: string): Promise<void> {
+    const id = unref(recipeId);
+    if (!id) return;
     error.value = "";
-    const created = await api.startRecipeTry(recipeId, { title, notes });
+    const created = await api.startRecipeTry(id, { title, notes });
     activeTry.value = created;
     await refresh();
     startClock();
@@ -105,13 +114,8 @@ export function useKitchenExecution(recipeId: string) {
     await refresh();
   }
 
-  const activeOperation = computed(() =>
-    activeTry.value?.operations.find((item) => item.status === "active"),
-  );
-
-  const liveTimer = computed<LiveTimerState | null>(() => {
-    const operation = activeOperation.value;
-    if (!operation?.actualStart) return null;
+  function timerState(operation: TryOperation): LiveTimerState | null {
+    if (!operation.actualStart) return null;
     const started = Date.parse(operation.actualStart);
     if (Number.isNaN(started)) return null;
     const elapsedSeconds = Math.max(0, Math.floor((now.value - started) / 1000));
@@ -124,6 +128,26 @@ export function useKitchenExecution(recipeId: string) {
       durationSeconds: operation.durationSeconds,
       overdue: elapsedSeconds > operation.durationSeconds,
     };
+  }
+
+  const activeOperation = computed(() =>
+    activeTry.value?.operations.find((item) => item.status === "active"),
+  );
+
+  const liveTimers = computed<Record<string, LiveTimerState>>(() => {
+    const timers: Record<string, LiveTimerState> = {};
+    for (const operation of activeTry.value?.operations ?? []) {
+      if (operation.status !== "active") continue;
+      const timer = timerState(operation);
+      if (timer) timers[operation.operationId] = timer;
+    }
+    return timers;
+  });
+
+  const liveTimer = computed<LiveTimerState | null>(() => {
+    const operation = activeOperation.value;
+    if (!operation) return null;
+    return liveTimers.value[operation.operationId] ?? null;
   });
 
   const nextPendingOperation = computed(() =>
@@ -143,6 +167,7 @@ export function useKitchenExecution(recipeId: string) {
     activeTry,
     error,
     liveTimer,
+    liveTimers,
     activeOperation,
     nextPendingOperation,
     refresh,

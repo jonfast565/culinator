@@ -31,7 +31,7 @@ defineProps<{ groups: IngredientGroup[] }>();
 .variant-heading {
   margin: 0 0 8px;
   font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 13px;
+  font-size: calc(13px * var(--reading-scale, 1));
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;

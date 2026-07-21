@@ -72,7 +72,7 @@ function draft(resource: UiResource, grams: number | null): FormulaIngredient {
  * weighable ingredient at all get no reference, which leaves every percentage
  * blank until the cook fills in a weight.
  */
-function chooseReference(ingredients: FormulaIngredient[]): FormulaIngredient | null {
+export function chooseReference(ingredients: FormulaIngredient[]): FormulaIngredient | null {
   const weighable = ingredients.filter((item) => (item.mass_grams ?? 0) > 0);
   if (!weighable.length) return null;
   const heaviest = (pool: FormulaIngredient[]): FormulaIngredient =>

@@ -1,0 +1,11 @@
+:root[data-text-size="default"] {
+  --reading-scale: 1;
+}
+
+:root[data-text-size="large"] {
+  --reading-scale: 1.125;
+}
+
+:root[data-text-size="x-large"] {
+  --reading-scale: 1.25;
+}

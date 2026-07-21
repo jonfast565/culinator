@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import type { Diagnostic, ValidationResult } from "../../../domain/types";
 import type { UiRecipeModel } from "../model";
 import FormulaCalculator from "../../formulas/components/FormulaCalculator.vue";
 import ExportPanel from "../../export/components/ExportPanel.vue";
@@ -23,15 +22,14 @@ export type InspectorTabId =
   | "haccp"
   | "kitchen"
   | "nutrition"
-  | "export"
-  | "diagnostics";
+  | "export";
 
 const props = defineProps<{
   model: UiRecipeModel;
-  validation: ValidationResult | null;
   recipeId?: string;
   source: string;
   initialTab?: InspectorTabId;
+  showNavigation?: boolean;
 }>();
 
 // Ingredient lines are rendered by the shared narrative generator; look each
@@ -50,7 +48,7 @@ function partsFor(symbol: string) {
 
 const emit = defineEmits<{
   "update:source": [value: string];
-  "goto-source": [diagnostic: Diagnostic];
+  "kitchen-started": [];
 }>();
 
 const tabGroups = [
@@ -83,10 +81,7 @@ const tabGroups = [
   },
   {
     label: "Output",
-    tabs: [
-      { id: "export" as const, label: "Export" },
-      { id: "diagnostics" as const, label: "Diagnostics" },
-    ],
+    tabs: [{ id: "export" as const, label: "Export" }],
   },
 ];
 
@@ -115,15 +110,11 @@ watch(
 
 const operations = computed(() => props.model.operations ?? []);
 const operationSymbols = computed(() => operations.value.map((item) => item.symbol));
-
-function openDiagnostic(diagnostic: Diagnostic): void {
-  emit("goto-source", diagnostic);
-}
 </script>
 
 <template>
   <aside class="inspector">
-    <nav class="tab-groups">
+    <nav v-if="showNavigation !== false" class="tab-groups">
       <div v-for="group in tabGroups" :key="group.label" class="tab-group">
         <span class="tab-group-label">{{ group.label }}</span>
         <div class="tabs">
@@ -211,7 +202,7 @@ function openDiagnostic(diagnostic: Diagnostic): void {
     <KitchenModePanel
       v-else-if="tab === 'kitchen' && recipeId"
       :recipe-id="recipeId"
-      :operations="operations"
+      @started="emit('kitchen-started')"
     />
     <NutritionPanel
       v-else-if="tab === 'nutrition' && recipeId"
@@ -223,24 +214,6 @@ function openDiagnostic(diagnostic: Diagnostic): void {
       :recipe-id="recipeId"
       :recipe-title="model.title"
     />
-    <section v-else class="panel">
-      <h3>Diagnostics</h3>
-      <p v-if="!validation?.diagnostics.length" class="empty">No diagnostics.</p>
-      <article
-        v-for="(item, index) in validation?.diagnostics"
-        :key="`${item.message}-${index}`"
-        class="diagnostic clickable"
-        :class="item.severity"
-        role="button"
-        tabindex="0"
-        @click="openDiagnostic(item)"
-        @keydown.enter="openDiagnostic(item)"
-      >
-        <strong>{{ item.severity }}</strong>
-        <span>{{ item.message }}</span>
-        <small v-if="item.start != null">Jump to source</small>
-      </article>
-    </section>
   </aside>
 </template>
 
@@ -270,18 +243,6 @@ function openDiagnostic(diagnostic: Diagnostic): void {
 .tab-group .tabs button {
   padding: 5px 9px;
   font-size: 12px;
-}
-.diagnostic.clickable {
-  cursor: pointer;
-}
-.diagnostic.clickable:hover {
-  filter: brightness(0.97);
-}
-.diagnostic small {
-  display: block;
-  margin-top: 4px;
-  font-size: 11px;
-  opacity: 0.75;
 }
 .state-tag {
   margin-left: 0.4rem;

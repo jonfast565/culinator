@@ -1,27 +1,24 @@
 <script setup lang="ts">
-/* global PointerEvent, HTMLElement, KeyboardEvent */
-import { computed, onBeforeUnmount, onMounted, provide, ref } from "vue";
+/* global PointerEvent, HTMLElement, KeyboardEvent, DOMRect */
+import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
 import {
-  Trash2,
   Database,
   Pencil,
   Blocks,
   BookOpen,
   ChevronLeft,
-  Scale,
-  Ruler,
   ChefHat,
-  PackageOpen,
-  ListChecks,
-  Divide,
+  FileCode2,
+  Save,
 } from "lucide-vue-next";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
+import DiagnosticsPane from "../features/recipe-editor/components/DiagnosticsPane.vue";
 import EditDrawer from "../features/recipe-editor/components/EditDrawer.vue";
 import type { InspectorTabId } from "../features/recipe-editor/components/InspectorPanel.vue";
+import RecipeToolDialog from "../features/recipe-editor/components/RecipeToolDialog.vue";
 import { useRecipeEditor } from "../features/recipe-editor/composables/useRecipeEditor";
 import RecipePage from "../features/reading/components/RecipePage.vue";
 import RecipeBuilderView from "../features/recipe-builder/components/RecipeBuilderView.vue";
-import ReadingToolsDrawer from "../features/reading/components/ReadingToolsDrawer.vue";
 import Bookshelf from "../features/bookshelf/components/Bookshelf.vue";
 import OpenBook from "../features/bookshelf/components/OpenBook.vue";
 import MeasuresView from "../features/units/components/MeasuresView.vue";
@@ -38,6 +35,8 @@ import {
   VIEW_SETTINGS_KEY,
   useViewSettings,
 } from "../features/reading/composables/useViewSettings";
+import AppMenuBar, { type AppMenuAction } from "./components/AppMenuBar.vue";
+import type { Diagnostic } from "../domain/types";
 
 const library = useRecipeLibrary();
 const editor = useRecipeEditor(library.selectedRecipe);
@@ -47,13 +46,25 @@ const dialog = useAppDialog();
 provide(UNIT_DISPLAY_KEY, unitDisplay);
 const viewSettings = useViewSettings();
 provide(VIEW_SETTINGS_KEY, viewSettings);
+watch(
+  viewSettings.textSize,
+  (size) => {
+    document.documentElement.dataset.textSize = size;
+  },
+  { immediate: true },
+);
+
+const textSizeLabel = computed(() => {
+  if (viewSettings.textSize.value === "large") return "A+";
+  if (viewSettings.textSize.value === "x-large") return "A++";
+  return "A";
+});
 
 const connection = ref<ConnectionStatus>("connecting");
 const importing = ref(false);
-const readingToolsOpen = ref(false);
-const readingToolsTab = ref<"kitchen" | "export">("kitchen");
-const editDrawerTab = ref<"details" | "source" | "tools" | undefined>();
-const editInspectorTab = ref<InspectorTabId | undefined>();
+const activeTool = ref<InspectorTabId | null>(null);
+const kitchenMode = ref(false);
+const pendingDiagnostic = ref<Diagnostic | null>(null);
 
 const stopStatus = onConnectionStatus((status) => {
   connection.value = status;
@@ -65,27 +76,57 @@ const openBookSummary = computed(
 const openBookRecipes = computed(() =>
   library.recipes.value.filter((recipe) => (recipe.bookId ?? null) === nav.bookId.value),
 );
-
-const clampInspector = (width: number): number => Math.max(280, width);
-const inspectorWidth = ref(
-  clampInspector(Number(window.localStorage.getItem("cg:inspector-width")) || 390),
+const activeRecipe = computed(() =>
+  ["reading", "editing", "building"].includes(nav.view.value) ? library.selectedRecipe.value : null,
 );
-let resizeStartX = 0;
-let resizeStartWidth = 0;
+
+const clampSplit = (value: number): number => Math.min(80, Math.max(20, value));
+const storedSplit = Number(window.localStorage.getItem("cg:editor-split"));
+const editorSplit = ref(clampSplit(storedSplit || 50));
+let resizeBounds: DOMRect | null = null;
 function startResize(event: PointerEvent): void {
-  resizeStartX = event.clientX;
-  resizeStartWidth = inspectorWidth.value;
+  resizeBounds =
+    (event.currentTarget as HTMLElement).parentElement?.getBoundingClientRect() ?? null;
   (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   window.addEventListener("pointermove", onResize);
   window.addEventListener("pointerup", stopResize);
 }
 function onResize(event: PointerEvent): void {
-  inspectorWidth.value = clampInspector(resizeStartWidth - (event.clientX - resizeStartX));
+  if (!resizeBounds) return;
+  editorSplit.value = clampSplit(((resizeBounds.right - event.clientX) / resizeBounds.width) * 100);
 }
 function stopResize(): void {
   window.removeEventListener("pointermove", onResize);
   window.removeEventListener("pointerup", stopResize);
-  window.localStorage.setItem("cg:inspector-width", String(inspectorWidth.value));
+  window.localStorage.setItem("cg:editor-split", String(editorSplit.value));
+  resizeBounds = null;
+}
+
+const diagnosticsHeight = ref(
+  Math.max(90, Number(window.localStorage.getItem("cg:diagnostics-height")) || 170),
+);
+let diagnosticsStartY = 0;
+let diagnosticsStartHeight = 0;
+let diagnosticsMaxHeight = 420;
+function startDiagnosticsResize(event: PointerEvent): void {
+  const parent = (event.currentTarget as HTMLElement).parentElement;
+  diagnosticsStartY = event.clientY;
+  diagnosticsStartHeight = diagnosticsHeight.value;
+  diagnosticsMaxHeight = Math.max(120, (parent?.clientHeight ?? 600) - 180);
+  (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
+  window.addEventListener("pointermove", onDiagnosticsResize);
+  window.addEventListener("pointerup", stopDiagnosticsResize);
+}
+function onDiagnosticsResize(event: PointerEvent): void {
+  diagnosticsHeight.value = Math.min(
+    diagnosticsMaxHeight,
+    Math.max(90, diagnosticsStartHeight + diagnosticsStartY - event.clientY),
+  );
+}
+function stopDiagnosticsResize(): void {
+  window.removeEventListener("pointermove", onDiagnosticsResize);
+  window.removeEventListener("pointerup", stopDiagnosticsResize);
+  window.localStorage.setItem("cg:diagnostics-height", String(diagnosticsHeight.value));
 }
 
 function onGlobalKeydown(event: KeyboardEvent): void {
@@ -99,6 +140,7 @@ onMounted(() => window.addEventListener("keydown", onGlobalKeydown));
 onBeforeUnmount(() => {
   stopStatus();
   stopResize();
+  stopDiagnosticsResize();
   window.removeEventListener("keydown", onGlobalKeydown);
 });
 
@@ -108,8 +150,8 @@ function openBook(bookId: string | null): void {
 }
 async function openRecipe(id: string): Promise<void> {
   await library.selectRecipe(id);
-  editDrawerTab.value = undefined;
-  editInspectorTab.value = undefined;
+  activeTool.value = null;
+  kitchenMode.value = false;
   nav.read();
 }
 async function bulkDelete(ids: string[]): Promise<void> {
@@ -154,8 +196,7 @@ async function deleteBook(book: Parameters<typeof library.deleteBook>[0]): Promi
 }
 async function newRecipe(): Promise<void> {
   await library.createRecipe();
-  editDrawerTab.value = undefined;
-  editInspectorTab.value = undefined;
+  activeTool.value = null;
   // A brand-new recipe is a skeleton, which is exactly what the structured
   // builder is for — no source to hand-write first.
   nav.build();
@@ -188,12 +229,10 @@ async function acceptImport(payload: ImportAcceptPayload): Promise<void> {
   await save();
   importing.value = false;
   if (payload.hasDiagnostics) {
-    editDrawerTab.value = "tools";
-    editInspectorTab.value = "diagnostics";
+    activeTool.value = null;
     nav.edit();
   } else {
-    editDrawerTab.value = undefined;
-    editInspectorTab.value = undefined;
+    activeTool.value = null;
     nav.read();
   }
 }
@@ -205,16 +244,6 @@ async function importFromFile(): Promise<void> {
     title: file.fileName.replace(/\.(cg|txt)$/i, ""),
     hasDiagnostics: false,
   });
-}
-function quickIngredient(): void {
-  editor.appendSnippet(
-    `    ingredient new_ingredient measured by mass {\n        quantity 100 g;\n    }`,
-  );
-}
-function quickOperation(): void {
-  editor.appendSnippet(
-    `    process preparation {\n        operation new_operation does mix {\n            duration 5 min;\n            labor active;\n        }\n    }`,
-  );
 }
 async function convertRecipeUnits(): Promise<void> {
   if (!library.selectedRecipe.value) return;
@@ -235,10 +264,6 @@ async function convertRecipeUnits(): Promise<void> {
   editor.source.value = converted;
   await save();
 }
-function openReadingTools(tab: "kitchen" | "export"): void {
-  readingToolsTab.value = tab;
-  readingToolsOpen.value = true;
-}
 async function leaveEdit(): Promise<void> {
   if (editor.dirty.value) {
     const leave = await dialog.confirm("You have unsaved changes. Leave without saving?", {
@@ -247,9 +272,94 @@ async function leaveEdit(): Promise<void> {
     });
     if (!leave) return;
   }
-  editDrawerTab.value = undefined;
-  editInspectorTab.value = undefined;
   nav.read();
+}
+async function goHome(): Promise<void> {
+  if (editor.dirty.value) {
+    const leave = await dialog.confirm("You have unsaved changes. Leave without saving?", {
+      title: "Unsaved changes",
+      confirmLabel: "Leave",
+    });
+    if (!leave) return;
+  }
+  activeTool.value = null;
+  nav.shelf();
+}
+function editSource(): void {
+  activeTool.value = null;
+  pendingDiagnostic.value = null;
+  nav.edit();
+}
+function openDiagnostic(diagnostic: Diagnostic): void {
+  pendingDiagnostic.value = { ...diagnostic };
+  activeTool.value = null;
+  if (nav.view.value !== "editing") nav.edit();
+}
+function openTool(tool: InspectorTabId): void {
+  if (!library.selectedRecipe.value) return;
+  activeTool.value = tool;
+}
+function enterKitchenMode(): void {
+  activeTool.value = null;
+  kitchenMode.value = true;
+}
+async function handleMenuAction(action: AppMenuAction): Promise<void> {
+  if (action.startsWith("tool:")) {
+    openTool(action.slice(5) as InspectorTabId);
+    return;
+  }
+  switch (action) {
+    case "home":
+      await goHome();
+      break;
+    case "new-book":
+      await createBook();
+      break;
+    case "new-recipe":
+      await newRecipe();
+      break;
+    case "import-recipe":
+      importing.value = true;
+      break;
+    case "import-file":
+      await importFromFile();
+      break;
+    case "read":
+      await leaveEdit();
+      break;
+    case "edit-source":
+      editSource();
+      break;
+    case "build":
+      activeTool.value = null;
+      nav.build();
+      break;
+    case "save":
+      await save();
+      break;
+    case "delete":
+      await remove();
+      break;
+    case "measures":
+      activeTool.value = null;
+      nav.measures();
+      break;
+    case "toggle-units":
+      unitDisplay.toggleUnitSystem();
+      break;
+    case "toggle-mise":
+      viewSettings.toggleMisePlacement();
+      break;
+    case "toggle-numbers":
+      viewSettings.toggleNumberStyle();
+      break;
+    case "cycle-text":
+      viewSettings.cycleTextSize();
+      break;
+    case "convert-units":
+      await convertRecipeUnits();
+      break;
+  }
 }
 function saveStatusText(): string {
   switch (editor.saveStatus.value) {
@@ -267,6 +377,18 @@ function saveStatusText(): string {
 
 <template>
   <div class="app-root">
+    <AppMenuBar
+      :view="nav.view.value"
+      :has-recipe="Boolean(activeRecipe)"
+      :recipe-title="activeRecipe?.title"
+      :dirty="editor.dirty.value"
+      :saving="editor.saving.value"
+      :unit-system="unitDisplay.unitSystem.value"
+      :mise-placement="viewSettings.misePlacement.value"
+      :number-style="viewSettings.numberStyle.value"
+      :text-size-label="textSizeLabel"
+      @action="handleMenuAction"
+    />
     <Bookshelf
       v-if="nav.view.value === 'shelf'"
       :books="library.books.value"
@@ -308,61 +430,25 @@ function saveStatusText(): string {
           /></small>
         </div>
         <div class="reading-bar-actions">
-          <button class="ghost" title="Cook with step timers" @click="openReadingTools('kitchen')">
+          <button
+            v-if="!kitchenMode"
+            class="ghost"
+            title="Cook with step timers"
+            @click="openTool('kitchen')"
+          >
             <ChefHat :size="15" /> Cook
           </button>
-          <button class="ghost" title="Export recipe" @click="openReadingTools('export')">
-            <PackageOpen :size="15" /> Export
-          </button>
           <button
-            class="ghost unit-toggle"
-            :title="
-              unitDisplay.unitSystem.value === 'metric' ? 'Switch to US units' : 'Switch to metric'
-            "
-            @click="unitDisplay.toggleUnitSystem()"
-          >
-            <Scale :size="15" />
-            {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
-          </button>
-          <button
-            class="ghost unit-toggle"
-            :title="
-              viewSettings.misePlacement.value === 'colocated'
-                ? 'List ingredients and equipment once, above the method'
-                : 'Show ingredients and equipment beside the steps that use them'
-            "
-            @click="viewSettings.toggleMisePlacement()"
-          >
-            <ListChecks :size="15" />
-            {{ viewSettings.misePlacement.value === "colocated" ? "Mise" : "List" }}
-          </button>
-          <button
-            class="ghost unit-toggle"
-            :title="
-              viewSettings.numberStyle.value === 'fractions'
-                ? 'Show amounts as decimals (0.5 tsp)'
-                : 'Show amounts as cooking fractions (1/2 tsp)'
-            "
-            @click="viewSettings.toggleNumberStyle()"
-          >
-            <Divide :size="15" />
-            {{ viewSettings.numberStyle.value === "fractions" ? "1/2" : "0.5" }}
-          </button>
-          <button
+            v-if="!kitchenMode"
             class="ghost"
-            title="Rewrite convertible quantities in the recipe source"
-            @click="convertRecipeUnits"
+            title="Build with structured forms"
+            @click="nav.build()"
           >
-            <Ruler :size="15" />
-            Convert units
-          </button>
-          <button class="danger" title="Delete recipe" @click="remove">
-            <Trash2 :size="15" />
-          </button>
-          <button class="ghost" title="Build with structured forms" @click="nav.build()">
             <Blocks :size="15" /> Build
           </button>
-          <button class="primary" @click="nav.edit()"><Pencil :size="15" /> Edit</button>
+          <button v-if="!kitchenMode" class="primary" @click="nav.build()">
+            <Pencil :size="15" /> Edit
+          </button>
         </div>
       </header>
       <div class="reading-stage">
@@ -370,20 +456,17 @@ function saveStatusText(): string {
           :model="editor.model.value"
           :source="editor.source.value"
           :recipe-id="library.selectedRecipe.value?.id"
+          :kitchen-mode="kitchenMode"
+          @kitchen-finished="kitchenMode = false"
         />
       </div>
-      <ReadingToolsDrawer
-        v-if="readingToolsOpen && library.selectedRecipe.value"
-        :model="editor.model.value"
-        :recipe-id="library.selectedRecipe.value.id"
-        :operations="editor.model.value.operations"
-        :initial-tab="readingToolsTab"
-        @close="readingToolsOpen = false"
-      />
     </main>
 
     <main
-      v-else-if="library.selectedRecipe.value && nav.view.value === 'editing'"
+      v-else-if="
+        library.selectedRecipe.value &&
+        (nav.view.value === 'editing' || nav.view.value === 'building')
+      "
       class="workspace"
     >
       <header class="reading-bar">
@@ -397,60 +480,37 @@ function saveStatusText(): string {
         </div>
         <div class="reading-bar-actions">
           <button
-            class="ghost unit-toggle"
-            :title="
-              unitDisplay.unitSystem.value === 'metric' ? 'Switch to US units' : 'Switch to metric'
-            "
-            @click="unitDisplay.toggleUnitSystem()"
+            class="primary"
+            :disabled="!editor.dirty.value || editor.saving.value"
+            @click="save"
           >
-            <Scale :size="15" />
-            {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+            <Save :size="15" /> {{ editor.saving.value ? "Saving…" : "Save" }}
           </button>
           <button
-            class="ghost unit-toggle"
-            :title="
-              viewSettings.misePlacement.value === 'colocated'
-                ? 'List ingredients and equipment once, above the method'
-                : 'Show ingredients and equipment beside the steps that use them'
-            "
-            @click="viewSettings.toggleMisePlacement()"
-          >
-            <ListChecks :size="15" />
-            {{ viewSettings.misePlacement.value === "colocated" ? "Mise" : "List" }}
-          </button>
-          <button
-            class="ghost unit-toggle"
-            :title="
-              viewSettings.numberStyle.value === 'fractions'
-                ? 'Show amounts as decimals (0.5 tsp)'
-                : 'Show amounts as cooking fractions (1/2 tsp)'
-            "
-            @click="viewSettings.toggleNumberStyle()"
-          >
-            <Divide :size="15" />
-            {{ viewSettings.numberStyle.value === "fractions" ? "1/2" : "0.5" }}
-          </button>
-          <button
+            v-if="nav.view.value === 'building'"
             class="ghost"
-            title="Rewrite convertible quantities in the recipe source"
-            @click="convertRecipeUnits"
+            title="Edit the raw recipe source"
+            @click="editSource"
           >
-            <Ruler :size="15" />
-            Convert units
+            <FileCode2 :size="15" /> Source
           </button>
-          <button class="ghost" title="Switch to the structured builder" @click="nav.build()">
-            <Blocks :size="15" /> Build
+          <button v-else class="ghost" title="Use the structured builder" @click="nav.build()">
+            <Blocks :size="15" /> Builder
           </button>
         </div>
       </header>
-      <section class="edit-layout" :style="{ '--inspector-w': inspectorWidth + 'px' }">
+      <section
+        class="edit-layout"
+        :style="{
+          '--editor-w': editorSplit + '%',
+          '--diagnostics-h': diagnosticsHeight + 'px',
+        }"
+      >
         <div class="reading-stage">
           <RecipePage
             :model="editor.model.value"
             :recipe-id="library.selectedRecipe.value?.id"
-            editable
             :source="editor.source.value"
-            @update:source="editor.source.value = $event"
           />
         </div>
         <div
@@ -460,46 +520,58 @@ function saveStatusText(): string {
           title="Drag to resize"
           @pointerdown="startResize"
         ></div>
-        <EditDrawer
-          :source="editor.source.value"
-          :model="editor.model.value"
-          :validation="editor.validation.value"
-          :recipe-id="library.selectedRecipe.value.id"
-          :books="library.books.value"
-          :current-book-id="library.selectedRecipe.value.bookId ?? null"
-          :dirty="editor.dirty.value"
-          :saving="editor.saving.value"
-          :save-status="editor.saveStatus.value"
-          :initial-drawer-tab="editDrawerTab"
-          :initial-inspector-tab="editInspectorTab"
-          @update:source="editor.source.value = $event"
-          @save="save"
-          @close="leaveEdit"
-          @move-book="library.moveSelected($event)"
-          @delete="remove"
-          @insert-ingredient="quickIngredient"
-          @insert-operation="quickOperation"
-        />
+        <div class="editor-stack">
+          <RecipeBuilderView
+            v-if="nav.view.value === 'building'"
+            :source="editor.source.value"
+            :model="editor.model.value"
+            :recipe-id="library.selectedRecipe.value.id"
+            @update:source="editor.source.value = $event"
+            @edit-source="editSource"
+          />
+          <EditDrawer
+            v-else
+            :source="editor.source.value"
+            :validation="editor.validation.value"
+            :dirty="editor.dirty.value"
+            :saving="editor.saving.value"
+            :save-status="editor.saveStatus.value"
+            :initial-diagnostic="pendingDiagnostic"
+            @update:source="editor.source.value = $event"
+            @save="save"
+            @close="leaveEdit"
+          />
+          <div
+            class="diagnostics-resizer"
+            role="separator"
+            aria-orientation="horizontal"
+            title="Drag to resize issues"
+            @pointerdown="startDiagnosticsResize"
+          ></div>
+          <DiagnosticsPane
+            :diagnostics="editor.validation.value?.diagnostics ?? []"
+            :source="editor.source.value"
+            @select="openDiagnostic"
+          />
+        </div>
       </section>
     </main>
-
-    <RecipeBuilderView
-      v-else-if="library.selectedRecipe.value && nav.view.value === 'building'"
-      :source="editor.source.value"
-      :model="editor.model.value"
-      :recipe-id="library.selectedRecipe.value.id"
-      :title="library.selectedRecipe.value.title"
-      :dirty="editor.dirty.value"
-      :save-status="editor.saveStatus.value"
-      @update:source="editor.source.value = $event"
-      @close="leaveEdit"
-      @edit-source="nav.edit()"
-    />
 
     <section v-else class="empty-workspace">
       <h2>Nothing open</h2>
       <button class="primary" @click="nav.shelf()"><BookOpen :size="15" /> Back to shelf</button>
     </section>
+    <RecipeToolDialog
+      v-if="activeTool && library.selectedRecipe.value"
+      :key="activeTool"
+      :tool="activeTool"
+      :model="editor.model.value"
+      :recipe-id="library.selectedRecipe.value.id"
+      :source="editor.source.value"
+      @close="activeTool = null"
+      @update:source="editor.source.value = $event"
+      @kitchen-started="enterKitchenMode"
+    />
   </div>
   <RecipeImportPanel v-if="importing" @close="importing = false" @accept="acceptImport" />
 </template>
@@ -509,6 +581,10 @@ function saveStatusText(): string {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+.app-root > :not(.app-menu-bar) {
+  flex: 1;
+  min-height: 0;
 }
 .workspace {
   flex: 1;
@@ -588,10 +664,30 @@ function saveStatusText(): string {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 6px var(--inspector-w, 420px);
+  grid-template-columns:
+    minmax(0, calc(100% - var(--editor-w, 50%) - 6px))
+    6px minmax(0, var(--editor-w, 50%));
 }
 .edit-layout .reading-stage {
   padding: clamp(18px, 3vw, 40px) 16px;
+}
+.editor-stack {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: minmax(180px, 1fr) 6px minmax(90px, var(--diagnostics-h, 170px));
+  overflow: hidden;
+  background: #f7f6f2;
+}
+.diagnostics-resizer {
+  cursor: row-resize;
+  background: #d8ddd9;
+  transition: background 0.12s ease;
+  touch-action: none;
+}
+.diagnostics-resizer:hover,
+.diagnostics-resizer:active {
+  background: #28643b;
 }
 .dirty {
   margin-left: 6px;
@@ -600,6 +696,8 @@ function saveStatusText(): string {
 @media (max-width: 900px) {
   .edit-layout {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(280px, 1fr) minmax(360px, 1fr);
+    overflow: auto;
   }
   .edit-layout .pane-resizer {
     display: none;

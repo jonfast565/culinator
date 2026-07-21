@@ -18,17 +18,23 @@ export type MisePlacement = "top-matter" | "colocated";
  */
 export type NumberStyle = "fractions" | "decimals";
 
+/** User-selected scale for recipe and search-result text. */
+export type TextSize = "default" | "large" | "x-large";
+
 export interface ViewSettingsContext {
   misePlacement: Ref<MisePlacement>;
   toggleMisePlacement: () => void;
   numberStyle: Ref<NumberStyle>;
   toggleNumberStyle: () => void;
+  textSize: Ref<TextSize>;
+  cycleTextSize: () => void;
 }
 
 export const VIEW_SETTINGS_KEY: InjectionKey<ViewSettingsContext> = Symbol("viewSettings");
 
 const STORAGE_KEY = "culinator.misePlacement";
 const NUMBER_STYLE_KEY = "culinator.numberStyle";
+const TEXT_SIZE_KEY = "culinator.textSize";
 
 function readStoredPlacement(): MisePlacement {
   try {
@@ -48,6 +54,16 @@ function readStoredNumberStyle(): NumberStyle {
     // ignore
   }
   return "fractions";
+}
+
+function readStoredTextSize(): TextSize {
+  try {
+    const stored = window.localStorage.getItem(TEXT_SIZE_KEY);
+    if (stored === "default" || stored === "large" || stored === "x-large") return stored;
+  } catch {
+    // ignore
+  }
+  return "default";
 }
 
 export function useViewSettings(): ViewSettingsContext {
@@ -77,5 +93,26 @@ export function useViewSettings(): ViewSettingsContext {
     numberStyle.value = numberStyle.value === "fractions" ? "decimals" : "fractions";
   }
 
-  return { misePlacement, toggleMisePlacement, numberStyle, toggleNumberStyle };
+  const textSize = ref<TextSize>(readStoredTextSize());
+  watch(textSize, (value) => {
+    try {
+      window.localStorage.setItem(TEXT_SIZE_KEY, value);
+    } catch {
+      // ignore
+    }
+  });
+
+  function cycleTextSize(): void {
+    textSize.value =
+      textSize.value === "default" ? "large" : textSize.value === "large" ? "x-large" : "default";
+  }
+
+  return {
+    misePlacement,
+    toggleMisePlacement,
+    numberStyle,
+    toggleNumberStyle,
+    textSize,
+    cycleTextSize,
+  };
 }

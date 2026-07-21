@@ -208,10 +208,10 @@ defineExpose({ focus });
   gap: 4px;
 }
 .results strong {
-  font-size: 14px;
+  font-size: calc(14px * var(--reading-scale, 1));
 }
 .results span {
-  font-size: 12px;
+  font-size: calc(12px * var(--reading-scale, 1));
   color: #6d7972;
 }
 .results :deep(mark) {
@@ -220,7 +220,7 @@ defineExpose({ focus });
 }
 .empty {
   margin: 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--reading-scale, 1));
   color: #6d7972;
 }
 .spin {

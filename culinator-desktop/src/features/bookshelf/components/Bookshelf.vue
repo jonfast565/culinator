@@ -155,7 +155,7 @@ onBeforeUnmount(unregisterSearch);
   justify-content: space-between;
   gap: 20px;
   flex-wrap: wrap;
-  padding: 16px 22px;
+  padding: 10px 22px;
   background: #18120b;
   border-bottom: 1px solid #2e2416;
 }
@@ -168,8 +168,8 @@ onBeforeUnmount(unregisterSearch);
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 10px;
   background: #d9f0df;
   color: #1f5130;
