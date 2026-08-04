@@ -234,6 +234,8 @@ async function calculate(): Promise<void> {
       servingSize: recipeFacts.servingSize,
       servingSizeGrams: recipeFacts.servingSizeGrams,
     });
+    // Calculate may auto-link ingredients; reload so the mapping UI reflects them.
+    await refresh();
     if (!manualOverride.value && result.value.calculated) {
       Object.assign(recipeFacts, result.value.facts);
     }

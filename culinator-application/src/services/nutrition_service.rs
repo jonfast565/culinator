@@ -1,16 +1,23 @@
 use crate::{
     ApplicationError, AutoLinkRequest, AutoLinkResult, CalculateRecipeNutritionRequest,
     DocumentParser, FuzzyFoodMatch, FuzzyMatchRequest, IngredientMatchSuggestion,
-    LinkResourceNutritionRequest, NutritionCatalog, RecipeIngredientNutrition,
+    LinkResourceNutritionRequest, NutritionCatalog, NutritionFacts, RecipeIngredientNutrition,
     RecipeNutritionResult, RecipeNutritionState, RecipeRepository, ResourceNutritionRepository,
     SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest, aggregate_nutrients,
-    default_serving_context, fts_query_from_ingredient, ingredient_resources,
-    manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches, resource_mass_grams,
-    search_result_label,
+    default_serving_context, fts_queries_from_ingredient, ingredient_match_query,
+    ingredient_resources, manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches,
+    resource_mass_grams, search_result_label,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use uuid::Uuid;
+
+fn default_auto_link_request() -> AutoLinkRequest {
+    AutoLinkRequest {
+        min_score: 0.45,
+        dry_run: false,
+    }
+}
 
 #[derive(Clone)]
 pub struct NutritionService {
@@ -81,8 +88,21 @@ impl NutritionService {
                 "search query cannot be empty".to_owned(),
             ));
         }
-        let fts_query = fts_query_from_ingredient(&request.query);
-        let results = catalog.search_foods(&fts_query, request.limit.clamp(1, 50).max(10))?;
+        let candidate_limit = request.limit.clamp(1, 50).max(40);
+        let mut results = Vec::new();
+        let mut seen = std::collections::BTreeSet::new();
+        for fts_query in fts_queries_from_ingredient(&request.query) {
+            let batch = catalog.search_foods(&fts_query, candidate_limit)?;
+            for item in batch {
+                if seen.insert(item.fdc_id) {
+                    results.push(item);
+                }
+            }
+            // Prefer AND hits; only widen if the pool is thin.
+            if results.len() >= 10 {
+                break;
+            }
+        }
         Ok(rank_fuzzy_matches(&request.query, &results)
             .into_iter()
             .take(request.limit.clamp(1, 50))
@@ -202,9 +222,7 @@ impl NutritionService {
                 continue;
             }
             let resource_name = resource_display_name(resource);
-            let query = resource_name
-                .clone()
-                .unwrap_or_else(|| resource.symbol.clone());
+            let query = ingredient_match_query(resource);
             let matches = self.fuzzy_match(FuzzyMatchRequest {
                 query: query.clone(),
                 limit: 3,
@@ -245,7 +263,7 @@ impl NutritionService {
         recipe_id: Uuid,
         request: CalculateRecipeNutritionRequest,
     ) -> Result<RecipeNutritionResult, ApplicationError> {
-        let state = self.nutrition.get_recipe_nutrition(recipe_id)?;
+        let mut state = self.nutrition.get_recipe_nutrition(recipe_id)?;
         if state.manual_override {
             let facts = state.manual_facts.clone().ok_or_else(|| {
                 ApplicationError::InvalidInput(
@@ -265,6 +283,18 @@ impl NutritionService {
         }
 
         let catalog = self.catalog()?;
+        let mut warnings = Vec::new();
+
+        // Attempt auto-link for any unlinked ingredients before aggregating.
+        let auto = self.auto_link(recipe_id, default_auto_link_request())?;
+        if !auto.linked.is_empty() {
+            warnings.push(format!(
+                "Auto-linked {} ingredient(s) before calculating",
+                auto.linked.len()
+            ));
+            state = self.nutrition.get_recipe_nutrition(recipe_id)?;
+        }
+
         let document = self
             .recipes
             .get_recipe(recipe_id)?
@@ -281,7 +311,6 @@ impl NutritionService {
             .map(|entry| (entry.resource_symbol.clone(), entry))
             .collect();
 
-        let mut warnings = Vec::new();
         let mut ingredient_rows = Vec::new();
         let mut nutrient_inputs = Vec::new();
         let mut total_mass_grams = 0.0;
@@ -301,9 +330,13 @@ impl NutritionService {
             }
 
             if mass_grams.is_none() {
+                let dimension_hint = quantity_dimension_hint(resource);
                 warnings.push(format!(
-                    "{} has no mass quantity; skipped from totals",
-                    resource.symbol
+                    "{} has no resolvable mass{}; skipped from totals",
+                    resource.symbol,
+                    dimension_hint
+                        .map(|hint| format!(" ({hint} with no density/piece weight)"))
+                        .unwrap_or_default()
                 ));
             }
 
@@ -346,13 +379,6 @@ impl NutritionService {
             });
         }
 
-        if sourced_count == 0 {
-            return Err(ApplicationError::InvalidInput(
-                "link ingredients or enter manual nutrition facts before calculating".to_owned(),
-            ));
-        }
-
-        let totals = aggregate_nutrients(&nutrient_inputs);
         let (default_servings, default_serving_size, default_serving_mass) =
             default_serving_context(&recipe.servings);
         let servings = request
@@ -361,6 +387,29 @@ impl NutritionService {
             .max(1.0);
         let serving_size = request.serving_size.unwrap_or(default_serving_size);
         let serving_size_grams = request.serving_size_grams.or(default_serving_mass);
+
+        if sourced_count == 0 {
+            warnings.push(
+                "No ingredients contributed nutrients; link ingredients, add manual facts, or use mass/volume quantities with known densities.".to_owned(),
+            );
+            return Ok(RecipeNutritionResult {
+                facts: NutritionFacts {
+                    servings_per_container: servings,
+                    serving_size,
+                    serving_size_grams,
+                    ..NutritionFacts::default()
+                },
+                total_mass_grams: 0.0,
+                linked_ingredient_count: linked_count,
+                total_ingredient_count: ingredient_rows.len(),
+                ingredients: ingredient_rows,
+                warnings,
+                manual_override: false,
+                calculated: true,
+            });
+        }
+
+        let totals = aggregate_nutrients(&nutrient_inputs);
         let facts = nutrients_to_facts(
             &totals,
             total_mass_grams,
@@ -399,6 +448,19 @@ fn resource_display_name(resource: &culinator_core::Resource) -> Option<String> 
             }
             _ => None,
         })
+}
+
+fn quantity_dimension_hint(resource: &culinator_core::Resource) -> Option<&'static str> {
+    for key in ["mass", "quantity"] {
+        if let Some(culinator_core::Value::Quantity(quantity)) = resource.properties.get(key) {
+            return match quantity.dimension {
+                culinator_core::Dimension::Volume => Some("volume"),
+                culinator_core::Dimension::Count => Some("count"),
+                _ => None,
+            };
+        }
+    }
+    None
 }
 
 #[cfg(test)]

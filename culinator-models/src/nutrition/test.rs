@@ -1,39 +1,100 @@
 use crate::{
     FDC_ENERGY_KCAL, FDC_PROTEIN, FoodNutrientRecord, NutritionSearchResult, aggregate_nutrients,
-    default_serving_context, fts_query_from_ingredient, ingredient_resources,
-    manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches, resource_mass_grams,
-    string_similarity, value_mass_grams,
+    default_serving_context, fts_query_from_ingredient, fts_queries_from_ingredient,
+    ingredient_match_query, ingredient_resources, manual_facts_to_nutrients, nutrients_to_facts,
+    rank_fuzzy_matches, resource_mass_grams, string_similarity, value_mass_grams,
 };
 use culinator_core::{Dimension, Resource, ResourceKind, Value};
 use std::collections::BTreeMap;
 
-#[test]
-fn resource_mass_reads_quantity_property() {
-    let mut properties = std::collections::BTreeMap::new();
-    properties.insert(
-        "quantity".to_owned(),
-        Value::Quantity(culinator_core::Quantity {
-            value: 250.0,
-            unit: "g".to_owned(),
-            dimension: Dimension::Mass,
-        }),
-    );
-    let resource = Resource {
+fn ingredient_resource(
+    symbol: &str,
+    name: Option<&str>,
+    quantity: culinator_core::Quantity,
+    size: Option<&str>,
+) -> Resource {
+    let mut properties = BTreeMap::new();
+    properties.insert("quantity".to_owned(), Value::Quantity(quantity));
+    if let Some(name) = name {
+        properties.insert("name".to_owned(), Value::Text(name.to_owned()));
+    }
+    Resource {
         id: uuid::Uuid::new_v4(),
-        symbol: "flour".to_owned(),
+        symbol: symbol.to_owned(),
         declared_type: culinator_core::TypeRef::named("Ingredient"),
         kind: ResourceKind::Ingredient,
         optional: false,
         divided: false,
         substitutes: vec![],
         to_taste: false,
-        size: None,
+        size: size.map(|value| value.to_owned()),
         variant: None,
         notes: vec![],
         properties,
         span: None,
-    };
+    }
+}
+
+#[test]
+fn resource_mass_reads_quantity_property() {
+    let resource = ingredient_resource(
+        "flour",
+        None,
+        culinator_core::Quantity {
+            value: 250.0,
+            unit: "g".to_owned(),
+            dimension: Dimension::Mass,
+        },
+        None,
+    );
     assert_eq!(resource_mass_grams(&resource), Some(250.0));
+}
+
+#[test]
+fn resource_mass_converts_volume_via_density() {
+    let resource = ingredient_resource(
+        "flour",
+        Some("all-purpose flour"),
+        culinator_core::Quantity {
+            value: 1.0,
+            unit: "cup".to_owned(),
+            dimension: Dimension::Volume,
+        },
+        None,
+    );
+    let grams = resource_mass_grams(&resource).expect("cup flour density");
+    // 1 cup ≈ 236.59 ml * 0.59 g/ml ≈ 139.6 g
+    assert!((grams - 139.6).abs() < 1.0, "got {grams}");
+}
+
+#[test]
+fn resource_mass_converts_count_egg() {
+    let resource = ingredient_resource(
+        "egg",
+        None,
+        culinator_core::Quantity {
+            value: 2.0,
+            unit: "count".to_owned(),
+            dimension: Dimension::Count,
+        },
+        Some("large"),
+    );
+    assert_eq!(resource_mass_grams(&resource), Some(100.0));
+}
+
+#[test]
+fn resource_mass_converts_garlic_clove() {
+    let resource = ingredient_resource(
+        "garlic",
+        None,
+        culinator_core::Quantity {
+            value: 3.0,
+            unit: "clove".to_owned(),
+            dimension: Dimension::Count,
+        },
+        None,
+    );
+    assert_eq!(resource_mass_grams(&resource), Some(9.0));
 }
 
 #[test]
@@ -74,10 +135,40 @@ fn string_similarity_prefers_close_names() {
 }
 
 #[test]
+fn string_similarity_uses_synonyms() {
+    let score = string_similarity("scallion", "Onions, spring or scallions (includes tops and bulb), raw");
+    assert!(score > 0.3, "got {score}");
+}
+
+#[test]
 fn fts_query_strips_prep_words() {
     let query = fts_query_from_ingredient("Hass avocado, diced");
     assert!(query.contains("avocado"));
     assert!(!query.contains("diced"));
+}
+
+#[test]
+fn fts_query_strips_warm_and_for_the_pan() {
+    let milk = fts_query_from_ingredient("warm milk");
+    assert!(milk.to_lowercase().contains("milk"));
+    assert!(!milk.to_lowercase().contains("warm"));
+
+    let butter = normalize_check("butter for the pan");
+    assert!(butter.contains("butter"));
+    assert!(!butter.contains("pan"));
+}
+
+fn normalize_check(name: &str) -> String {
+    crate::normalize_ingredient_name(name)
+}
+
+#[test]
+fn fts_queries_prefer_and_then_or() {
+    let queries = fts_queries_from_ingredient("all-purpose flour");
+    assert!(
+        queries.first().is_some_and(|query| query.contains(" AND ") || query.contains("flour")),
+        "{queries:?}"
+    );
 }
 
 #[test]
@@ -115,6 +206,48 @@ fn rank_fuzzy_matches_orders_by_score() {
     ];
     let ranked = rank_fuzzy_matches("avocado", &results);
     assert_eq!(ranked.first().unwrap().result.fdc_id, 1);
+}
+
+#[test]
+fn rank_fuzzy_matches_prefers_foundation_over_branded() {
+    let results = vec![
+        NutritionSearchResult {
+            fdc_id: 10,
+            description: "Milk, whole".to_owned(),
+            data_type: "branded_food".to_owned(),
+            brand_owner: Some("ACME Dairy".to_owned()),
+            serving_size: None,
+            serving_size_unit: None,
+        },
+        NutritionSearchResult {
+            fdc_id: 11,
+            description: "Milk, whole, 3.25% milkfat".to_owned(),
+            data_type: "foundation_food".to_owned(),
+            brand_owner: None,
+            serving_size: None,
+            serving_size_unit: None,
+        },
+    ];
+    let ranked = rank_fuzzy_matches("whole milk", &results);
+    assert_eq!(ranked.first().unwrap().result.fdc_id, 11);
+    assert!(ranked[0].score > ranked[1].score);
+}
+
+#[test]
+fn ingredient_match_query_uses_name_and_size() {
+    let resource = ingredient_resource(
+        "egg",
+        Some("large egg"),
+        culinator_core::Quantity {
+            value: 1.0,
+            unit: "count".to_owned(),
+            dimension: Dimension::Count,
+        },
+        Some("large"),
+    );
+    let query = ingredient_match_query(&resource);
+    assert!(query.contains("egg"));
+    assert!(query.contains("large"));
 }
 
 #[test]

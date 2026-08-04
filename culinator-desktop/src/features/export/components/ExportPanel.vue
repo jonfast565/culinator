@@ -127,7 +127,7 @@ async function generate() {
       @click="calculateFromIngredients"
     >
       <Calculator :size="16" />{{
-        calculating ? "Calculating…" : "Calculate from linked ingredients"
+        calculating ? "Calculating…" : "Calculate from ingredients"
       }}
     </button>
     <div class="space-y-2">

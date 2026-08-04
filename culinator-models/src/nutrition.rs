@@ -1,4 +1,6 @@
-use culinator_core::{Resource, ResourceKind, Serving, Value};
+use culinator_core::{
+    Dimension, IngredientDensity, Quantity, Resource, ResourceKind, Serving, Value,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -152,10 +154,51 @@ pub struct RecipeNutritionResult {
     pub calculated: bool,
 }
 
+/// Build a matching query from a resource's display name / symbol plus size and
+/// state cues. Variant group labels are omitted — they are alternative-set tags,
+/// not food descriptors.
+pub fn ingredient_match_query(resource: &Resource) -> String {
+    let mut parts = Vec::new();
+    if let Some(name) = resource_display_name(resource) {
+        parts.push(name);
+    } else {
+        parts.push(resource.symbol.replace('_', " "));
+    }
+    if let Some(size) = resource.size.as_deref().filter(|value| !value.is_empty()) {
+        parts.push(size.to_owned());
+    }
+    if let Some(state) = resource_state(resource) {
+        parts.push(state);
+    }
+    parts.join(" ")
+}
+
+fn resource_display_name(resource: &Resource) -> Option<String> {
+    resource
+        .properties
+        .get("name")
+        .and_then(|value| match value {
+            Value::Text(text) | Value::Symbol(text) => Some(text.clone()),
+            _ => None,
+        })
+}
+
+fn resource_state(resource: &Resource) -> Option<String> {
+    resource
+        .properties
+        .get("state")
+        .and_then(|value| match value {
+            Value::Text(text) | Value::Symbol(text) => Some(text.clone()),
+            _ => None,
+        })
+}
+
+/// Resolve an ingredient quantity to grams: mass units pass through; volume uses
+/// built-in densities; common count units use typical piece weights.
 pub fn resource_mass_grams(resource: &Resource) -> Option<f64> {
     for key in ["mass", "quantity"] {
         if let Some(value) = resource.properties.get(key)
-            && let Some(grams) = value_mass_grams(value)
+            && let Some(grams) = value_mass_grams_for_resource(value, resource)
         {
             return Some(grams);
         }
@@ -168,6 +211,173 @@ pub fn value_mass_grams(value: &Value) -> Option<f64> {
         Value::Quantity(quantity) => quantity.as_grams(),
         _ => None,
     }
+}
+
+fn value_mass_grams_for_resource(value: &Value, resource: &Resource) -> Option<f64> {
+    let Value::Quantity(quantity) = value else {
+        return None;
+    };
+    if let Some(grams) = quantity.as_grams() {
+        return Some(grams);
+    }
+    let hint = resource_display_name(resource)
+        .unwrap_or_else(|| resource.symbol.replace('_', " "));
+    match quantity.dimension {
+        Dimension::Volume => volume_to_grams(quantity, &hint),
+        Dimension::Count => count_to_grams(quantity, resource, &hint),
+        _ => None,
+    }
+}
+
+fn volume_to_grams(quantity: &Quantity, ingredient_hint: &str) -> Option<f64> {
+    let density = density_for_ingredient(ingredient_hint)?;
+    quantity
+        .to_mass(density)
+        .ok()
+        .and_then(|mass| mass.as_grams())
+}
+
+fn density_for_ingredient(hint: &str) -> Option<f64> {
+    let registry = IngredientDensity::new();
+    let normalized = normalize_ingredient_name(hint);
+    if let Some(density) = registry.density_g_per_ml(&normalized) {
+        return Some(density);
+    }
+    // Try progressively shorter suffixes / aliases.
+    for alias in synonym_expansions(&normalized) {
+        if let Some(density) = registry.density_g_per_ml(&alias) {
+            return Some(density);
+        }
+    }
+    let tokens: Vec<&str> = normalized.split_whitespace().collect();
+    for start in 0..tokens.len() {
+        let slice = tokens[start..].join(" ");
+        if let Some(density) = registry.density_g_per_ml(&slice) {
+            return Some(density);
+        }
+        for alias in synonym_expansions(&slice) {
+            if let Some(density) = registry.density_g_per_ml(&alias) {
+                return Some(density);
+            }
+        }
+    }
+    None
+}
+
+fn count_to_grams(quantity: &Quantity, resource: &Resource, ingredient_hint: &str) -> Option<f64> {
+    let unit = quantity.unit.to_ascii_lowercase();
+    let count = match unit.as_str() {
+        "dozen" | "dozens" => quantity.value * 12.0,
+        _ => quantity.value,
+    };
+    if count <= 0.0 {
+        return None;
+    }
+    let piece = piece_weight_grams(ingredient_hint, resource.size.as_deref(), &unit)?;
+    Some(count * piece)
+}
+
+fn piece_weight_grams(hint: &str, size: Option<&str>, unit: &str) -> Option<f64> {
+    let normalized = normalize_ingredient_name(hint);
+    let size = size.map(|value| value.to_ascii_lowercase());
+
+    if matches!(unit, "clove" | "cloves")
+        || normalized.contains("garlic") && matches!(unit, "clove" | "cloves" | "count" | "each" | "piece" | "pieces")
+    {
+        return Some(3.0);
+    }
+
+    let key = primary_ingredient_key(&normalized);
+    let base = match key.as_str() {
+        "egg" | "eggs" => match size.as_deref() {
+            Some("small") => 38.0,
+            Some("medium") => 44.0,
+            Some("jumbo") | Some("extra large") | Some("xl") => 63.0,
+            _ => 50.0, // large default
+        },
+        "banana" | "bananas" => match size.as_deref() {
+            Some("small") => 100.0,
+            Some("large") => 136.0,
+            _ => 118.0,
+        },
+        "onion" | "onions" | "white onion" | "yellow onion" | "red onion" => match size.as_deref()
+        {
+            Some("small") => 70.0,
+            Some("large") => 150.0,
+            _ => 110.0,
+        },
+        "green onion" | "green onions" | "scallion" | "scallions" | "spring onion" => 15.0,
+        "tomato" | "tomatoes" => match size.as_deref() {
+            Some("small") => 90.0,
+            Some("large") => 180.0,
+            _ => 123.0,
+        },
+        "potato" | "potatoes" => match size.as_deref() {
+            Some("small") => 170.0,
+            Some("large") => 300.0,
+            _ => 213.0,
+        },
+        "carrot" | "carrots" => 61.0,
+        "lemon" | "lemons" => 84.0,
+        "lime" | "limes" => 67.0,
+        "avocado" | "avocados" => 136.0,
+        "jalapeno" | "jalapeño" | "jalapenos" | "chili" | "chilies" | "chilli" | "pepper"
+        | "peppers" | "chili pepper" => 14.0,
+        "garlic" => 3.0,
+        "shallot" | "shallots" => 25.0,
+        "egg yolk" | "yolk" | "yolks" => 18.0,
+        "egg white" | "whites" => 33.0,
+        _ => return None,
+    };
+    Some(base)
+}
+
+fn primary_ingredient_key(normalized: &str) -> String {
+    // Prefer longer synonym keys first so "green onion" wins over "onion".
+    let mut aliases = synonym_expansions(normalized);
+    aliases.insert(0, normalized.to_owned());
+    for candidate in &aliases {
+        if matches!(
+            candidate.as_str(),
+            "egg"
+                | "eggs"
+                | "banana"
+                | "bananas"
+                | "onion"
+                | "onions"
+                | "white onion"
+                | "yellow onion"
+                | "red onion"
+                | "green onion"
+                | "green onions"
+                | "scallion"
+                | "scallions"
+                | "tomato"
+                | "tomatoes"
+                | "potato"
+                | "potatoes"
+                | "carrot"
+                | "carrots"
+                | "lemon"
+                | "lemons"
+                | "lime"
+                | "limes"
+                | "avocado"
+                | "avocados"
+                | "jalapeno"
+                | "garlic"
+                | "shallot"
+                | "shallots"
+        ) {
+            return candidate.clone();
+        }
+    }
+    // Fall back to last content token (e.g. "fresh tomatoes" → "tomatoes").
+    normalized
+        .split_whitespace()
+        .next_back()
+        .unwrap_or(normalized)
+        .to_owned()
 }
 
 pub fn ingredient_resources(recipe: &culinator_core::Recipe) -> Vec<&Resource> {
@@ -268,7 +478,132 @@ const INGREDIENT_STOP_WORDS: &[&str] = &[
     "fresh", "diced", "chopped", "minced", "ripe", "large", "small", "medium", "organic", "raw",
     "cooked", "hass", "whole", "ground", "grated", "sliced", "peeled", "seeded", "boneless",
     "skinless", "unsalted", "salted", "extra", "virgin", "finely", "roughly", "about", "optional",
+    "warm", "crushed", "for", "the", "pan", "plus", "more", "serving", "to", "taste", "divided",
+    "room", "temperature", "softened", "melted", "cold", "hot", "dried", "canned", "packed",
+    "firmly", "loosely", "thinly", "thickly", "into", "and", "or", "with", "from", "a", "an",
 ];
+
+/// Cooking-name → USDA-leaning aliases used to expand FTS / similarity queries.
+fn synonym_expansions(normalized: &str) -> Vec<String> {
+    let mut expansions = Vec::new();
+    let push = |expansions: &mut Vec<String>, alias: &str| {
+        let alias = alias.to_owned();
+        if alias != normalized && !expansions.contains(&alias) {
+            expansions.push(alias);
+        }
+    };
+
+    // Phrase-level aliases (check longer keys first via contains / equality).
+    let pairs = [
+        ("all purpose flour", "wheat flour"),
+        ("all-purpose flour", "wheat flour"),
+        ("ap flour", "wheat flour"),
+        ("bread flour", "wheat flour"),
+        ("green onion", "scallion"),
+        ("green onions", "scallions"),
+        ("scallion", "green onion"),
+        ("scallions", "green onions"),
+        ("spring onion", "green onion"),
+        ("cilantro", "coriander leaves"),
+        ("fresh cilantro", "coriander leaves"),
+        ("coriander", "coriander leaves"),
+        ("baking powder", "leavening agents baking powder"),
+        ("instant yeast", "yeast bakers"),
+        ("active dry yeast", "yeast bakers"),
+        ("dry yeast", "yeast bakers"),
+        ("yeast", "yeast bakers"),
+        ("olive oil", "oil olive"),
+        ("extra virgin olive oil", "oil olive"),
+        ("vegetable oil", "oil vegetable"),
+        ("canola oil", "oil canola"),
+        ("sesame oil", "oil sesame"),
+        ("heavy cream", "cream fluid heavy whipping"),
+        ("whipping cream", "cream fluid heavy whipping"),
+        ("whole milk", "milk whole"),
+        ("warm milk", "milk whole"),
+        ("butter for the pan", "butter"),
+        ("butter or oil for the pan", "butter"),
+        ("kosher salt", "salt table"),
+        ("sea salt", "salt table"),
+        ("table salt", "salt table"),
+        ("salt", "salt table"),
+        ("bell pepper", "peppers sweet"),
+        ("red pepper", "peppers sweet red"),
+        ("chili pepper", "peppers hot chili"),
+        ("jalapeno", "peppers jalapeno"),
+        ("jalapeño", "peppers jalapeno"),
+        ("ground cumin", "spices cumin seed"),
+        ("ground ginger", "spices ginger"),
+        ("ground cinnamon", "spices cinnamon"),
+        ("brown sugar", "sugars brown"),
+        ("powdered sugar", "sugars powdered"),
+        ("confectioners sugar", "sugars powdered"),
+        ("soy sauce", "sauce soy"),
+        ("tomato paste", "tomato products paste"),
+        ("canned tomatoes", "tomatoes red ripe canned"),
+        ("greek yogurt", "yogurt greek"),
+        ("parmesan", "cheese parmesan"),
+        ("mozzarella", "cheese mozzarella"),
+        ("cheddar", "cheese cheddar"),
+        ("feta", "cheese feta"),
+        ("arborio rice", "rice white"),
+        ("red lentils", "lentils"),
+        ("bulgur", "bulgur"),
+        ("chickpeas", "chickpeas garbanzo beans"),
+        ("garbanzo beans", "chickpeas"),
+        ("beef broth", "soup beef broth"),
+        ("chicken broth", "soup chicken broth"),
+        ("vegetable broth", "soup vegetable broth"),
+    ];
+
+    for (from, to) in pairs {
+        if normalized == from || normalized.ends_with(&format!(" {from}")) || normalized.contains(from)
+        {
+            push(&mut expansions, to);
+            push(&mut expansions, from);
+        }
+    }
+
+    // Token-level aliases.
+    for token in normalized.split_whitespace() {
+        match token {
+            "scallion" | "scallions" => push(&mut expansions, "green onion"),
+            "cilantro" => {
+                push(&mut expansions, "coriander");
+                push(&mut expansions, "coriander leaves");
+            }
+            "flour" => push(&mut expansions, "wheat flour"),
+            "oil" => push(&mut expansions, "oil vegetable"),
+            "butter" => push(&mut expansions, "butter salted"),
+            "milk" => push(&mut expansions, "milk whole"),
+            "egg" | "eggs" => push(&mut expansions, "egg whole"),
+            "banana" | "bananas" => push(&mut expansions, "bananas raw"),
+            "tomato" | "tomatoes" => push(&mut expansions, "tomatoes red ripe"),
+            "onion" | "onions" => push(&mut expansions, "onions raw"),
+            "garlic" => push(&mut expansions, "garlic raw"),
+            "potato" | "potatoes" => push(&mut expansions, "potatoes flesh and skin"),
+            "avocado" | "avocados" => push(&mut expansions, "avocados raw"),
+            "pepper" | "peppers" => push(&mut expansions, "peppers sweet"),
+            "chili" | "chilies" | "chilli" => push(&mut expansions, "peppers hot chili"),
+            "yeast" => push(&mut expansions, "yeast bakers"),
+            "salt" => push(&mut expansions, "salt table"),
+            "sugar" => push(&mut expansions, "sugars granulated"),
+            "cumin" => push(&mut expansions, "spices cumin seed"),
+            "cinnamon" => push(&mut expansions, "spices cinnamon"),
+            "nutmeg" => push(&mut expansions, "spices nutmeg"),
+            "ginger" => push(&mut expansions, "spices ginger"),
+            "paprika" => push(&mut expansions, "spices paprika"),
+            "rice" => push(&mut expansions, "rice white"),
+            "lentils" => push(&mut expansions, "lentils raw"),
+            "oats" => push(&mut expansions, "oats regular"),
+            "yogurt" => push(&mut expansions, "yogurt plain"),
+            "mayonnaise" | "mayo" | "aioli" => push(&mut expansions, "salad dressing mayonnaise"),
+            _ => {}
+        }
+    }
+
+    expansions
+}
 
 pub fn normalize_ingredient_name(name: &str) -> String {
     name.to_lowercase()
@@ -278,20 +613,72 @@ pub fn normalize_ingredient_name(name: &str) -> String {
         .join(" ")
 }
 
+/// Content tokens for an ingredient name, with synonym expansions appended.
+pub fn ingredient_query_tokens(name: &str) -> Vec<String> {
+    let normalized = normalize_ingredient_name(name);
+    let mut tokens: Vec<String> = normalized
+        .split_whitespace()
+        .filter(|word| word.len() > 1)
+        .map(|word| word.to_owned())
+        .collect();
+    if tokens.is_empty() {
+        tokens = name
+            .split(|character: char| !character.is_alphanumeric())
+            .filter(|word| !word.is_empty())
+            .map(|word| word.to_ascii_lowercase())
+            .collect();
+    }
+    for expansion in synonym_expansions(&normalized) {
+        for token in expansion.split_whitespace() {
+            let token = token.to_owned();
+            if token.len() > 1 && !tokens.iter().any(|existing| existing == &token) {
+                tokens.push(token);
+            }
+        }
+    }
+    tokens
+}
+
+/// Primary FTS query using AND of core tokens (synonym-aware).
 pub fn fts_query_from_ingredient(name: &str) -> String {
-    let normalized = name.to_lowercase();
-    let words: Vec<&str> = normalized
-        .split(|character: char| !character.is_alphanumeric())
+    fts_queries_from_ingredient(name)
+        .into_iter()
+        .next()
+        .unwrap_or_default()
+}
+
+/// Ordered FTS strategies: AND of primary tokens, then OR fallback, then synonym OR.
+pub fn fts_queries_from_ingredient(name: &str) -> Vec<String> {
+    let normalized = normalize_ingredient_name(name);
+    let primary: Vec<&str> = normalized
+        .split_whitespace()
         .filter(|word| word.len() > 2 && !INGREDIENT_STOP_WORDS.contains(word))
         .collect();
-    if words.is_empty() {
-        name.split(|character: char| character.is_whitespace())
+    let mut queries = Vec::new();
+    if !primary.is_empty() {
+        queries.push(primary.join(" AND "));
+        if primary.len() > 1 {
+            queries.push(primary.join(" OR "));
+        }
+    }
+    let expanded = ingredient_query_tokens(name);
+    if !expanded.is_empty() {
+        let or_expanded = expanded.join(" OR ");
+        if !queries.iter().any(|query| query == &or_expanded) {
+            queries.push(or_expanded);
+        }
+    }
+    if queries.is_empty() {
+        let fallback = name
+            .split_whitespace()
             .filter(|word| !word.is_empty())
             .collect::<Vec<_>>()
-            .join(" OR ")
-    } else {
-        words.join(" OR ")
+            .join(" OR ");
+        if !fallback.is_empty() {
+            queries.push(fallback);
+        }
     }
+    queries
 }
 
 fn trigrams(value: &str) -> BTreeSet<String> {
@@ -336,33 +723,98 @@ fn token_overlap_score(left: &str, right: &str) -> f64 {
 }
 
 pub fn string_similarity(left: &str, right: &str) -> f64 {
-    let left = normalize_ingredient_name(left);
-    let right = normalize_ingredient_name(right);
-    if left == right {
+    let left_norm = normalize_ingredient_name(left);
+    let right_norm = normalize_ingredient_name(right);
+    if left_norm == right_norm {
         return 1.0;
     }
-    let left_trigrams = trigrams(&left);
-    let right_trigrams = trigrams(&right);
-    let trigram_score = if left_trigrams.is_empty() && right_trigrams.is_empty() {
-        1.0
-    } else {
-        let intersection = left_trigrams.intersection(&right_trigrams).count();
-        let union = left_trigrams.union(&right_trigrams).count();
-        if union == 0 {
+    // Also compare against synonym-expanded forms.
+    let left_variants = {
+        let mut variants = synonym_expansions(&left_norm);
+        variants.insert(0, left_norm.clone());
+        variants
+    };
+    let mut best = 0.0_f64;
+    for left_variant in &left_variants {
+        if left_variant == &right_norm || right_norm.contains(left_variant) && !left_variant.is_empty()
+        {
+            best = best.max(0.95);
+        }
+        let left_trigrams = trigrams(left_variant);
+        let right_trigrams = trigrams(&right_norm);
+        let trigram_score = if left_trigrams.is_empty() && right_trigrams.is_empty() {
             1.0
         } else {
-            intersection as f64 / union as f64
-        }
-    };
-    trigram_score.max(token_overlap_score(&left, &right))
+            let intersection = left_trigrams.intersection(&right_trigrams).count();
+            let union = left_trigrams.union(&right_trigrams).count();
+            if union == 0 {
+                1.0
+            } else {
+                intersection as f64 / union as f64
+            }
+        };
+        let overlap = token_overlap_score(left_variant, &right_norm);
+        best = best.max(trigram_score.max(overlap));
+    }
+    best
+}
+
+fn data_type_bonus(data_type: &str) -> f64 {
+    let lowered = data_type.to_ascii_lowercase().replace([' ', '-'], "_");
+    match lowered.as_str() {
+        "foundation_food" | "foundation" => 0.18,
+        "sr_legacy_food" | "sr_legacy" => 0.15,
+        "survey_fndds_food" | "survey_fndds" | "fndds" => 0.05,
+        "branded_food" | "branded" => -0.12,
+        _ => 0.0,
+    }
+}
+
+fn match_quality_bonus(query: &str, result: &NutritionSearchResult) -> f64 {
+    let query_norm = normalize_ingredient_name(query);
+    let desc_norm = normalize_ingredient_name(&result.description);
+    let mut bonus = data_type_bonus(&result.data_type);
+
+    if !query_norm.is_empty() && desc_norm.starts_with(&query_norm) {
+        bonus += 0.2;
+    } else if !query_norm.is_empty() && desc_norm.contains(&query_norm) {
+        bonus += 0.12;
+    }
+
+    let query_tokens: Vec<&str> = query_norm.split_whitespace().collect();
+    if !query_tokens.is_empty()
+        && query_tokens
+            .iter()
+            .all(|token| desc_norm.split_whitespace().any(|other| tokens_match(token, other)))
+    {
+        bonus += 0.1;
+    }
+
+    if result.brand_owner.as_deref().is_some_and(|brand| !brand.is_empty()) {
+        bonus -= 0.08;
+    }
+
+    // Long multi-ingredient branded descriptions are usually poor generic matches.
+    let comma_count = result.description.matches(',').count();
+    if comma_count >= 3 && data_type_bonus(&result.data_type) < 0.0 {
+        bonus -= 0.05;
+    }
+
+    bonus
 }
 
 pub fn rank_fuzzy_matches(query: &str, results: &[NutritionSearchResult]) -> Vec<FuzzyFoodMatch> {
     let mut ranked: Vec<FuzzyFoodMatch> = results
         .iter()
-        .map(|result| FuzzyFoodMatch {
-            score: string_similarity(query, &result.description),
-            result: result.clone(),
+        .map(|result| {
+            let base = string_similarity(query, &result.description);
+            // Allow quality bonuses to exceed 1.0 so Foundation/SR Legacy can
+            // outrank branded rows with equally perfect token overlap.
+            let score = (base + match_quality_bonus(query, result)).max(0.0);
+            FuzzyFoodMatch {
+                score,
+                result: result.clone(),
+            }
         })
         .collect();
     ranked.sort_by(|left, right| {
@@ -370,6 +822,12 @@ pub fn rank_fuzzy_matches(query: &str, results: &[NutritionSearchResult]) -> Vec
             .score
             .partial_cmp(&left.score)
             .unwrap_or(std::cmp::Ordering::Equal)
+            .then_with(|| {
+                data_type_bonus(&right.result.data_type)
+                    .partial_cmp(&data_type_bonus(&left.result.data_type))
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            })
+            .then_with(|| left.result.fdc_id.cmp(&right.result.fdc_id))
     });
     ranked
 }

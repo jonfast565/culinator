@@ -317,10 +317,52 @@ fn normalize_ingredient_key(name: &str) -> String {
 
 fn builtin_density(key: &str) -> Option<f64> {
     Some(match key {
-        "water" => 1.0,
-        "flour" | "all purpose flour" | "all-purpose flour" | "ap flour" => 0.59,
-        "sugar" | "granulated sugar" | "white sugar" => 0.85,
-        "butter" => 0.911,
+        "water" | "warm water" => 1.0,
+        "flour"
+        | "all purpose flour"
+        | "all-purpose flour"
+        | "ap flour"
+        | "wheat flour"
+        | "bread flour"
+        | "cake flour" => 0.59,
+        "sugar" | "granulated sugar" | "white sugar" | "caster sugar" => 0.85,
+        "brown sugar" | "light brown sugar" | "dark brown sugar" => 0.93,
+        "powdered sugar" | "confectioners sugar" | "icing sugar" => 0.56,
+        "butter" | "unsalted butter" | "salted butter" | "melted butter" => 0.911,
+        "milk" | "whole milk" | "warm milk" | "2% milk" | "skim milk" => 1.03,
+        "buttermilk" => 1.03,
+        "cream" | "heavy cream" | "whipping cream" | "heavy whipping cream" => 0.994,
+        "oil" | "vegetable oil" | "canola oil" | "neutral oil" | "cooking oil" => 0.92,
+        "olive oil" | "extra virgin olive oil" | "evoo" => 0.91,
+        "sesame oil" => 0.92,
+        "coconut oil" => 0.92,
+        "salt" | "kosher salt" | "sea salt" | "table salt" => 1.22,
+        "baking powder" => 0.9,
+        "baking soda" | "bicarbonate of soda" => 0.95,
+        "yeast" | "instant yeast" | "active dry yeast" | "dry yeast" => 0.8,
+        "honey" => 1.42,
+        "maple syrup" => 1.32,
+        "soy sauce" => 1.12,
+        "vinegar" | "white vinegar" | "apple cider vinegar" | "rice vinegar" => 1.01,
+        "broth" | "stock" | "chicken broth" | "beef broth" | "vegetable broth" => 1.01,
+        "wine" | "red wine" | "white wine" | "dry wine" => 0.99,
+        "cinnamon" | "ground cinnamon" => 0.56,
+        "nutmeg" | "ground nutmeg" => 0.47,
+        "ginger" | "ground ginger" => 0.45,
+        "cumin" | "ground cumin" => 0.45,
+        "paprika" | "chili powder" | "cayenne" | "black pepper" | "pepper" => 0.45,
+        "oregano" | "dried oregano" | "thyme" | "dried thyme" | "basil" | "dried basil" => 0.3,
+        "cocoa" | "cocoa powder" | "unsweetened cocoa" => 0.5,
+        "cornstarch" | "corn starch" | "cornflour" => 0.54,
+        "oats" | "rolled oats" | "old fashioned oats" => 0.36,
+        "rice" | "white rice" | "long grain rice" | "jasmine rice" => 0.85,
+        "lentils" | "red lentils" | "brown lentils" => 0.85,
+        "bulgur" | "bulgur wheat" => 0.7,
+        "mayonnaise" | "mayo" | "aioli" => 0.91,
+        "yogurt" | "greek yogurt" | "plain yogurt" => 1.05,
+        "tomato paste" => 1.15,
+        "tomato sauce" => 1.04,
+        "lemon juice" | "lime juice" | "fresh lemon juice" | "fresh lime juice" => 1.03,
         _ => return None,
     })
 }
