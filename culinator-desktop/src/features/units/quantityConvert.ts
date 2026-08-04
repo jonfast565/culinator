@@ -165,6 +165,78 @@ export function quantityDimension(unit: string): string | null {
   return null;
 }
 
+/** Metric vs US for a mass/volume unit; null for count, time, or unknown. */
+export function unitSystemOf(unit: string): UnitSystem | null {
+  const normalized = normalizeUnit(unit);
+  if (METRIC_MASS.has(normalized) || METRIC_VOLUME.has(normalized)) return "metric";
+  if (US_MASS.has(normalized) || US_VOLUME.has(normalized)) return "us_customary";
+  return null;
+}
+
+/**
+ * Dominant mass vs volume among ingredient quantity strings.
+ * Ties and count-only lists return null.
+ */
+export function dominantIngredientDimension(
+  quantities: Iterable<string>,
+): "mass" | "volume" | null {
+  let mass = 0;
+  let volume = 0;
+  for (const text of quantities) {
+    const parsed = parseQuantity(text);
+    if (!parsed) continue;
+    const dimension = quantityDimension(parsed.unit);
+    if (dimension === "mass") mass += 1;
+    else if (dimension === "volume") volume += 1;
+  }
+  if (mass === volume) return null;
+  return mass > volume ? "mass" : "volume";
+}
+
+/**
+ * Unit system that keeps a recipe's mass/volume ingredients as authored.
+ * Prefers the system used by the dominant dimension (volume→cups/tsp stay US;
+ * mass→g stay metric when that is how they were written). Count-only or ties
+ * return null so a leftover display preference is left alone only then.
+ */
+export function detectAuthoredUnitSystem(quantities: Iterable<string>): UnitSystem | null {
+  let massMetric = 0;
+  let massUs = 0;
+  let volumeMetric = 0;
+  let volumeUs = 0;
+  for (const text of quantities) {
+    const parsed = parseQuantity(text);
+    if (!parsed) continue;
+    const dimension = quantityDimension(parsed.unit);
+    const system = unitSystemOf(parsed.unit);
+    if (!system || (dimension !== "mass" && dimension !== "volume")) continue;
+    if (dimension === "mass") {
+      if (system === "metric") massMetric += 1;
+      else massUs += 1;
+    } else if (system === "metric") volumeMetric += 1;
+    else volumeUs += 1;
+  }
+
+  const mass = massMetric + massUs;
+  const volume = volumeMetric + volumeUs;
+  if (mass === 0 && volume === 0) return null;
+
+  const majority = (metric: number, us: number): UnitSystem | null => {
+    if (metric === us) return null;
+    return metric > us ? "metric" : "us_customary";
+  };
+
+  if (mass > volume) {
+    return majority(massMetric, massUs) ?? majority(massMetric + volumeMetric, massUs + volumeUs);
+  }
+  if (volume > mass) {
+    return (
+      majority(volumeMetric, volumeUs) ?? majority(massMetric + volumeMetric, massUs + volumeUs)
+    );
+  }
+  return majority(massMetric + volumeMetric, massUs + volumeUs);
+}
+
 export function isConvertibleUnit(unit: string): boolean {
   const dimension = quantityDimension(unit);
   return dimension != null && dimension !== "count";

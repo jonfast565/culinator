@@ -14,6 +14,7 @@ export default defineConfig({
       "src/features/recipe-builder/**/*.test.ts",
       "src/features/recipe-editor/**/*.test.ts",
       "src/features/reading/**/*.test.ts",
+      "src/features/units/**/*.test.ts",
     ],
   },
 });

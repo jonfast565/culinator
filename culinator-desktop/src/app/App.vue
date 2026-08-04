@@ -56,6 +56,16 @@ watch(
   },
   { immediate: true },
 );
+// When the open recipe changes, match unit display to that recipe's authored
+// mass/volume quantities so a leftover Metric/US preference does not convert
+// cups↔ml or g↔oz away from how the recipe was written.
+watch(
+  () => library.selectedRecipe.value?.id,
+  (id) => {
+    if (!id) return;
+    unitDisplay.syncToRecipe(editor.model.value);
+  },
+);
 
 const textSizeLabel = computed(() => {
   if (viewSettings.textSize.value === "large") return "A+";

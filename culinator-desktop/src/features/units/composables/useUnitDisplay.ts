@@ -3,11 +3,17 @@ import type { InjectionKey, Ref } from "vue";
 import type { UnitSystem } from "../../../domain/types";
 import type { UiRecipeModel } from "../../recipe-editor/model";
 import { convertRecipeQuantitiesInSource } from "../../recipe-editor/sourcePatch";
-import { convertQuantityForDisplay, convertQuantityForSource } from "../quantityConvert";
+import {
+  convertQuantityForDisplay,
+  convertQuantityForSource,
+  detectAuthoredUnitSystem,
+} from "../quantityConvert";
 
 export interface UnitDisplayContext {
   unitSystem: Ref<UnitSystem>;
   toggleUnitSystem: () => void;
+  /** Align display with a recipe's authored mass/volume units when opening it. */
+  syncToRecipe: (model: UiRecipeModel) => void;
   formatQuantity: (text: string | undefined) => Promise<string>;
   convertRecipeSource: (source: string, model: UiRecipeModel) => Promise<string>;
 }
@@ -40,6 +46,17 @@ export function useUnitDisplay() {
     unitSystem.value = unitSystem.value === "metric" ? "us_customary" : "metric";
   }
 
+  function syncToRecipe(model: UiRecipeModel): void {
+    const quantities: string[] = [];
+    for (const resource of model.resources) {
+      if (resource.kind === "ingredient" && resource.quantity) {
+        quantities.push(resource.quantity);
+      }
+    }
+    const authored = detectAuthoredUnitSystem(quantities);
+    if (authored) unitSystem.value = authored;
+  }
+
   async function formatQuantity(text: string | undefined): Promise<string> {
     const raw = text?.trim();
     if (!raw) return raw ?? "";
@@ -52,7 +69,7 @@ export function useUnitDisplay() {
     return convertRecipeQuantitiesInSource(source, ingredients, model.operations ?? [], convert);
   }
 
-  return { unitSystem, toggleUnitSystem, formatQuantity, convertRecipeSource };
+  return { unitSystem, toggleUnitSystem, syncToRecipe, formatQuantity, convertRecipeSource };
 }
 
 export async function formatOperationTemperature(
