@@ -14,10 +14,35 @@ import { ref, watch } from "vue";
 const props = defineProps<{ modelValue: string; disabled?: boolean }>();
 const emit = defineEmits<{ commit: [value: string] }>();
 
+/** Common cooking units — free text still accepts anything the grammar keeps. */
+const UNITS = [
+  "g",
+  "kg",
+  "oz",
+  "lb",
+  "ml",
+  "l",
+  "tsp",
+  "tbsp",
+  "cup",
+  "pint",
+  "quart",
+  "gallon",
+  "clove",
+  "count",
+  "pinch",
+  "dash",
+  "stick",
+  "bunch",
+  "slice",
+  "can",
+];
+
 const amount = ref("");
 const max = ref("");
 const unit = ref("");
 const root = ref<HTMLElement>();
+const unitsListId = `quantity-units-${Math.random().toString(36).slice(2, 8)}`;
 
 function parse(quantity: string): void {
   const text = quantity.trim();
@@ -72,7 +97,13 @@ function commit(): void {
   <div ref="root" class="quantity-field">
     <label>
       <span>Amount</span>
-      <input v-model="amount" :disabled="disabled" inputmode="decimal" @change="commit" />
+      <input
+        v-model="amount"
+        data-focus-priority
+        :disabled="disabled"
+        inputmode="decimal"
+        @change="commit"
+      />
     </label>
     <label class="to">
       <span>to</span>
@@ -86,8 +117,17 @@ function commit(): void {
     </label>
     <label>
       <span>Unit</span>
-      <input v-model="unit" :disabled="disabled" placeholder="g, ml, clove…" @change="commit" />
+      <input
+        v-model="unit"
+        :list="unitsListId"
+        :disabled="disabled"
+        placeholder="g, ml, clove…"
+        @change="commit"
+      />
     </label>
+    <datalist :id="unitsListId">
+      <option v-for="option in UNITS" :key="option" :value="option" />
+    </datalist>
   </div>
 </template>
 

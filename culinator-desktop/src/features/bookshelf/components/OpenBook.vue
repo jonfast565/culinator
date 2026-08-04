@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { ChevronLeft, Search, Loader2, BookOpen, ListChecks, X } from "lucide-vue-next";
+import { ChevronLeft, Search, Loader2, BookOpen, ListChecks, Plus, X } from "lucide-vue-next";
 import { getRecipe } from "../../../services/api";
 import { parseUiModel } from "../../recipe-editor/model";
 import { buildLeaves, sectionOf, type LoadedRecipe } from "../bookContents";
@@ -19,6 +19,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (event: "back"): void;
   (event: "open-recipe", recipeId: string): void;
+  (event: "create-recipe"): void;
   (event: "bulk-move", ids: string[], bookId: string | null): void;
   (event: "bulk-delete", ids: string[]): void;
 }>();
@@ -154,6 +155,9 @@ onBeforeUnmount(unregisterSearch);
     <div v-if="loading" class="book-loading"><Loader2 :size="22" class="spin" /> Opening book…</div>
     <div v-else-if="!loaded.length" class="book-empty">
       <p>This book has no recipes yet.</p>
+      <button class="primary" type="button" @click="emit('create-recipe')">
+        <Plus :size="15" /> Add recipe
+      </button>
     </div>
     <BookManage
       v-else-if="mode === 'manage'"
@@ -318,10 +322,19 @@ onBeforeUnmount(unregisterSearch);
 .book-empty {
   flex: 1;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 12px;
   color: #6d7972;
+}
+.book-empty p {
+  margin: 0;
+}
+.book-empty .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .spin {
   animation: spin 1s linear infinite;

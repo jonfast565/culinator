@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* global Event, HTMLElement, KeyboardEvent */
+/* global Event, HTMLElement, KeyboardEvent, navigator */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { BookOpen, ChevronDown, Circle, FilePlus2, Home, Import, Save } from "lucide-vue-next";
 import type { AppView } from "../useNavigation";
@@ -28,9 +28,15 @@ type MenuItem = {
   label: string;
   action: AppMenuAction;
   hint?: string;
+  shortcut?: string;
   disabled?: boolean;
   divider?: boolean;
 };
+
+const mod =
+  typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac")
+    ? "⌘"
+    : "Ctrl+";
 
 const props = defineProps<{
   view: AppView;
@@ -66,12 +72,17 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
     recipeOnly: true,
     items: [
       { label: "Read recipe", action: "read", disabled: props.view === "reading" },
-      { label: "Edit recipe", action: "build" },
-      { label: "Edit source", action: "edit-source" },
-      { label: "Structured builder", action: "build" },
+      {
+        label: "Edit recipe",
+        action: "build",
+        hint: "Structured builder",
+        shortcut: `${mod}E`,
+      },
+      { label: "Edit source", action: "edit-source", hint: "Raw DSL", shortcut: `${mod}E` },
       {
         label: props.saving ? "Saving…" : "Save changes",
         action: "save",
+        shortcut: `${mod}S`,
         disabled: !props.dirty || props.saving,
         divider: true,
       },
@@ -122,7 +133,7 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
     recipeOnly: true,
     items: [
       { label: "Workflow graph", action: "tool:author" },
-      { label: "Diagnostics", action: "edit-source" },
+      { label: "Jump to source issues", action: "edit-source", hint: "Open source + Issues" },
     ],
   },
   {
@@ -204,7 +215,10 @@ onBeforeUnmount(() => {
             :disabled="item.disabled"
             @click="choose(item)"
           >
-            <span>{{ item.label }}</span>
+            <span class="item-main">
+              <span>{{ item.label }}</span>
+              <kbd v-if="item.shortcut">{{ item.shortcut }}</kbd>
+            </span>
             <small v-if="item.hint">{{ item.hint }}</small>
           </button>
         </div>
@@ -320,6 +334,25 @@ onBeforeUnmount(() => {
 }
 .menu-popover small {
   font-size: 10px;
+  color: #6d7972;
+}
+.item-main {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.item-main kbd {
+  flex: 0 0 auto;
+  padding: 1px 5px;
+  border: 1px solid #d3d8d1;
+  border-radius: 4px;
+  background: #f0f3f0;
+  color: #55635b;
+  font-size: 10px;
+  font-family: inherit;
+  font-weight: 600;
 }
 .menu-context {
   min-width: 0;

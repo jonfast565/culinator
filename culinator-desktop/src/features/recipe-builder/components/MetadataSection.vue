@@ -64,6 +64,7 @@ function removeCover(): void {
         label="Title"
         :model-value="metadata.title"
         placeholder="e.g. Pizza Dough"
+        :autofocus="!metadata.title || metadata.title === 'Untitled Recipe'"
         @commit="commit('title', $event)"
       />
       <div class="field-row">

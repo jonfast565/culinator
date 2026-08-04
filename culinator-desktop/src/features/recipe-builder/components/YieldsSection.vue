@@ -27,7 +27,19 @@ function onMeasurement(symbol: string, event: Event): void {
       <h3>Yield</h3>
     </div>
 
-    <p v-if="!yields.length" class="empty">No yield declared. Say how much the recipe makes.</p>
+    <div v-if="!yields.length" class="empty-cta">
+      <p class="empty">
+        How much does this recipe make? Add servings or a yield so cooks can scale it.
+      </p>
+      <div class="empty-actions">
+        <button class="primary" :disabled="disabled" @click="emit('add', 'serving')">
+          <Plus :size="14" /> Add servings
+        </button>
+        <button :disabled="disabled" @click="emit('add', 'yield')">
+          <Plus :size="14" /> Yield
+        </button>
+      </div>
+    </div>
 
     <div class="rows">
       <div v-for="item in yields" :key="item.symbol" class="yield-row card">
@@ -64,7 +76,7 @@ function onMeasurement(symbol: string, event: Event): void {
       </div>
     </div>
 
-    <div class="add-row">
+    <div v-if="yields.length" class="add-row">
       <button :disabled="disabled" @click="emit('add', 'yield')"><Plus :size="14" /> Yield</button>
       <button :disabled="disabled" @click="emit('add', 'serving')">
         <Plus :size="14" /> Serving
@@ -74,10 +86,31 @@ function onMeasurement(symbol: string, event: Event): void {
 </template>
 
 <style scoped>
+.empty-cta {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-bottom: 4px;
+  padding: 14px 16px;
+  border: 1px dashed #cfd6d0;
+  border-radius: 10px;
+  background: #fbfcfa;
+}
 .empty {
-  color: #8a938c;
+  color: #6d7972;
   font-size: 13px;
-  margin: 0 0 12px;
+  margin: 0;
+}
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.empty-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
 }
 .rows {
   display: grid;

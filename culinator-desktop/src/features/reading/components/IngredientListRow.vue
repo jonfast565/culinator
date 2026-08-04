@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import type { IngredientDisplayParts } from "../../recipe-editor/narrative";
 
-defineProps<{ parts: IngredientDisplayParts }>();
+defineProps<{
+  parts: IngredientDisplayParts;
+  selectable?: boolean;
+  highlighted?: boolean;
+}>();
+const emit = defineEmits<{ select: [symbol: string] }>();
 </script>
 
 <template>
-  <li class="ingredient-row">
+  <li
+    class="ingredient-row"
+    :class="{ selectable, highlighted }"
+    :data-preview-symbol="parts.symbol"
+    @click="selectable && parts.symbol && emit('select', parts.symbol)"
+  >
     <span class="ingredient-qty">{{ parts.amount }}</span>
     <span class="ingredient-body">
       <span class="ingredient-name">{{ parts.description }}</span>
@@ -22,6 +32,20 @@ defineProps<{ parts: IngredientDisplayParts }>();
   align-items: baseline;
   padding: 8px 0;
   border-bottom: 1px dashed #e2e0d4;
+}
+.ingredient-row.selectable {
+  cursor: pointer;
+  border-radius: 6px;
+  margin: 0 -6px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.ingredient-row.selectable:hover {
+  background: rgb(40 100 59 / 8%);
+}
+.ingredient-row.highlighted {
+  background: rgb(40 100 59 / 12%);
+  box-shadow: inset 3px 0 0 #28643b;
 }
 .ingredient-row:last-child {
   border-bottom: 0;

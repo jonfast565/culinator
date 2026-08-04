@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, inject, toRef, watch } from "vue";
+/* global CSS */
+import { computed, inject, nextTick, toRef, watch } from "vue";
 import { CheckCircle2, ChefHat } from "lucide-vue-next";
 import type { TryOperation } from "../../../domain/types";
 import {
@@ -26,11 +27,14 @@ const props = defineProps<{
   recipeId?: string;
   editable?: boolean;
   kitchenMode?: boolean;
+  /** Symbol currently focused in the builder — preview rows pulse to match. */
+  highlightedSymbol?: string | null;
 }>();
 
 const emit = defineEmits<{
   "update:source": [value: string];
   "kitchen-finished": [];
+  "select-symbol": [symbol: string];
 }>();
 
 const dialog = useAppDialog();
@@ -113,12 +117,48 @@ async function removeStep(step: NarrativeStep): Promise<void> {
 }
 
 const eyebrow = computed(() => props.model.attribution || props.model.source || "Recipe");
+
+const kitchenProgress = computed(() => {
+  const ops = activeTry.value?.operations;
+  if (!ops?.length) return "";
+  const done = ops.filter(
+    (operation) => operation.status === "completed" || operation.status === "skipped",
+  ).length;
+  return `${done} of ${ops.length} steps done`;
+});
+
+const kitchenProgressRatio = computed(() => {
+  const ops = activeTry.value?.operations;
+  if (!ops?.length) return null;
+  const done = ops.filter(
+    (operation) => operation.status === "completed" || operation.status === "skipped",
+  ).length;
+  return done / ops.length;
+});
+
+watch(
+  () => props.highlightedSymbol,
+  (symbol) => {
+    if (!symbol) return;
+    void nextTick(() => {
+      document
+        .querySelector(`[data-preview-symbol="${CSS.escape(symbol)}"]`)
+        ?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  },
+);
 </script>
 
 <template>
   <article class="leaf" :class="{ 'kitchen-leaf': kitchenMode }">
     <div v-if="kitchenMode" class="kitchen-strip">
-      <span><ChefHat :size="15" /> Kitchen mode</span>
+      <div class="kitchen-progress">
+        <span><ChefHat :size="15" /> Kitchen mode</span>
+        <small v-if="kitchenProgress">{{ kitchenProgress }}</small>
+        <div v-if="kitchenProgressRatio != null" class="progress-track" aria-hidden="true">
+          <div class="progress-fill" :style="{ width: `${kitchenProgressRatio * 100}%` }"></div>
+        </div>
+      </div>
       <button type="button" class="finish-kitchen" :disabled="!activeTry" @click="finishKitchen">
         <CheckCircle2 :size="14" /> Finish cooking
       </button>
@@ -138,8 +178,20 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
     <template v-if="!colocated">
       <section class="leaf-section ingredients">
         <h2 class="section-label">Ingredients</h2>
-        <IngredientGroupList v-if="ingredientGroups.length" :groups="ingredientGroups" />
-        <p v-else class="empty">No ingredients listed yet.</p>
+        <IngredientGroupList
+          v-if="ingredientGroups.length"
+          :groups="ingredientGroups"
+          :selectable="editable"
+          :highlighted-symbol="highlightedSymbol"
+          @select="emit('select-symbol', $event)"
+        />
+        <p v-else class="empty">
+          {{
+            editable
+              ? "No ingredients yet — add some in Resources, or click Quick-add."
+              : "No ingredients listed yet."
+          }}
+        </p>
       </section>
 
       <section v-if="equipment.length" class="leaf-section equipment">
@@ -157,7 +209,12 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
       <template v-if="colocated && hasSteps">
         <section v-for="section in sections" :key="section.process" class="method-section">
           <h3 v-if="section.title" class="section-label process-heading">{{ section.title }}</h3>
-          <MiseBlock :mise="section.mise" />
+          <MiseBlock
+            :mise="section.mise"
+            :selectable="editable"
+            :highlighted-symbol="highlightedSymbol"
+            @select="emit('select-symbol', $event)"
+          />
           <p v-if="section.note" class="section-note">{{ section.note }}</p>
           <div class="steps">
             <RecipeStepRow
@@ -170,9 +227,11 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
               :time="step.time"
               :recipe-id="recipeId"
               :editable="editable"
+              :highlighted="highlightedSymbol === step.symbol"
               :kitchen-operation="kitchenOperationFor(step)"
               :kitchen-timer="kitchenTimerFor(step)"
               @delete="removeStep(step)"
+              @select="emit('select-symbol', $event)"
               @start-timer="runKitchenAction(() => startOperation($event))"
               @complete-timer="runKitchenAction(() => completeOperation($event))"
             />
@@ -195,15 +254,19 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
             :time="step.time"
             :recipe-id="recipeId"
             :editable="editable"
+            :highlighted="highlightedSymbol === step.symbol"
             :kitchen-operation="kitchenOperationFor(step)"
             :kitchen-timer="kitchenTimerFor(step)"
             @delete="removeStep(step)"
+            @select="emit('select-symbol', $event)"
             @start-timer="runKitchenAction(() => startOperation($event))"
             @complete-timer="runKitchenAction(() => completeOperation($event))"
           />
         </template>
       </div>
-      <p v-else class="empty">No steps yet.</p>
+      <p v-else class="empty">
+        {{ editable ? "No steps yet — add a first step in Method on the right." : "No steps yet." }}
+      </p>
     </section>
 
     <footer v-if="model.attribution || model.source" class="leaf-credit">
@@ -264,19 +327,43 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   padding-bottom: 14px;
   border-bottom: 1px solid var(--rule);
 }
-.kitchen-strip > span,
+.kitchen-progress {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+.kitchen-progress > span,
 .finish-kitchen {
   display: inline-flex;
   align-items: center;
   gap: 7px;
   font-family: var(--sans);
 }
-.kitchen-strip > span {
+.kitchen-progress > span {
   color: var(--herb);
   font-size: calc(12px * var(--reading-scale, 1));
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+.kitchen-progress small {
+  font-family: var(--sans);
+  font-size: calc(12px * var(--reading-scale, 1));
+  color: #6d7972;
+}
+.progress-track {
+  height: 4px;
+  max-width: 220px;
+  border-radius: 999px;
+  background: #dfe6df;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #28643b;
+  transition: width 0.25s ease;
 }
 .finish-kitchen {
   padding: 6px 10px;

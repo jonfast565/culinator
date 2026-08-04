@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/* global HTMLElement */
-import { ref, watch } from "vue";
+/* global HTMLElement, KeyboardEvent */
+import { computed, ref, watch } from "vue";
 import { Plus, X } from "lucide-vue-next";
 import type { BuilderBinding } from "../composables/useRecipeBuilder";
 
@@ -15,9 +15,13 @@ const props = defineProps<{
   options: string[];
   disabled?: boolean;
   listId: string;
+  /** Create a missing ingredient and return its symbol. */
+  createIngredient?: (name: string) => string | undefined;
 }>();
 
-const emit = defineEmits<{ commit: [bindings: BuilderBinding[]] }>();
+const emit = defineEmits<{
+  commit: [bindings: BuilderBinding[]];
+}>();
 
 const local = ref<BuilderBinding[]>(props.bindings.map((binding) => ({ ...binding })));
 const root = ref<HTMLElement>();
@@ -30,6 +34,8 @@ watch(
     }
   },
 );
+
+const optionSet = computed(() => new Set(props.options));
 
 function commit(): void {
   emit(
@@ -44,6 +50,32 @@ function removeAt(index: number): void {
   local.value = local.value.filter((_, i) => i !== index);
   commit();
 }
+
+function unknownName(symbol: string): string | null {
+  const clean = symbol.trim();
+  if (!clean || optionSet.value.has(clean)) return null;
+  return clean;
+}
+
+function createAt(index: number): void {
+  const name = unknownName(local.value[index]?.symbol ?? "");
+  if (!name || !props.createIngredient) return;
+  const symbol = props.createIngredient(name);
+  if (!symbol) return;
+  local.value = local.value.map((binding, i) => (i === index ? { ...binding, symbol } : binding));
+  commit();
+}
+
+function onSymbolChange(): void {
+  // Unknown names stay editable so the author can click "Add ingredient".
+  commit();
+}
+
+function onSymbolEnter(index: number, event: KeyboardEvent): void {
+  if (!unknownName(local.value[index]?.symbol ?? "")) return;
+  event.preventDefault();
+  createAt(index);
+}
 </script>
 
 <template>
@@ -52,24 +84,37 @@ function removeAt(index: number): void {
     <datalist :id="listId">
       <option v-for="option in options" :key="option" :value="option" />
     </datalist>
-    <div v-for="(binding, index) in local" :key="index" class="binding-row">
-      <input
-        v-model="binding.symbol"
-        :list="listId"
+    <div v-for="(binding, index) in local" :key="index" class="binding-block">
+      <div class="binding-row" :class="{ unknown: !!unknownName(binding.symbol) }">
+        <input
+          v-model="binding.symbol"
+          :list="listId"
+          :disabled="disabled"
+          placeholder="ingredient"
+          aria-label="Ingredient"
+          :data-focus-priority="index === 0 && !binding.symbol.trim() ? '' : undefined"
+          @change="onSymbolChange"
+          @keydown.enter="onSymbolEnter(index, $event)"
+        />
+        <input
+          v-model="binding.quantity"
+          :disabled="disabled"
+          placeholder="amount (optional)"
+          aria-label="Per-step amount"
+          @change="commit"
+        />
+        <button class="icon" title="Remove" :disabled="disabled" @click="removeAt(index)">
+          <X :size="14" />
+        </button>
+      </div>
+      <button
+        v-if="createIngredient && unknownName(binding.symbol)"
+        type="button"
+        class="create-btn"
         :disabled="disabled"
-        placeholder="ingredient"
-        aria-label="Ingredient"
-        @change="commit"
-      />
-      <input
-        v-model="binding.quantity"
-        :disabled="disabled"
-        placeholder="amount (optional)"
-        aria-label="Per-step amount"
-        @change="commit"
-      />
-      <button class="icon" title="Remove" :disabled="disabled" @click="removeAt(index)">
-        <X :size="14" />
+        @click="createAt(index)"
+      >
+        <Plus :size="13" /> Add “{{ unknownName(binding.symbol) }}” as ingredient
       </button>
     </div>
     <button class="add-row" :disabled="disabled" @click="add"><Plus :size="14" /> Add input</button>
@@ -79,22 +124,45 @@ function removeAt(index: number): void {
 <style scoped>
 .binding-editor {
   display: grid;
-  gap: 6px;
+  gap: 8px;
 }
 .editor-label {
   font-size: 12px;
   color: #657169;
+}
+.binding-block {
+  display: grid;
+  gap: 5px;
 }
 .binding-row {
   display: grid;
   grid-template-columns: 1.3fr 1fr auto;
   gap: 6px;
 }
+.binding-row.unknown input:first-child {
+  border-color: #c9a24a;
+  background: #fffdf6;
+}
 .icon {
   width: 34px;
   padding: 0;
   display: grid;
   place-items: center;
+}
+.create-btn {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  border: 1px dashed #8fb897;
+  background: #f3faf4;
+  color: #28643b;
+  font-size: 12px;
+  border-radius: 7px;
+}
+.create-btn:hover:not(:disabled) {
+  background: #e4efe6;
 }
 .add-row {
   justify-self: start;

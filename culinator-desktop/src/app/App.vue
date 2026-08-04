@@ -1,6 +1,6 @@
 <script setup lang="ts">
-/* global PointerEvent, HTMLElement, KeyboardEvent, DOMRect */
-import { computed, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
+/* global PointerEvent, HTMLElement, KeyboardEvent, DOMRect, EventTarget, navigator */
+import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
 import {
   Database,
   Pencil,
@@ -9,6 +9,9 @@ import {
   ChevronLeft,
   ChefHat,
   FileCode2,
+  Layers,
+  Hash,
+  Ruler,
   Save,
 } from "lucide-vue-next";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
@@ -65,10 +68,38 @@ const importing = ref(false);
 const activeTool = ref<InspectorTabId | null>(null);
 const kitchenMode = ref(false);
 const pendingDiagnostic = ref<Diagnostic | null>(null);
+const recipeBuilder = ref<{ focusSymbol: (symbol: string) => void } | null>(null);
+/** Symbol highlighted in the live preview (click sync with the builder). */
+const highlightedSymbol = ref<string | null>(null);
+
+function symbolAtOffset(offset: number | null | undefined): string | null {
+  if (offset == null) return null;
+  const model = editor.model.value;
+  for (const operation of model.operations) {
+    if (operation.range && offset >= operation.range.start && offset < operation.range.end) {
+      return operation.symbol;
+    }
+  }
+  for (const resource of model.resources) {
+    if (resource.range && offset >= resource.range.start && offset < resource.range.end) {
+      return resource.symbol;
+    }
+  }
+  return null;
+}
+
+function focusBuilderSymbol(symbol: string): void {
+  highlightedSymbol.value = symbol;
+  void nextTick(() => recipeBuilder.value?.focusSymbol(symbol));
+}
 
 const stopStatus = onConnectionStatus((status) => {
   connection.value = status;
 });
+
+const liveRecipeTitle = computed(
+  () => editor.model.value.title || library.selectedRecipe.value?.title || "Untitled recipe",
+);
 
 const openBookSummary = computed(
   () => library.books.value.find((book) => book.id === nav.bookId.value) ?? null,
@@ -105,6 +136,10 @@ function stopResize(): void {
 const diagnosticsHeight = ref(
   Math.max(90, Number(window.localStorage.getItem("cg:diagnostics-height")) || 170),
 );
+const diagnosticsExpanded = ref(window.localStorage.getItem("cg:diagnostics-expanded") !== "0");
+const diagnosticsRow = computed(() =>
+  diagnosticsExpanded.value ? `minmax(90px, ${diagnosticsHeight.value}px)` : "34px",
+);
 let diagnosticsStartY = 0;
 let diagnosticsStartHeight = 0;
 let diagnosticsMaxHeight = 420;
@@ -129,11 +164,55 @@ function stopDiagnosticsResize(): void {
   window.localStorage.setItem("cg:diagnostics-height", String(diagnosticsHeight.value));
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable ||
+    Boolean(target.closest(".cm-editor, [contenteditable='true']"))
+  );
+}
+
 function onGlobalKeydown(event: KeyboardEvent): void {
-  if (!isSearchShortcut(event)) return;
-  event.preventDefault();
-  if (nav.view.value === "shelf") triggerSearch("shelf");
-  else if (nav.view.value === "book") triggerSearch("book");
+  if (isSearchShortcut(event)) {
+    event.preventDefault();
+    if (nav.view.value === "shelf") triggerSearch("shelf");
+    else if (nav.view.value === "book") triggerSearch("book");
+    return;
+  }
+
+  const mod = event.metaKey || event.ctrlKey;
+
+  if (mod && event.key.toLowerCase() === "s" && library.selectedRecipe.value) {
+    event.preventDefault();
+    if (!saveBlocked.value) void save();
+    return;
+  }
+
+  if (mod && event.key.toLowerCase() === "e" && library.selectedRecipe.value) {
+    event.preventDefault();
+    if (nav.view.value === "reading" || nav.view.value === "editing") nav.build();
+    else if (nav.view.value === "building") editSource();
+    return;
+  }
+
+  if (event.key === "Escape") {
+    if (activeTool.value) {
+      event.preventDefault();
+      activeTool.value = null;
+      return;
+    }
+    if (
+      (nav.view.value === "editing" || nav.view.value === "building") &&
+      !isEditableTarget(event.target)
+    ) {
+      event.preventDefault();
+      void leaveEdit();
+    }
+  }
 }
 
 onMounted(() => window.addEventListener("keydown", onGlobalKeydown));
@@ -293,7 +372,30 @@ function editSource(): void {
 function openDiagnostic(diagnostic: Diagnostic): void {
   pendingDiagnostic.value = { ...diagnostic };
   activeTool.value = null;
+  const symbol = symbolAtOffset(diagnostic.start);
+  // Prefer the structured builder when the span maps to a declaration.
+  if (symbol) {
+    if (nav.view.value !== "building") nav.build();
+    focusBuilderSymbol(symbol);
+    return;
+  }
   if (nav.view.value !== "editing") nav.edit();
+}
+
+function onPreviewSelect(symbol: string): void {
+  if (nav.view.value !== "building") nav.build();
+  focusBuilderSymbol(symbol);
+}
+
+function jumpToFirstError(): void {
+  const first =
+    editor.validation.value?.diagnostics.find((item) => item.severity === "error") ??
+    editor.validation.value?.diagnostics[0];
+  if (first) openDiagnostic(first);
+}
+
+function modKey(): string {
+  return navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl+";
 }
 function openTool(tool: InspectorTabId): void {
   if (!library.selectedRecipe.value) return;
@@ -362,6 +464,10 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
   }
 }
 function saveStatusText(): string {
+  const blocked =
+    editor.dirty.value &&
+    (editor.validation.value?.diagnostics.some((item) => item.severity === "error") ?? false);
+  if (blocked) return "Fix issues to save";
   switch (editor.saveStatus.value) {
     case "saving":
       return "Saving…";
@@ -373,6 +479,12 @@ function saveStatusText(): string {
       return editor.dirty.value ? "Unsaved changes" : "";
   }
 }
+
+const saveBlocked = computed(
+  () =>
+    editor.dirty.value &&
+    (editor.validation.value?.diagnostics.some((item) => item.severity === "error") ?? false),
+);
 </script>
 
 <template>
@@ -380,7 +492,7 @@ function saveStatusText(): string {
     <AppMenuBar
       :view="nav.view.value"
       :has-recipe="Boolean(activeRecipe)"
-      :recipe-title="activeRecipe?.title"
+      :recipe-title="activeRecipe ? liveRecipeTitle : undefined"
       :dirty="editor.dirty.value"
       :saving="editor.saving.value"
       :unit-system="unitDisplay.unitSystem.value"
@@ -413,6 +525,7 @@ function saveStatusText(): string {
       :books="library.books.value"
       @back="nav.shelf()"
       @open-recipe="openRecipe"
+      @create-recipe="newRecipe"
       @bulk-move="library.moveRecipes"
       @bulk-delete="bulkDelete"
     />
@@ -424,7 +537,7 @@ function saveStatusText(): string {
       <header class="reading-bar">
         <button class="ghost" @click="backToBook"><ChevronLeft :size="16" /> Book</button>
         <div class="reading-bar-title">
-          <h1>{{ library.selectedRecipe.value.title }}</h1>
+          <h1>{{ liveRecipeTitle }}</h1>
           <small
             ><Database :size="13" /> SQLite · WebSocket <ConnectionBadge :status="connection"
           /></small>
@@ -441,12 +554,17 @@ function saveStatusText(): string {
           <button
             v-if="!kitchenMode"
             class="ghost"
-            title="Build with structured forms"
+            title="Edit the raw recipe source"
+            @click="editSource"
+          >
+            <FileCode2 :size="15" /> Source
+          </button>
+          <button
+            v-if="!kitchenMode"
+            class="primary"
+            :title="'Edit recipe (' + modKey() + 'E)'"
             @click="nav.build()"
           >
-            <Blocks :size="15" /> Build
-          </button>
-          <button v-if="!kitchenMode" class="primary" @click="nav.build()">
             <Pencil :size="15" /> Edit
           </button>
         </div>
@@ -473,15 +591,56 @@ function saveStatusText(): string {
         <button class="ghost" @click="leaveEdit"><ChevronLeft :size="16" /> Done</button>
         <div class="reading-bar-title">
           <h1>
-            {{ library.selectedRecipe.value.title
+            {{ liveRecipeTitle
             }}<span v-if="editor.dirty.value" class="dirty" title="Unsaved changes">•</span>
           </h1>
-          <small class="save-hint" :class="editor.saveStatus.value">{{ saveStatusText() }}</small>
+          <small class="save-hint" :class="[editor.saveStatus.value, { blocked: saveBlocked }]">{{
+            saveStatusText()
+          }}</small>
         </div>
         <div class="reading-bar-actions">
+          <div class="view-toggles" role="group" aria-label="Preview display">
+            <button
+              class="ghost compact"
+              :title="
+                unitDisplay.unitSystem.value === 'metric'
+                  ? 'Showing metric — switch to US customary'
+                  : 'Showing US customary — switch to metric'
+              "
+              @click="unitDisplay.toggleUnitSystem()"
+            >
+              <Ruler :size="14" />
+              {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+            </button>
+            <button
+              class="ghost compact"
+              :title="
+                viewSettings.misePlacement.value === 'colocated'
+                  ? 'Mise with each section — switch to top list'
+                  : 'Mise at top — switch to per-section'
+              "
+              @click="viewSettings.toggleMisePlacement()"
+            >
+              <Layers :size="14" />
+              {{ viewSettings.misePlacement.value === "colocated" ? "By section" : "Top mise" }}
+            </button>
+            <button
+              class="ghost compact"
+              :title="
+                viewSettings.numberStyle.value === 'fractions'
+                  ? 'Fractions — switch to decimals'
+                  : 'Decimals — switch to fractions'
+              "
+              @click="viewSettings.toggleNumberStyle()"
+            >
+              <Hash :size="14" />
+              {{ viewSettings.numberStyle.value === "fractions" ? "½" : "0.5" }}
+            </button>
+          </div>
           <button
             class="primary"
-            :disabled="!editor.dirty.value || editor.saving.value"
+            :disabled="!editor.dirty.value || editor.saving.value || saveBlocked"
+            :title="modKey() + 'S'"
             @click="save"
           >
             <Save :size="15" /> {{ editor.saving.value ? "Saving…" : "Save" }}
@@ -489,21 +648,31 @@ function saveStatusText(): string {
           <button
             v-if="nav.view.value === 'building'"
             class="ghost"
-            title="Edit the raw recipe source"
+            :title="'Edit the raw recipe source (' + modKey() + 'E)'"
             @click="editSource"
           >
             <FileCode2 :size="15" /> Source
           </button>
-          <button v-else class="ghost" title="Use the structured builder" @click="nav.build()">
+          <button
+            v-else
+            class="ghost"
+            :title="'Use the structured builder (' + modKey() + 'E)'"
+            @click="nav.build()"
+          >
             <Blocks :size="15" /> Builder
           </button>
         </div>
       </header>
+      <p v-if="saveBlocked" class="save-blocked-banner">
+        Autosave is paused while there are syntax errors.
+        <button type="button" class="link" @click="jumpToFirstError">Jump to first issue</button>
+      </p>
       <section
         class="edit-layout"
         :style="{
           '--editor-w': editorSplit + '%',
           '--diagnostics-h': diagnosticsHeight + 'px',
+          '--diagnostics-row': diagnosticsRow,
         }"
       >
         <div class="reading-stage">
@@ -511,6 +680,10 @@ function saveStatusText(): string {
             :model="editor.model.value"
             :recipe-id="library.selectedRecipe.value?.id"
             :source="editor.source.value"
+            :editable="true"
+            :highlighted-symbol="highlightedSymbol"
+            @update:source="editor.source.value = $event"
+            @select-symbol="onPreviewSelect"
           />
         </div>
         <div
@@ -520,14 +693,16 @@ function saveStatusText(): string {
           title="Drag to resize"
           @pointerdown="startResize"
         ></div>
-        <div class="editor-stack">
+        <div class="editor-stack" :class="{ 'diagnostics-collapsed': !diagnosticsExpanded }">
           <RecipeBuilderView
             v-if="nav.view.value === 'building'"
+            ref="recipeBuilder"
             :source="editor.source.value"
             :model="editor.model.value"
             :recipe-id="library.selectedRecipe.value.id"
             @update:source="editor.source.value = $event"
             @edit-source="editSource"
+            @focus-symbol="highlightedSymbol = $event"
           />
           <EditDrawer
             v-else
@@ -543,6 +718,7 @@ function saveStatusText(): string {
             @close="leaveEdit"
           />
           <div
+            v-if="diagnosticsExpanded"
             class="diagnostics-resizer"
             role="separator"
             aria-orientation="horizontal"
@@ -553,6 +729,7 @@ function saveStatusText(): string {
             :diagnostics="editor.validation.value?.diagnostics ?? []"
             :source="editor.source.value"
             @select="openDiagnostic"
+            @update:expanded="diagnosticsExpanded = $event"
           />
         </div>
       </section>
@@ -631,9 +808,47 @@ function saveStatusText(): string {
 }
 .save-hint.saved {
   color: #28643b;
+  animation: saved-pulse 0.8s ease;
 }
-.save-hint.error {
+@keyframes saved-pulse {
+  0% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .save-hint.saved {
+    animation: none;
+  }
+}
+.save-hint.error,
+.save-hint.blocked {
   color: #a83737;
+}
+.save-blocked-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 8px 16px;
+  background: #fbf1f1;
+  color: #8a3a3a;
+  font-size: 13px;
+  border-bottom: 1px solid #efd5d5;
+}
+.save-blocked-banner .link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #28643b;
+  text-decoration: underline;
+  font: inherit;
+  cursor: pointer;
 }
 .reading-bar-actions {
   display: flex;
@@ -653,6 +868,32 @@ function saveStatusText(): string {
   width: 34px;
   padding: 0;
   justify-content: center;
+}
+.view-toggles {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-right: 4px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #eceee9;
+}
+.reading-bar-actions .view-toggles button.compact {
+  height: 28px;
+  padding: 0 8px;
+  font-size: 12px;
+  border: 0;
+  background: transparent;
+  color: #45524b;
+}
+.reading-bar-actions .view-toggles button.compact:hover {
+  background: #e4efe6;
+  color: #28643b;
+}
+@media (max-width: 900px) {
+  .view-toggles {
+    display: none;
+  }
 }
 .reading-stage {
   flex: 1;
@@ -676,9 +917,12 @@ function saveStatusText(): string {
   min-width: 0;
   min-height: 0;
   display: grid;
-  grid-template-rows: minmax(180px, 1fr) 6px minmax(90px, var(--diagnostics-h, 170px));
+  grid-template-rows: minmax(180px, 1fr) 6px var(--diagnostics-row, minmax(90px, 170px));
   overflow: hidden;
   background: #f7f6f2;
+}
+.editor-stack.diagnostics-collapsed {
+  grid-template-rows: minmax(180px, 1fr) 34px;
 }
 .diagnostics-resizer {
   cursor: row-resize;

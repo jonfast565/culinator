@@ -4,6 +4,7 @@ import {
   emitBindings,
   emitFormula,
   emitOperation,
+  emitPrep,
   emitResource,
   emitYield,
   formatNumber,
@@ -200,6 +201,24 @@ describe("emitOperation", () => {
     expect(operation?.heatLevel).toBe("medium_high");
     expect(operation?.targetTemperature).toBe("350 fahrenheit");
     expect(operation?.notes).toEqual(["whisk constantly"]);
+  });
+});
+
+describe("emitPrep", () => {
+  it("emits prep sugar the parser desugars", () => {
+    const declaration = `    process method {\n${emitPrep({
+      verb: "dice",
+      ingredient: "onion",
+      after: ["step"],
+    })}\n    }`;
+    const model = parses(
+      `    ingredient onion { }\n    process other {\n      operation step does prepare { }\n    }\n${declaration}`,
+    );
+    expect(model.diagnostics).toHaveLength(0);
+    const operation = model.operations.find((item) => item.symbol === "dice_onion");
+    expect(operation?.inputs).toContain("onion");
+    expect(operation?.produces).toBe("onion_dice");
+    expect(operation?.after).toEqual(["step"]);
   });
 });
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* global HTMLInputElement, HTMLTextAreaElement */
-import { ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 
 /**
  * A labelled text field that commits on change, not on every keystroke, and
@@ -21,6 +21,9 @@ const props = defineProps<{
   type?: string;
   multiline?: boolean;
   disabled?: boolean;
+  autofocus?: boolean;
+  /** Prefer this field when jumping here from the live preview. */
+  focusPriority?: boolean;
   /** id of a `<datalist>` to offer autocomplete suggestions. */
   list?: string;
 }>();
@@ -40,6 +43,10 @@ watch(
 function commit(): void {
   if (local.value !== props.modelValue) emit("commit", local.value);
 }
+
+onMounted(() => {
+  if (props.autofocus) field.value?.focus();
+});
 </script>
 
 <template>
@@ -51,6 +58,7 @@ function commit(): void {
       v-model="local"
       :placeholder="placeholder"
       :disabled="disabled"
+      :data-focus-priority="focusPriority ? '' : undefined"
       rows="2"
       @change="commit"
     />
@@ -62,6 +70,7 @@ function commit(): void {
       :placeholder="placeholder"
       :disabled="disabled"
       :list="list"
+      :data-focus-priority="focusPriority ? '' : undefined"
       @change="commit"
     />
   </label>

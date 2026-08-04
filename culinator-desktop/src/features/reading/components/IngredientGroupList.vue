@@ -4,7 +4,12 @@ import IngredientListRow from "./IngredientListRow.vue";
 
 // Items arrive already rendered by the shared narrative generator, so there is
 // nothing to format here.
-defineProps<{ groups: IngredientGroup[] }>();
+defineProps<{
+  groups: IngredientGroup[];
+  selectable?: boolean;
+  highlightedSymbol?: string | null;
+}>();
+const emit = defineEmits<{ select: [symbol: string] }>();
 </script>
 
 <template>
@@ -16,6 +21,9 @@ defineProps<{ groups: IngredientGroup[] }>();
           v-for="(item, index) in group.items"
           :key="`${item.description}-${index}`"
           :parts="item"
+          :selectable="selectable"
+          :highlighted="highlightedSymbol === item.symbol"
+          @select="emit('select', $event)"
         />
       </ul>
     </div>

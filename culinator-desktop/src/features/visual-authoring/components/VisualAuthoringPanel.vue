@@ -8,8 +8,16 @@ import { parseOutline, walk } from "../../recipe-builder/outline";
 import type { OutlineNode } from "../../recipe-builder/outline";
 import { useAppDialog } from "../../../shared/composables/useAppDialog";
 
-const props = defineProps<{ source: string; model: UiRecipeModel }>();
-const emit = defineEmits<{ "update:source": [value: string] }>();
+const props = defineProps<{
+  source: string;
+  model: UiRecipeModel;
+  /** Docked in the builder: hide duplicate chrome and jump to cards on click. */
+  embedded?: boolean;
+}>();
+const emit = defineEmits<{
+  "update:source": [value: string];
+  "select-symbol": [symbol: string];
+}>();
 const dialog = useAppDialog();
 const selected = ref<string | null>(null);
 const selectedOperation = computed(() =>
@@ -184,10 +192,13 @@ const graph = computed(() => {
 const connected = computed(() => {
   const active = selected.value;
   if (!active) return new Set<string>();
-  const set = new Set<string>([`op:${active}`]);
+  const opId = `op:${active}`;
+  const resId = `res:${active}`;
+  const seed = graph.value.nodes.some((node) => node.id === opId) ? opId : resId;
+  const set = new Set<string>([seed]);
   for (const edge of graph.value.edges) {
-    if (edge.from === `op:${active}`) set.add(edge.to);
-    if (edge.to === `op:${active}`) set.add(edge.from);
+    if (edge.from === seed) set.add(edge.to);
+    if (edge.to === seed) set.add(edge.from);
   }
   return set;
 });
@@ -210,7 +221,8 @@ function laborColor(labor?: string): string {
   }
 }
 function selectNode(node: GraphNode): void {
-  selected.value = node.type === "operation" ? node.symbol : null;
+  selected.value = node.symbol;
+  emit("select-symbol", node.symbol);
 }
 
 // ---- Source editing (unchanged wiring) --------------------------------------
@@ -268,18 +280,24 @@ function addOperation(): void {
 </script>
 
 <template>
-  <section class="panel space-y-4">
-    <div>
-      <label class="text-xs font-semibold uppercase tracking-wide">Recipe title</label>
-      <input class="mt-1 w-full rounded border p-2" :value="model.title" @change="renameTitle" />
-    </div>
-    <div class="flex items-center justify-between">
-      <h3>Visual workflow</h3>
-      <button @click="addOperation"><Plus :size="14" /> Operation</button>
-    </div>
+  <section class="panel space-y-4" :class="{ embedded }">
+    <template v-if="!embedded">
+      <div>
+        <label class="text-xs font-semibold uppercase tracking-wide">Recipe title</label>
+        <input class="mt-1 w-full rounded border p-2" :value="model.title" @change="renameTitle" />
+      </div>
+      <div class="flex items-center justify-between">
+        <h3>Visual workflow</h3>
+        <button @click="addOperation"><Plus :size="14" /> Operation</button>
+      </div>
+    </template>
 
     <p v-if="!graph.nodes.length" class="empty">
-      No operations yet. Add one, or write <code>prep</code> / <code>operation</code> steps.
+      No operations yet.
+      <template v-if="embedded">Add a step in Method to see the graph.</template>
+      <template v-else
+        >Add one, or write <code>prep</code> / <code>operation</code> steps.</template
+      >
     </p>
 
     <div v-else class="graph-scroll">
@@ -345,7 +363,7 @@ function addOperation(): void {
           :class="[
             node.type,
             {
-              selected: node.type === 'operation' && node.symbol === selected,
+              selected: node.symbol === selected,
               dim: selected && !connected.has(node.id),
             },
           ]"
@@ -383,8 +401,8 @@ function addOperation(): void {
       <span><i class="swatch dot" :style="{ background: '#3b6ea5' }" /> automated</span>
     </div>
 
-    <!-- Operation inspector -->
-    <div v-if="selectedOperation" class="card space-y-3">
+    <!-- Operation inspector (standalone tool only — builder cards own edits when docked) -->
+    <div v-if="!embedded && selectedOperation" class="card space-y-3">
       <h4>{{ selectedOperation.symbol }}</h4>
       <label>
         Duration
@@ -419,6 +437,12 @@ function addOperation(): void {
 </template>
 
 <style scoped>
+.panel.embedded {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
 .graph-scroll {
   overflow: auto;
   border: 1px solid #e5e7eb;
@@ -427,6 +451,14 @@ function addOperation(): void {
     linear-gradient(90deg, #fbfaf6 0 1px, transparent 1px) 0 0 / 210px 100%,
     #fdfcf9;
   max-height: 60vh;
+}
+.embedded .graph-scroll {
+  min-height: 360px;
+  max-height: min(70vh, 560px);
+}
+.graph-node.resource.selected {
+  outline: 2px solid #8fb897;
+  outline-offset: 1px;
 }
 .graph-canvas {
   position: relative;

@@ -30,6 +30,21 @@
     color: white;
     border-color: #28643b;
   }
+  button.primary:hover:not(:disabled) {
+    background: #215533;
+  }
+  button.ghost {
+    background: transparent;
+    border-color: transparent;
+    color: #45524b;
+  }
+  button.ghost:hover:not(:disabled) {
+    background: #eceee9;
+  }
+  button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
   button.danger {
     color: #a83737;
   }

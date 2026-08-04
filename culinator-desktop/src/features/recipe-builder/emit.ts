@@ -277,6 +277,29 @@ export function emitOperation(draft: OperationDraft, indent = "        "): strin
   return `${indent}${header} {\n${body.map((line) => `${inner}${line}`).join("\n")}\n${indent}}`;
 }
 
+export interface PrepDraft {
+  verb: string;
+  ingredient: string;
+  into?: string;
+  after?: string[];
+  duration?: string;
+}
+
+/**
+ * A `prep <verb> <ingredient> [into <output>]` declaration. Always printed with
+ * a block when body fields are present so the builder can keep editing them.
+ */
+export function emitPrep(draft: PrepDraft, indent = "        "): string {
+  const inner = `${indent}    `;
+  const into = draft.into?.trim() ? ` into ${draft.into.trim()}` : "";
+  const header = `prep ${draft.verb} ${draft.ingredient}${into}`;
+  const body: string[] = [];
+  if (draft.after?.length) body.push(emitStatement("after", formatList(draft.after)));
+  if (draft.duration) body.push(emitStatement("duration", draft.duration));
+  if (!body.length) return `${indent}${header} { }`;
+  return `${indent}${header} {\n${body.map((line) => `${inner}${line}`).join("\n")}\n${indent}}`;
+}
+
 /** An empty named process, ready for operations to be added into it. */
 export function emitProcess(symbol: string, indent = "    "): string {
   return `${indent}process ${symbol} {\n${indent}}`;

@@ -5,6 +5,7 @@ import {
   emitBindings,
   emitFormula,
   emitOperation,
+  emitPrep,
   emitProcess,
   emitResource,
   emitStatement,
@@ -214,6 +215,8 @@ export interface BuilderOperation {
   unknown: UnknownProperty[];
   /** A block-less `prep` step cannot take structured edits. */
   readOnly: boolean;
+  /** True when the source declaration is `prep` sugar. */
+  isPrep: boolean;
 }
 
 /** A named group of steps. */
@@ -547,6 +550,7 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
         unknown,
         // A block-less `prep foo bar;` has no block to hold structured fields.
         readOnly: node?.keyword === "prep" && node.blockInnerRange == null,
+        isPrep: node?.keyword === "prep",
       };
       const key = built.process || "";
       if (!groups.has(key)) groups.set(key, []);
@@ -558,6 +562,13 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
   /** The current outline node for a step, for editing. */
   function operationNode(symbol: string): OutlineNode | undefined {
     if (!outline.value.parsed) return undefined;
+    // Join by span, not header symbol: `prep dice onion` desugars to
+    // `dice_onion` in the UI model while the outline's second token is `dice`.
+    const operation = model.value.operations.find((item) => item.symbol === symbol);
+    if (operation?.range) {
+      const byRange = findByRange(outline.value, operation.range);
+      if (byRange) return byRange;
+    }
     for (const node of walk(outline.value.nodes)) {
       if ((node.keyword === "operation" || node.keyword === "prep") && node.symbol === symbol) {
         return node;
@@ -573,7 +584,25 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
 
   function setOperationVerb(symbol: string, verb: string): void {
     const node = operationNode(symbol);
-    if (node) source.value = setDoesVerb(source.value, node, verb);
+    if (!node || node.keyword === "prep") return;
+    source.value = setDoesVerb(source.value, node, verb);
+    // Generic `step` / `step_2` identifiers produce weak narrative. When the
+    // author picks a real verb, rename once to `<verb>` or `<verb>_<input>`.
+    if (!/^step(?:_\d+)?$/.test(symbol)) return;
+    const operation = model.value.operations.find((item) => item.symbol === symbol);
+    const input = operation?.inputBindings[0]?.symbol;
+    const suggested = symbolize(
+      input ? `${verb} ${input}` : verb,
+      (() => {
+        const taken = declaredSymbols(outline.value);
+        taken.delete(symbol);
+        return taken;
+      })(),
+      verb || "step",
+    );
+    if (suggested && suggested !== symbol) {
+      renameDeclaration(symbol, suggested);
+    }
   }
 
   /** Regenerate all `input` bindings for a step as one unit (see `emitBindings`). */
@@ -657,19 +686,122 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
     if (node) source.value = setOperationPhoto(source.value, node.codeRange, reference);
   }
 
-  /** Add an empty step to a process (or to the recipe when `process` is ""). */
+  /** Desugared symbol of the last step in a process (or recipe-level). */
+  function lastStepSymbol(process: string): string | undefined {
+    const steps = model.value.operations.filter(
+      (operation) => (operation.process || "") === process,
+    );
+    return steps.at(-1)?.symbol;
+  }
+
+  /**
+   * Add an empty step to a process (or to the recipe when `process` is "").
+   * New steps chain onto the previous one via `after`, matching how the
+   * scheduler orders work — source order alone is not enough.
+   */
   function addOperation(process: string): string | undefined {
     const parent = process ? processNode(process) : editableRecipe(outline.value);
     if (!parent) return undefined;
     const symbol = symbolize("step", declaredSymbols(outline.value), "step");
     const indent = `${parent.indent}    `;
+    const previous = lastStepSymbol(process);
     source.value = insertDeclaration(
       source.value,
       parent,
-      emitOperation({ symbol, action: "prepare" }, indent),
+      emitOperation(
+        { symbol, action: "prepare", after: previous ? [previous] : undefined },
+        indent,
+      ),
       "operation",
     );
     return symbol;
+  }
+
+  /**
+   * Add a `prep <verb> <ingredient>` shorthand step. Always emitted with a
+   * block so duration/`after` stay editable in the builder.
+   */
+  function addPrep(
+    process: string,
+    verb: string,
+    ingredient: string,
+    output?: string,
+  ): string | undefined {
+    const parent = process ? processNode(process) : editableRecipe(outline.value);
+    if (!parent) return undefined;
+    const cleanVerb = symbolize(verb, new Set(), "prep");
+    const cleanIngredient = symbolize(ingredient, new Set(), "ingredient");
+    if (!cleanVerb || !cleanIngredient) return undefined;
+    const indent = `${parent.indent}    `;
+    const previous = lastStepSymbol(process);
+    const into = output?.trim()
+      ? symbolize(output, declaredSymbols(outline.value), `${cleanIngredient}_${cleanVerb}`)
+      : undefined;
+    source.value = insertDeclaration(
+      source.value,
+      parent,
+      emitPrep(
+        {
+          verb: cleanVerb,
+          ingredient: cleanIngredient,
+          into,
+          after: previous ? [previous] : undefined,
+        },
+        indent,
+      ),
+      "prep",
+    );
+    return `${cleanVerb}_${cleanIngredient}`;
+  }
+
+  /**
+   * Ensure there is a method process, then add a step to it. Used by the empty
+   * Method CTA so authors never have to invent a process before cooking.
+   */
+  function addFirstStep(): string | undefined {
+    const recipe = editableRecipe(outline.value);
+    if (!recipe) return undefined;
+    const existing = recipe.children.find((child) => child.keyword === "process");
+    if (existing?.symbol) return addOperation(existing.symbol);
+    const process = addProcess();
+    if (!process) return undefined;
+    // Re-resolve after the process insert so offsets are valid.
+    return addOperation(process);
+  }
+
+  /**
+   * Create a resource from a name typed at a use-site (step input / tool), then
+   * return its symbol so the binding can keep it.
+   */
+  function createResourceFromName(kind: string, name: string): string | undefined {
+    const recipe = editableRecipe(outline.value);
+    if (!recipe) return undefined;
+    const cleanKind = RESOURCE_KEYWORDS.has(kind) ? kind : "ingredient";
+    const symbol = symbolize(name, declaredSymbols(outline.value), cleanKind);
+    const hasSameKind = recipe.children.some((child) => child.keyword === cleanKind);
+    const lastResource = [...recipe.children]
+      .reverse()
+      .find((child) => RESOURCE_KEYWORDS.has(child.keyword));
+    const afterKeyword = hasSameKind ? cleanKind : lastResource?.keyword;
+    const label = name.trim().replace(/\s+/g, " ");
+    source.value = insertDeclaration(
+      source.value,
+      recipe,
+      emitResource({
+        kind: cleanKind,
+        symbol,
+        name: label || undefined,
+        // Ingredients default to mass; tools/vessels usually aren't weighed.
+        measurement: cleanKind === "ingredient" ? "mass" : undefined,
+      }),
+      afterKeyword,
+    );
+    return symbol;
+  }
+
+  /** Create an ingredient from a name typed as a step input. */
+  function createIngredientFromName(name: string): string | undefined {
+    return createResourceFromName("ingredient", name);
   }
 
   function removeOperation(symbol: string): void {
@@ -716,8 +848,12 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
   function addProcess(): string | undefined {
     const recipe = editableRecipe(outline.value);
     if (!recipe) return undefined;
-    const symbol = symbolize("process", declaredSymbols(outline.value), "process");
+    // Prefer a readable default name for the first process; later ones keep
+    // the generic `process` / `process_2` sequence.
     const hasProcess = recipe.children.some((child) => child.keyword === "process");
+    const symbol = hasProcess
+      ? symbolize("process", declaredSymbols(outline.value), "process")
+      : symbolize("method", declaredSymbols(outline.value), "method");
     const lastResource = [...recipe.children]
       .reverse()
       .find((child) => RESOURCE_KEYWORDS.has(child.keyword));
@@ -939,6 +1075,10 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
     setOperationEquipment,
     setOperationPhotoRef,
     addOperation,
+    addPrep,
+    addFirstStep,
+    createIngredientFromName,
+    createResourceFromName,
     removeOperation,
     duplicateOperation,
     moveOperation,

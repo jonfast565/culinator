@@ -329,10 +329,13 @@ onMounted(async () => {
 
     <p v-if="loading" class="empty">Reading the recipe…</p>
 
-    <p v-else-if="!formula.ingredients.length" class="empty-state">
-      This recipe has no ingredients to weigh yet.
-      <button class="ghost" @click="add"><Plus :size="14" /> Add a row</button>
-    </p>
+    <div v-else-if="!formula.ingredients.length" class="empty-state">
+      <p>
+        This recipe has no ingredients to weigh yet. Add a row, or declare ingredients in the
+        builder first.
+      </p>
+      <button class="primary" @click="add"><Plus :size="14" /> Add a row</button>
+    </div>
 
     <template v-else>
       <!-- The ratio at a glance: every ingredient's share of the batch, keyed
@@ -755,9 +758,21 @@ onMounted(async () => {
   display: grid;
   justify-items: start;
   gap: 10px;
-  margin: 0;
+  margin: 8px 0 0;
+  padding: 16px;
+  border: 1px dashed #cfd6d0;
+  border-radius: 10px;
+  background: #fbfcfa;
   font-size: 13px;
   color: #6d7972;
+}
+.empty-state p {
+  margin: 0;
+}
+.empty-state .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .metrics {
   padding: 4px 12px;

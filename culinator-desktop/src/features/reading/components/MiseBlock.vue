@@ -4,7 +4,12 @@ import IngredientListRow from "./IngredientListRow.vue";
 
 // A divided ingredient shows this section's own amount, not the recipe total —
 // that split is done by the shared narrative generator.
-defineProps<{ mise: SectionMise }>();
+defineProps<{
+  mise: SectionMise;
+  selectable?: boolean;
+  highlightedSymbol?: string | null;
+}>();
+const emit = defineEmits<{ select: [symbol: string] }>();
 </script>
 
 <template>
@@ -16,6 +21,9 @@ defineProps<{ mise: SectionMise }>();
           v-for="(item, index) in mise.ingredients"
           :key="`${item.description}-${item.amount}-${index}`"
           :parts="item"
+          :selectable="selectable"
+          :highlighted="highlightedSymbol === item.symbol"
+          @select="emit('select', $event)"
         />
       </ul>
     </div>

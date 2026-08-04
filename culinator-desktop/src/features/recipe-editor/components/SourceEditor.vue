@@ -2,8 +2,19 @@
 import { computed, shallowRef, watch } from "vue";
 import { Codemirror } from "vue-codemirror";
 import { basicSetup } from "codemirror";
+import {
+  autocompletion,
+  type CompletionContext,
+  type CompletionResult,
+} from "@codemirror/autocomplete";
 import { HighlightStyle, StreamLanguage, syntaxHighlighting } from "@codemirror/language";
 import { simpleMode } from "@codemirror/legacy-modes/mode/simple-mode";
+import {
+  forceLinting,
+  linter,
+  lintGutter,
+  type Diagnostic as CmDiagnostic,
+} from "@codemirror/lint";
 import { tags } from "@lezer/highlight";
 import { EditorView } from "@codemirror/view";
 import type { Diagnostic } from "../../../domain/types";
@@ -24,7 +35,7 @@ const view = shallowRef<EditorView>();
  * Structural and statement keywords from docs/GRAMMAR.ebnf. Kept as one list so
  * the source editor highlights the same vocabulary the parser recognizes.
  */
-const KEYWORDS = [
+const KEYWORD_LIST = [
   "culinator",
   "book",
   "recipe",
@@ -90,9 +101,9 @@ const KEYWORDS = [
   "size",
   "variant",
   "allergen",
-].join("|");
+];
 
-const ATOMS = [
+const ATOM_LIST = [
   "mass",
   "volume",
   "count",
@@ -123,7 +134,10 @@ const ATOMS = [
   "finish_finish",
   "start_finish",
   "lag",
-].join("|");
+];
+
+const KEYWORDS = KEYWORD_LIST.join("|");
+const ATOMS = ATOM_LIST.join("|");
 
 /** Time units from docs/GRAMMAR.ebnf — matched with a leading number as one duration token. */
 const TIME_UNITS = [
@@ -152,6 +166,48 @@ const highlightStyle = HighlightStyle.define([
   { tag: tags.comment, color: "#8a938c", fontStyle: "italic" },
 ]);
 
+/** Latest diagnostics for the linter closure — refreshed when props change. */
+let latestDiagnostics: Diagnostic[] = [];
+
+function toCmSeverity(severity: Diagnostic["severity"]): CmDiagnostic["severity"] {
+  if (severity === "error") return "error";
+  if (severity === "warning") return "warning";
+  return "info";
+}
+
+function recipeLinter(): CmDiagnostic[] {
+  const length = props.modelValue.length;
+  return latestDiagnostics
+    .filter((item) => item.start != null)
+    .map((item) => {
+      const from = Math.max(0, Math.min(item.start!, length));
+      const to = Math.max(from, Math.min(item.end ?? from + 1, length));
+      return {
+        from,
+        to: to === from ? Math.min(from + 1, length) : to,
+        severity: toCmSeverity(item.severity),
+        message: item.message,
+      };
+    });
+}
+
+function dslCompletions(context: CompletionContext): CompletionResult | null {
+  const word = context.matchBefore(/[A-Za-z_][\w]*/);
+  if (!word || (word.from === word.to && !context.explicit)) return null;
+  const symbols = [
+    ...(props.model?.resources.map((resource) => resource.symbol) ?? []),
+    ...(props.model?.operations.map((operation) => operation.symbol) ?? []),
+    ...(props.model?.processes.map((process) => process.symbol) ?? []),
+    ...(props.model?.yields.map((item) => item.symbol) ?? []),
+  ];
+  const options = [
+    ...KEYWORD_LIST.map((label) => ({ label, type: "keyword" as const })),
+    ...ATOM_LIST.map((label) => ({ label, type: "constant" as const })),
+    ...symbols.map((label) => ({ label, type: "variable" as const })),
+  ];
+  return { from: word.from, options, validFor: /^[\w]*$/ };
+}
+
 const extensions = [
   basicSetup,
   StreamLanguage.define({
@@ -175,6 +231,9 @@ const extensions = [
   }),
   syntaxHighlighting(highlightStyle),
   referenceNavigation(),
+  lintGutter(),
+  linter(() => recipeLinter()),
+  autocompletion({ override: [dslCompletions] }),
   EditorView.theme({
     "&": { backgroundColor: "#fbfbf9", height: "100%" },
     ".cm-content": { caretColor: "#27342d" },
@@ -198,12 +257,23 @@ function refreshReferenceIndex(): void {
 
 function onReady(payload: { view: EditorView }): void {
   view.value = payload.view;
+  latestDiagnostics = props.diagnostics ?? [];
   refreshReferenceIndex();
+  forceLinting(payload.view);
 }
 
 watch(
   () => [props.modelValue, props.model] as const,
   () => refreshReferenceIndex(),
+);
+
+watch(
+  () => props.diagnostics,
+  (next) => {
+    latestDiagnostics = next ?? [];
+    if (view.value) forceLinting(view.value);
+  },
+  { deep: true },
 );
 
 function jumpToOffset(offset: number): void {
@@ -236,7 +306,7 @@ defineExpose({ jumpToOffset, diagnosticLine });
     />
     <p class="reference-hint">
       Recipe names are colored by kind. Click to highlight binding and uses; Ctrl/⌘-click jumps to
-      the definition.
+      the definition. Type for keyword and symbol autocomplete.
     </p>
   </div>
 </template>

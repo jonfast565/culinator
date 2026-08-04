@@ -42,9 +42,11 @@ impl RecipeService {
             symbol: "new_recipe".to_owned(),
             title: "Untitled Recipe".to_owned(),
             protocol_version: "0.3".to_owned(),
-            source_text:
-                "culinator 0.3;\n\nrecipe new_recipe {\n    title \"Untitled Recipe\";\n}\n"
-                    .to_owned(),
+            // Seed a method process with one step so the structured builder
+            // opens ready to fill in — authors shouldn't have to create a
+            // process before they can write the first action.
+            source_text: "culinator 0.3;\n\nrecipe new_recipe {\n    title \"Untitled Recipe\";\n\n    process method {\n        operation step does prepare { }\n    }\n}\n"
+                .to_owned(),
         })
     }
 

@@ -16,6 +16,7 @@ const amount = ref("");
 const unit = ref("");
 const max = ref("");
 const root = ref<HTMLElement>();
+const listId = `duration-units-${Math.random().toString(36).slice(2, 8)}`;
 
 function parse(text: string): void {
   let rest = text.trim();
@@ -98,7 +99,22 @@ function commit(): void {
     </label>
     <label>
       <span>Unit</span>
-      <input v-model="unit" :disabled="disabled" placeholder="min" @change="commit" />
+      <input
+        v-model="unit"
+        :disabled="disabled"
+        :list="listId"
+        placeholder="min"
+        @change="commit"
+      />
+      <datalist :id="listId">
+        <option value="sec" />
+        <option value="seconds" />
+        <option value="min" />
+        <option value="minutes" />
+        <option value="hr" />
+        <option value="hour" />
+        <option value="hours" />
+      </datalist>
     </label>
   </div>
 </template>

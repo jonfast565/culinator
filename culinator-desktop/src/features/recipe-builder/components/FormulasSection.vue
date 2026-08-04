@@ -26,9 +26,15 @@ const emit = defineEmits<{
       <h3>Formulas</h3>
     </div>
 
-    <p v-if="!formulas.length" class="empty">
-      No formulas. Add one to express ingredients as baker's percentages.
-    </p>
+    <div v-if="!formulas.length" class="empty-cta">
+      <p class="empty">
+        Baker's percentages scale a dough or batter from flour. Optional — skip unless you bake by
+        ratio.
+      </p>
+      <button class="primary" :disabled="disabled" @click="emit('add')">
+        <Plus :size="14" /> Add formula
+      </button>
+    </div>
 
     <div class="formulas">
       <article v-for="formula in formulas" :key="formula.symbol" class="card formula-card">
@@ -92,17 +98,32 @@ const emit = defineEmits<{
       </article>
     </div>
 
-    <div class="add-row">
+    <div v-if="formulas.length" class="add-row">
       <button :disabled="disabled" @click="emit('add')"><Plus :size="14" /> Formula</button>
     </div>
   </section>
 </template>
 
 <style scoped>
+.empty-cta {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
+  margin-bottom: 4px;
+  padding: 14px 16px;
+  border: 1px dashed #cfd6d0;
+  border-radius: 10px;
+  background: #fbfcfa;
+}
 .empty {
-  color: #8a938c;
+  color: #6d7972;
   font-size: 13px;
-  margin: 0 0 12px;
+  margin: 0;
+}
+.empty-cta .primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 .formulas {
   display: grid;

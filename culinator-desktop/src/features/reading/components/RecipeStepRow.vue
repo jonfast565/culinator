@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { Check, Clock, Play, Trash2 } from "lucide-vue-next";
 import type { TryOperation } from "../../../domain/types";
 import type { LiveTimerState } from "../../kitchen-mode/composables/useKitchenExecution";
@@ -13,15 +14,21 @@ const props = defineProps<{
   time?: string;
   recipeId?: string;
   editable?: boolean;
+  highlighted?: boolean;
   kitchenOperation?: TryOperation;
   kitchenTimer?: LiveTimerState;
 }>();
 
 const emit = defineEmits<{
   delete: [];
+  select: [symbol: string];
   "start-timer": [operation: TryOperation];
   "complete-timer": [operation: TryOperation];
 }>();
+
+const selectable = computed(
+  () => !!props.editable && !!props.operation?.symbol && !props.kitchenOperation,
+);
 
 function formatClock(totalSeconds: number): string {
   const minutes = Math.floor(totalSeconds / 60);
@@ -39,7 +46,12 @@ function timerText(): string {
 </script>
 
 <template>
-  <div class="step">
+  <div
+    class="step"
+    :class="{ selectable, highlighted }"
+    :data-preview-symbol="operation?.symbol"
+    @click="selectable && operation?.symbol && emit('select', operation.symbol)"
+  >
     <span class="step-number">{{ number }}</span>
     <div class="step-body">
       <p class="step-text">{{ text }}</p>
@@ -83,7 +95,7 @@ function timerText(): string {
         type="button"
         class="step-delete"
         title="Delete step"
-        @click="emit('delete')"
+        @click.stop="emit('delete')"
       >
         <Trash2 :size="14" />
       </button>
@@ -97,6 +109,33 @@ function timerText(): string {
   grid-template-columns: minmax(4.5rem, 6.5rem) 1fr auto;
   gap: 12px;
   align-items: start;
+}
+.step.selectable {
+  cursor: pointer;
+  border-radius: 8px;
+  margin: 0 -8px;
+  padding: 6px 8px;
+}
+.step.selectable:hover {
+  background: rgb(40 100 59 / 8%);
+}
+.step.highlighted {
+  background: rgb(40 100 59 / 12%);
+  box-shadow: inset 3px 0 0 #28643b;
+  animation: preview-pulse 0.9s ease;
+}
+@keyframes preview-pulse {
+  0% {
+    background: rgb(40 100 59 / 22%);
+  }
+  100% {
+    background: rgb(40 100 59 / 12%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .step.highlighted {
+    animation: none;
+  }
 }
 .step-number {
   font-family: var(--reading-serif);
