@@ -44,6 +44,7 @@ defineProps<{ mise: SectionMise }>();
 }
 .mise-label {
   margin: 0 0 6px;
+  font-family: var(--reading-sans);
   font-size: calc(10px * var(--reading-scale, 1));
   font-weight: 700;
   letter-spacing: 0.14em;

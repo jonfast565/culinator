@@ -3,10 +3,12 @@ import { ref, watch } from "vue";
 import { FileCode2, Save, X } from "lucide-vue-next";
 import type { Diagnostic, ValidationResult } from "../../../domain/types";
 import type { SaveStatus } from "../composables/useRecipeEditor";
+import type { UiRecipeModel } from "../model";
 import SourceEditor from "./SourceEditor.vue";
 
 const props = defineProps<{
   source: string;
+  model: UiRecipeModel;
   validation: ValidationResult | null;
   dirty: boolean;
   saving: boolean;
@@ -74,6 +76,7 @@ watch(
       <SourceEditor
         ref="sourceEditor"
         :model-value="source"
+        :model="model"
         :diagnostics="validation?.diagnostics"
         @update:model-value="emit('update:source', $event)"
       />
@@ -144,7 +147,11 @@ watch(
   display: flex;
   flex-direction: column;
 }
-.source .source-editor {
+.source :deep(.source-editor-shell) {
+  flex: 1;
+  min-height: 0;
+}
+.source :deep(.source-editor) {
   flex: 1;
   min-height: 0;
 }

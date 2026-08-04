@@ -532,6 +532,7 @@ function saveStatusText(): string {
           <EditDrawer
             v-else
             :source="editor.source.value"
+            :model="editor.model.value"
             :validation="editor.validation.value"
             :dirty="editor.dirty.value"
             :saving="editor.saving.value"

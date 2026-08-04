@@ -15,6 +15,7 @@ function modelWithAllergens(allergens: Array<string | undefined>): UiRecipeModel
     })),
     processes: [],
     operations: [],
+    yields: [],
     diagnostics: [],
   };
 }

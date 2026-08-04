@@ -10,6 +10,10 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
   test: {
     environment: "node",
-    include: ["src/features/recipe-builder/**/*.test.ts", "src/features/reading/**/*.test.ts"],
+    include: [
+      "src/features/recipe-builder/**/*.test.ts",
+      "src/features/recipe-editor/**/*.test.ts",
+      "src/features/reading/**/*.test.ts",
+    ],
   },
 });

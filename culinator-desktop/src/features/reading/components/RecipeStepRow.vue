@@ -99,7 +99,7 @@ function timerText(): string {
   align-items: start;
 }
 .step-number {
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  font-family: var(--reading-serif);
   font-size: calc(26px * var(--reading-scale, 1));
   font-weight: 600;
   line-height: 1;
@@ -115,6 +115,7 @@ function timerText(): string {
 .step-meta {
   display: block;
   margin-top: 4px;
+  font-family: var(--reading-sans);
   font-size: calc(12px * var(--reading-scale, 1));
   text-transform: capitalize;
   color: #6d7972;
@@ -143,6 +144,7 @@ function timerText(): string {
   border-radius: 999px;
   background: #e8f0e6;
   color: #28643b;
+  font-family: var(--reading-sans);
   font-size: calc(12px * var(--reading-scale, 1));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -163,6 +165,7 @@ function timerText(): string {
   border-radius: 8px;
   background: #f1f6ef;
   color: #245c36;
+  font-family: var(--reading-sans);
   font-size: calc(12px * var(--reading-scale, 1));
   font-weight: 700;
   font-variant-numeric: tabular-nums;

@@ -70,6 +70,14 @@ pub struct UiProcess {
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct UiYield {
+    pub symbol: String,
+    pub amount: String,
+    pub kind: String,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct UiInputBinding {
     pub symbol: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -131,12 +139,21 @@ pub struct UiRecipeModel {
     pub resources: Vec<UiResource>,
     pub processes: Vec<UiProcess>,
     pub operations: Vec<UiOperation>,
+    pub yields: Vec<UiYield>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source_url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub attribution: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub publisher: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub active_time: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_time: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub section: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -370,9 +387,27 @@ pub fn project(source: &str, recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) ->
             .iter()
             .map(|item| operation(item, &offsets))
             .collect(),
+        yields: recipe
+            .yields
+            .iter()
+            .map(|item| UiYield {
+                symbol: item.symbol.clone(),
+                amount: value_text(&item.amount).unwrap_or_default(),
+                kind: "yield".to_owned(),
+            })
+            .chain(recipe.servings.iter().map(|item| UiYield {
+                symbol: item.symbol.clone(),
+                amount: value_text(&item.amount).unwrap_or_default(),
+                kind: "serving".to_owned(),
+            }))
+            .collect(),
         source: property("source"),
         source_url: property("source_url"),
         attribution: property("attribution"),
+        description: property("description"),
+        publisher: property("publisher"),
+        active_time: property("active_time"),
+        total_time: property("total_time"),
         section: property("section"),
         cover_image: property("image"),
         diagnostics,
@@ -388,9 +423,14 @@ pub fn empty(diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel {
         resources: vec![],
         processes: vec![],
         operations: vec![],
+        yields: vec![],
         source: None,
         source_url: None,
         attribution: None,
+        description: None,
+        publisher: None,
+        active_time: None,
+        total_time: None,
         section: None,
         cover_image: None,
         diagnostics,

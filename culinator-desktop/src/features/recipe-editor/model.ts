@@ -39,6 +39,11 @@ export interface UiResource {
 export interface UiProcess {
   symbol: string;
 }
+export interface UiYield {
+  symbol: string;
+  amount: string;
+  kind: "yield" | "serving";
+}
 /** A structured "cook until…" doneness cue. */
 export interface UiDonenessCue {
   kind: string;
@@ -85,9 +90,17 @@ export interface UiRecipeModel {
   resources: UiResource[];
   processes: UiProcess[];
   operations: UiOperation[];
+  /** Declared recipe outputs and serving sizes. */
+  yields: UiYield[];
   source?: string;
   sourceUrl?: string;
   attribution?: string;
+  /** Introductory prose shown below the recipe title. */
+  description?: string;
+  publisher?: string;
+  /** Authored hands-on and elapsed times, kept distinct from computed step duration. */
+  activeTime?: string;
+  totalTime?: string;
   /** The book section (chapter) this recipe belongs to, from `section "…";`. */
   section?: string;
   /** Cover image: an asset handle or an external URL, from `image "…";`. */

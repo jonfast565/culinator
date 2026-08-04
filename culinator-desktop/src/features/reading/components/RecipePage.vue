@@ -218,7 +218,8 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 
 <style scoped>
 .leaf {
-  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --serif: var(--reading-serif);
+  --sans: var(--reading-sans);
   --ink: #23302a;
   --muted: #6d7972;
   --herb: #28643b;
@@ -229,6 +230,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   padding: clamp(28px, 5vw, 60px) clamp(24px, 5vw, 64px);
   background: #fbf9f3;
   color: var(--ink);
+  font-family: var(--serif);
   font-size: calc(16px * var(--reading-scale, 1));
   border-radius: 3px;
   /* A paper leaf: soft outer drop + a faint binding shadow down the left edge. */
@@ -267,6 +269,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  font-family: var(--sans);
 }
 .kitchen-strip > span {
   color: var(--herb);
@@ -295,6 +298,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 }
 .eyebrow {
   margin: 0 0 10px;
+  font-family: var(--sans);
   font-size: calc(11px * var(--reading-scale, 1));
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -303,7 +307,6 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 }
 .leaf-title {
   margin: 0;
-  font-family: var(--serif);
   font-weight: 600;
   font-size: clamp(
     calc(30px * var(--reading-scale, 1)),
@@ -315,6 +318,7 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 }
 .leaf-summary {
   margin: 12px 0 0;
+  font-family: var(--sans);
   font-size: calc(12px * var(--reading-scale, 1));
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -326,7 +330,6 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 }
 .section-label {
   margin: 0 0 16px;
-  font-family: var(--serif);
   font-size: calc(15px * var(--reading-scale, 1));
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -399,7 +402,6 @@ const eyebrow = computed(() => props.model.attribution || props.model.source || 
 }
 .process-heading {
   margin: 8px 0 -4px;
-  font-family: var(--serif);
   font-size: calc(16px * var(--reading-scale, 1));
   font-weight: 600;
   color: var(--ink);

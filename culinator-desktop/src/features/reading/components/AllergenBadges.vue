@@ -26,6 +26,7 @@ const ariaLabel = computed(() => `Contains allergens: ${labels.value.join(", ")}
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+  font-family: var(--reading-sans);
 }
 .allergens-label {
   color: #7a2e1f;

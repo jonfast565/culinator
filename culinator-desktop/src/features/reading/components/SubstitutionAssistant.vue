@@ -33,6 +33,7 @@ const substitutions = computed(() => collectIngredientSubstitutions(props.resour
   border: 1px solid #cfd8cb;
   border-radius: 5px;
   background: #f4f2e9;
+  font-family: var(--reading-sans);
 }
 summary {
   display: flex;

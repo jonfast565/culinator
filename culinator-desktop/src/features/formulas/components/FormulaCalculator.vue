@@ -548,15 +548,11 @@ onMounted(async () => {
 }
 .formula-name {
   width: 100%;
-  padding: 2px 4px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  background: transparent;
+  padding: 7px 9px;
+  border-color: #cbd3cd;
+  background: #fff;
   font-size: 12px;
-  color: #657169;
-}
-.formula-name:hover {
-  border-color: #d9dedb;
+  color: #27342d;
 }
 .head-actions {
   display: flex;
@@ -669,19 +665,15 @@ onMounted(async () => {
 .row-name {
   flex: 1;
   min-width: 0;
-  padding: 3px 5px;
-  border: 1px solid transparent;
-  border-radius: 5px;
-  background: transparent;
+  padding: 6px 8px;
+  border-color: #cbd3cd;
+  background: #fff;
   font-size: 13px;
   color: #27342d;
 }
 .row-name::placeholder {
   color: #657169;
   opacity: 1;
-}
-.row-name:hover {
-  border-color: #e0e4e0;
 }
 .icon {
   flex-shrink: 0;
