@@ -123,7 +123,7 @@ fn ingredient_line_includes_size_state_notes_and_to_taste() {
         properties: props,
         span: None,
     };
-    let line = format_ingredient(&resource, NumberStyle::Fractions);
+    let line = format_ingredient(&resource, NumberStyle::Fractions.into());
     assert!(line.contains("3 count"));
     assert!(line.contains("medium"));
     assert!(line.contains("ripe"));
@@ -395,20 +395,20 @@ fn ingredient_drops_unit_already_in_name_and_bare_to_taste() {
         .properties
         .insert("quantity".into(), quantity(1.0, "clove"));
     assert_eq!(
-        format_ingredient(&garlic, NumberStyle::Fractions),
+        format_ingredient(&garlic, NumberStyle::Fractions.into()),
         "1 garlic clove"
     );
 
     let mut salt = resource("salt", ResourceKind::Ingredient, "salt");
     salt.to_taste = true;
     assert_eq!(
-        format_ingredient(&salt, NumberStyle::Fractions),
+        format_ingredient(&salt, NumberStyle::Fractions.into()),
         "salt, to taste"
     );
     salt.properties
         .insert("quantity".into(), quantity(0.5, "tsp"));
     assert_eq!(
-        format_ingredient(&salt, NumberStyle::Fractions),
+        format_ingredient(&salt, NumberStyle::Fractions.into()),
         "1/2 tsp salt, plus more to taste"
     );
 }
@@ -633,14 +633,45 @@ fn number_style_switches_between_fractions_and_decimals() {
 
 #[test]
 fn fractions_cover_kitchen_denominators_and_fall_back_to_decimals() {
-    assert_eq!(format_fraction(0.5), "1/2");
-    assert_eq!(format_fraction(0.25), "1/4");
-    assert_eq!(format_fraction(1.5), "1 1/2");
+    assert_eq!(format_fraction(0.5, 2), "1/2");
+    assert_eq!(format_fraction(0.25, 2), "1/4");
+    assert_eq!(format_fraction(1.5, 2), "1 1/2");
     // Thirds are common in recipes and used to render as 0.33333.
-    assert_eq!(format_fraction(1.0 / 3.0), "1/3");
-    assert_eq!(format_fraction(2.0 / 3.0), "2/3");
-    assert_eq!(format_fraction(0.125), "1/8");
-    assert_eq!(format_fraction(3.0), "3");
+    assert_eq!(format_fraction(1.0 / 3.0, 2), "1/3");
+    assert_eq!(format_fraction(2.0 / 3.0, 2), "2/3");
+    assert_eq!(format_fraction(0.125, 2), "1/8");
+    assert_eq!(format_fraction(3.0, 2), "3");
     // A converted metric amount has no sensible fraction.
-    assert_eq!(format_fraction(236.59), "236.59");
+    assert_eq!(format_fraction(236.59, 2), "236.59");
+}
+
+#[test]
+fn decimal_places_round_converted_amounts() {
+    assert_eq!(
+        format_decimal(236.588, 0),
+        "237"
+    );
+    assert_eq!(format_decimal(236.588, 1), "236.6");
+    assert_eq!(format_decimal(236.588, 2), "236.59");
+    assert_eq!(format_decimal(236.588, 3), "236.588");
+
+    let mut resource = resource("milk", ResourceKind::Ingredient, "milk");
+    resource.properties.insert(
+        "quantity".into(),
+        Value::Quantity(Quantity {
+            value: 236.588,
+            unit: "ml".into(),
+            dimension: culinator_core::Dimension::Volume,
+        }),
+    );
+    let recipe = recipe(vec![resource], vec![]);
+
+    let one_place = extract_with_format(
+        &recipe,
+        NumberFormat {
+            style: NumberStyle::Decimals,
+            decimal_places: 1,
+        },
+    );
+    assert_eq!(one_place.ingredients, vec!["236.6 ml milk"]);
 }

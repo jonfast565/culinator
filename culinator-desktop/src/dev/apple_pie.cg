@@ -1,0 +1,204 @@
+culinator 0.3;
+
+recipe apple_pie {
+    title "Apple Pie";
+    section "Desserts";
+
+    source "mfed3";
+    publisher "based.cooking";
+    source_url "https://based.cooking/apple-pie/";
+    attribution "From based.cooking; recipes there are public domain.";
+    active_time 30 min;
+    total_time 75 min;
+
+    ingredient apples measured by mass {
+        name "golden delicious apples";
+        quantity 900 g;
+        note "4-5 apples";
+    }
+    ingredient lemon_juice measured by mass { quantity 15 g; }
+    ingredient filling_white_sugar measured by mass {
+        name "white sugar";
+        quantity 50 g;
+    }
+    ingredient brown_sugar measured by mass { quantity 65 g; }
+    ingredient cinnamon measured by mass { quantity 5 g; }
+    ingredient nutmeg measured by mass { quantity 1 g to 2 g; }
+    ingredient cornstarch measured by mass { quantity 15 g; }
+    ingredient crust_flour measured by mass {
+        name "flour";
+        quantity 350 g;
+    }
+    ingredient crust_salt measured by mass {
+        name "salt";
+        quantity 5 g;
+    }
+    ingredient crust_sugar measured by mass {
+        name "white sugar";
+        quantity 30 g;
+    }
+    ingredient crust_butter measured by mass {
+        name "cold butter";
+        quantity 225 g;
+        note "cut into slices";
+    }
+    ingredient ice_water measured by volume {
+        quantity 50 ml to 100 ml;
+    }
+    ingredient egg measured by count {
+        quantity 1 count;
+        optional true;
+        variant "egg wash";
+    }
+    ingredient wash_water measured by mass {
+        name "water";
+        quantity 15 g;
+        optional true;
+        variant "egg wash";
+    }
+
+    container bowl { name "mixing bowl"; }
+    container saucepan { name "saucepan"; }
+    container pie_pan { name "9-inch pie pan"; }
+    equipment food_processor { name "food processor"; }
+    equipment rolling_pin { name "rolling pin"; }
+    equipment knife { name "knife"; }
+    equipment brush { name "pastry brush"; }
+    equipment oven { name "oven"; }
+
+    material macerated_filling measured by mass { }
+    material reduced_filling measured by mass { }
+    material pie_dough measured by mass { }
+    material assembled_pie measured by mass { }
+
+    process filling {
+        prep cut apples into cut_apples {
+            note "peel first, then cut into 1-2 inch strips";
+            duration 10 min;
+        }
+        operation macerate does rest {
+            input [cut_apples, lemon_juice, filling_white_sugar, brown_sugar, cinnamon, nutmeg, cornstarch];
+            after cut_apples;
+            container bowl;
+            note "letting it sit draws the water out of the apples";
+            duration 15 min;
+            labor passive;
+            produces macerated_filling;
+        }
+        operation reduce does heat {
+            input [macerated_filling];
+            after macerate;
+            container saucepan;
+            heat medium_low;
+            note "stir regularly, then take it off the heat";
+            until texture "the liquid has reduced";
+            duration 15 min;
+            labor monitor;
+            produces reduced_filling;
+        }
+    }
+
+    process crust {
+        operation cut_butter_in does mix {
+            input [crust_flour, crust_salt, crust_sugar, crust_butter];
+            equipment food_processor;
+            until texture "it resembles coarse sand";
+            duration 10 sec;
+            labor active;
+            produces crumb_mixture;
+        }
+        operation add_water does mix {
+            input [crumb_mixture, ice_water];
+            after cut_butter_in;
+            equipment food_processor;
+            note "drip the water in slowly; it is ready when you can pinch the dough and it sticks together";
+            until texture "the mixture starts to chunk together";
+            duration 2 min;
+            labor active;
+            produces pie_dough;
+        }
+        operation roll_out does move {
+            input [pie_dough];
+            after add_water;
+            tool rolling_pin;
+            note "cut the dough in half and roll both halves big enough to cover a 9-inch pan";
+            duration 8 min;
+            labor active;
+            produces rolled_crusts;
+        }
+    }
+
+    process assembly {
+        operation preheat does heat {
+            target oven;
+            temperature 350 fahrenheit;
+            duration estimated 15 min;
+            labor automated;
+        }
+        operation line_pan does move {
+            input [rolled_crusts];
+            after roll_out;
+            container pie_pan;
+            tool knife;
+            note "lay the bottom half in and trim the excess";
+            duration 3 min;
+            labor active;
+            produces lined_pan;
+        }
+        operation fill_pie does move {
+            input [lined_pan, reduced_filling];
+            after [line_pan, reduce];
+            container pie_pan;
+            note "even the filling out";
+            duration 2 min;
+            labor active;
+            produces filled_pie;
+        }
+        operation top_pie does mix {
+            input [filled_pie, rolled_crusts];
+            after fill_pie;
+            container pie_pan;
+            note "lay the top crust on, fold and tuck the excess, then pinch the top and bottom crusts together with a fork or your fingers so there are no air gaps";
+            duration 5 min;
+            labor active;
+            produces assembled_pie;
+        }
+        operation egg_wash does coat {
+            input [assembled_pie, egg, wash_water];
+            after top_pie;
+            optional true;
+            tool brush;
+            note "gives the crust a shiny golden-brown finish";
+            duration 2 min;
+            labor active;
+            produces washed_pie;
+        }
+        operation vent does mix {
+            input [assembled_pie];
+            after [top_pie, egg_wash];
+            tool knife;
+            note "cut a few slits in the top crust for a design and to let air escape";
+            duration 1 min;
+            labor active;
+            produces vented_pie;
+        }
+    }
+
+    process baking {
+        operation bake does heat {
+            input [vented_pie];
+            after [vent, preheat];
+            container pie_pan;
+            equipment oven;
+            temperature 350 fahrenheit;
+            until visual "the crust is browned to your liking and the apples are bubbling inside";
+            duration 45 min;
+            labor passive;
+            produces baked_pie;
+        }
+    }
+
+    yield servings measured by count {
+        amount 8 count;
+    }
+}

@@ -20,7 +20,7 @@ pub use narrative::UiNarrative;
 pub use outline::UiOutline;
 pub use ui_model::{UiDiagnostic, UiRecipeModel};
 
-use culinator_core::UnitSystem;
+use culinator_core::{TemperatureScale, UnitSystem};
 use culinator_narrative::NumberStyle;
 use culinator_parser::parse_recipe_recovering;
 use wasm_bindgen::prelude::*;
@@ -73,32 +73,58 @@ pub fn parse_outline_native(source: &str) -> UiOutline {
 /// Build the reading-page narrative: ingredient groups, method sections with
 /// rendered step prose, times, and per-section mise en place.
 ///
-/// `unit_system` is `"metric"` or `"us_customary"`; anything else keeps the
-/// amounts as authored. `number_style` is `"decimals"` or `"fractions"`. Returns JSON; never fails, it degrades to an empty
-/// narrative for unparseable source.
+/// `unit_system` is `"metric"` or `"us_customary"`; anything else keeps mass/volume
+/// as authored. `temperature_scale` is `"celsius"` or `"fahrenheit"`; anything
+/// else keeps temperatures as authored. `number_style` is `"decimals"` or
+/// `"fractions"`. `decimal_places` is 0–3 for plain-decimal rendering.
+/// Returns JSON; never fails, it degrades to an empty narrative for unparseable
+/// source.
 #[wasm_bindgen]
-pub fn narrative(source: &str, unit_system: &str, number_style: &str) -> String {
-    serde_json::to_string(&narrative_native(source, unit_system, number_style))
-        .unwrap_or_else(|error| format!(r#"{{"error":"{error}"}}"#))
+pub fn narrative(
+    source: &str,
+    unit_system: &str,
+    temperature_scale: &str,
+    number_style: &str,
+    decimal_places: u32,
+) -> String {
+    serde_json::to_string(&narrative_native(
+        source,
+        unit_system,
+        temperature_scale,
+        number_style,
+        decimal_places,
+    ))
+    .unwrap_or_else(|error| format!(r#"{{"error":"{error}"}}"#))
 }
 
 pub fn narrative_native(
     source: &str,
     unit_system: &str,
+    temperature_scale: &str,
     number_style: &str,
+    decimal_places: u32,
 ) -> narrative::UiNarrative {
     let system = match unit_system {
         "metric" => Some(UnitSystem::Metric),
         "us_customary" => Some(UnitSystem::UsCustomary),
         _ => None,
     };
+    let scale = match temperature_scale {
+        "celsius" => Some(TemperatureScale::Celsius),
+        "fahrenheit" => Some(TemperatureScale::Fahrenheit),
+        _ => None,
+    };
     let style = match number_style {
         "decimals" => NumberStyle::Decimals,
         _ => NumberStyle::Fractions,
     };
+    let format = culinator_narrative::NumberFormat {
+        style,
+        decimal_places: decimal_places.min(3) as u8,
+    };
     match parse_recipe_recovering(source).value {
-        Some(recipe) => narrative::build(&recipe, system, style),
-        None => narrative::build(&empty_recipe(), system, style),
+        Some(recipe) => narrative::build(&recipe, system, scale, format),
+        None => narrative::build(&empty_recipe(), system, scale, format),
     }
 }
 

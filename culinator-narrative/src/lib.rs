@@ -73,9 +73,14 @@ pub fn extract(recipe: &Recipe) -> RecipeContent {
     extract_with(recipe, NumberStyle::Fractions)
 }
 
-/// Render with an explicit number style.
+/// Render with an explicit number style (default decimal precision).
 pub fn extract_with(recipe: &Recipe, style: NumberStyle) -> RecipeContent {
-    let labels = label_map(recipe, style);
+    extract_with_format(recipe, NumberFormat::from(style))
+}
+
+/// Render with number style and decimal precision for plain decimals.
+pub fn extract_with_format(recipe: &Recipe, format: NumberFormat) -> RecipeContent {
+    let labels = label_map(recipe, format);
     let ingredient_resources: Vec<&Resource> = recipe
         .resources
         .iter()
@@ -83,9 +88,9 @@ pub fn extract_with(recipe: &Recipe, style: NumberStyle) -> RecipeContent {
         .collect();
     let ingredients: Vec<String> = ingredient_resources
         .iter()
-        .map(|resource| format_ingredient(resource, style))
+        .map(|resource| format_ingredient(resource, format))
         .collect();
-    let ingredient_groups = group_ingredients(&ingredient_resources, style);
+    let ingredient_groups = group_ingredients(&ingredient_resources, format);
     let equipment: Vec<String> = recipe
         .resources
         .iter()
@@ -105,7 +110,7 @@ pub fn extract_with(recipe: &Recipe, style: NumberStyle) -> RecipeContent {
 
     let ordered = order::sort_operations_for_display(&recipe.operations);
     let predecessors = order::transitive_predecessors(&recipe.operations);
-    let sections = build_sections(recipe, &labels, &ordered, &predecessors, style);
+    let sections = build_sections(recipe, &labels, &ordered, &predecessors, format);
     let summary = summary_line(&ingredients, &ordered);
 
     RecipeContent {
@@ -125,7 +130,7 @@ fn build_sections(
     labels: &BTreeMap<String, String>,
     ordered: &[&Operation],
     predecessors: &BTreeMap<String, BTreeSet<String>>,
-    style: NumberStyle,
+    format: NumberFormat,
 ) -> Vec<Section> {
     let mut groups: Vec<(String, Vec<&Operation>)> = Vec::new();
     for operation in ordered {
@@ -144,7 +149,7 @@ fn build_sections(
         let mut steps = Vec::new();
         for operation in operations {
             number += 1;
-            let mut text = describe_operation(labels, operation, style);
+            let mut text = describe_operation(labels, operation, format);
             if overlaps_previous(operation, previous, predecessors) {
                 text = format!("Meanwhile, {}", lowercase_first(&text));
             }
@@ -153,7 +158,7 @@ fn build_sections(
                 number,
                 text,
                 time: step_time(operation),
-                meta: step_meta(recipe, operation, style),
+                meta: step_meta(recipe, operation, format),
                 tools: step_tools(labels, operation),
             });
             previous = Some(operation);
@@ -316,7 +321,7 @@ fn step_verb(operation: &Operation) -> String {
 fn describe_operation(
     labels: &BTreeMap<String, String>,
     operation: &Operation,
-    style: NumberStyle,
+    format: NumberFormat,
 ) -> String {
     let inputs: Vec<(String, bool)> = operation
         .bindings
@@ -324,7 +329,7 @@ fn describe_operation(
         .filter(|binding| binding.role == BindingRole::Input)
         .map(|binding| {
             (
-                format_binding(labels, binding, style),
+                format_binding(labels, binding, format),
                 binding.quantity.is_some(),
             )
         })
@@ -520,7 +525,7 @@ fn describe_operation(
         };
         sentence.push_str(&format!(
             " {preposition} {}",
-            display_temperature(temperature, style)
+            display_temperature(temperature, format)
         ));
     }
     if let Some(level) = operation.heat_level {
@@ -533,12 +538,12 @@ fn describe_operation(
             .map(|cue| match cue.kind {
                 DonenessKind::InternalTemp => {
                     let shown = match &cue.value {
-                        Value::Quantity(quantity) => display_temperature(quantity, style),
-                        value => display_value(value, style),
+                        Value::Quantity(quantity) => display_temperature(quantity, format),
+                        value => display_value_format(value, format),
                     };
                     format!("it reaches {shown} internal")
                 }
-                _ => display_value(&cue.value, style),
+                _ => display_value_format(&cue.value, format),
             })
             .collect();
         sentence.push_str(&format!(", until {}", phrases.join(" and ")));
@@ -582,7 +587,7 @@ fn step_time(operation: &Operation) -> Option<String> {
     Some(formatted)
 }
 
-fn step_meta(recipe: &Recipe, operation: &Operation, style: NumberStyle) -> Vec<String> {
+fn step_meta(recipe: &Recipe, operation: &Operation, format: NumberFormat) -> Vec<String> {
     let mut parts = Vec::new();
     if let Some(labor) = operation.labor {
         parts.push(labor_label(labor).to_owned());
@@ -599,7 +604,7 @@ fn step_meta(recipe: &Recipe, operation: &Operation, style: NumberStyle) -> Vec<
             .iter()
             .find(|resource| resource.symbol == output)
             .and_then(|resource| resource.properties.get("state"))
-            .and_then(|value| value_text(value, style));
+            .and_then(|value| value_text(value, format));
         match state {
             // Skip a state the product name already spells out, so
             // "caramelized_onions" doesn't read "caramelized caramelized onions".
@@ -657,11 +662,11 @@ fn summary_line(ingredients: &[String], ordered: &[&Operation]) -> String {
     parts.join(" · ")
 }
 
-fn group_ingredients(resources: &[&Resource], style: NumberStyle) -> Vec<IngredientGroup> {
+fn group_ingredients(resources: &[&Resource], format: NumberFormat) -> Vec<IngredientGroup> {
     let mut base = Vec::new();
     let mut variants: Vec<(String, Vec<String>)> = Vec::new();
     for resource in resources {
-        let line = format_ingredient(resource, style);
+        let line = format_ingredient(resource, format);
         match &resource.variant {
             Some(variant) => match variants.iter_mut().find(|(label, _)| label == variant) {
                 Some((_, items)) => items.push(line),
@@ -716,10 +721,18 @@ pub fn ingredient_line_with(
     step_quantity: Option<&Quantity>,
     style: NumberStyle,
 ) -> IngredientLine {
+    ingredient_line_with_format(resource, step_quantity, NumberFormat::from(style))
+}
+
+pub fn ingredient_line_with_format(
+    resource: &Resource,
+    step_quantity: Option<&Quantity>,
+    format: NumberFormat,
+) -> IngredientLine {
     let name = resource
         .properties
         .get("name")
-        .map(|value| display_value(value, style))
+        .map(|value| display_value_format(value, format))
         .unwrap_or_else(|| resource.symbol.replace('_', " "));
     let source = step_quantity
         .map(|quantity| Value::Quantity(quantity.clone()))
@@ -727,16 +740,16 @@ pub fn ingredient_line_with(
     let quantity = match &source {
         // "1 clove garlic clove": drop a unit the name already spells out.
         Some(Value::Quantity(quantity)) if any_word_matches(&name, &quantity.unit) => {
-            format_number(quantity.value, style)
+            format_number(quantity.value, format)
         }
-        Some(value) => display_value(value, style),
+        Some(value) => display_value_format(value, format),
         None => String::new(),
     };
     let has_quantity = !quantity.is_empty();
     let state = resource
         .properties
         .get("state")
-        .and_then(|value| value_text(value, style));
+        .and_then(|value| value_text(value, format));
     let size = resource.size.as_deref().unwrap_or("");
     let parts = vec![size.to_owned(), state.unwrap_or_default(), name];
     let description = parts
@@ -795,18 +808,18 @@ pub fn ingredient_line_with(
     }
 }
 
-fn format_ingredient(resource: &Resource, style: NumberStyle) -> String {
-    ingredient_line_with(resource, None, style).flat()
+fn format_ingredient(resource: &Resource, format: NumberFormat) -> String {
+    ingredient_line_with_format(resource, None, format).flat()
 }
 
 fn format_binding(
     labels: &BTreeMap<String, String>,
     binding: &culinator_core::ResourceBinding,
-    style: NumberStyle,
+    format: NumberFormat,
 ) -> String {
     let name = binding_label(labels, &binding.resource);
     match &binding.quantity {
-        Some(quantity) => format!("{} {}", display_quantity(quantity, style), name),
+        Some(quantity) => format!("{} {}", display_quantity(quantity, format), name),
         None => name,
     }
 }
@@ -826,7 +839,7 @@ fn operation_output(operation: &Operation) -> Option<String> {
         .map(|binding| binding.resource.clone())
 }
 
-fn label_map(recipe: &Recipe, style: NumberStyle) -> BTreeMap<String, String> {
+fn label_map(recipe: &Recipe, format: NumberFormat) -> BTreeMap<String, String> {
     recipe
         .resources
         .iter()
@@ -834,7 +847,7 @@ fn label_map(recipe: &Recipe, style: NumberStyle) -> BTreeMap<String, String> {
             let name = resource
                 .properties
                 .get("name")
-                .and_then(|value| value_text(value, style))
+                .and_then(|value| value_text(value, format))
                 .unwrap_or_else(|| humanize(&resource.symbol));
             (resource.symbol.clone(), name)
         })
@@ -937,13 +950,13 @@ fn heat_label(level: HeatLevel) -> &'static str {
     }
 }
 
-fn display_temperature(quantity: &Quantity, style: NumberStyle) -> String {
+fn display_temperature(quantity: &Quantity, format: NumberFormat) -> String {
     let unit = match quantity.unit.to_ascii_lowercase().as_str() {
         "fahrenheit" | "f" => "°F",
         "celsius" | "c" => "°C",
-        _ => return display_quantity(quantity, style),
+        _ => return display_quantity(quantity, format),
     };
-    format!("{} {unit}", quantity.value)
+    format!("{} {unit}", format_number(quantity.value, format))
 }
 
 fn humanize(symbol: &str) -> String {
@@ -976,10 +989,10 @@ fn sentence_case(note: &str) -> String {
     sentence
 }
 
-fn value_text(value: &Value, style: NumberStyle) -> Option<String> {
+fn value_text(value: &Value, format: NumberFormat) -> Option<String> {
     match value {
         Value::Text(value) | Value::Symbol(value) => Some(value.clone()),
-        Value::Quantity(quantity) => Some(display_quantity(quantity, style)),
+        Value::Quantity(quantity) => Some(display_quantity(quantity, format)),
         _ => None,
     }
 }
@@ -997,20 +1010,58 @@ pub enum NumberStyle {
     Decimals,
 }
 
-fn format_number(value: f64, style: NumberStyle) -> String {
-    match style {
-        NumberStyle::Decimals => format_decimal(value),
-        NumberStyle::Fractions => format_fraction(value),
+/// Number style plus decimal precision for plain-decimal rendering.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NumberFormat {
+    pub style: NumberStyle,
+    /// Decimal places when rendering plain decimals (0–3). Default 2.
+    pub decimal_places: u8,
+}
+
+impl Default for NumberFormat {
+    fn default() -> Self {
+        Self {
+            style: NumberStyle::default(),
+            decimal_places: 2,
+        }
     }
 }
 
-/// Trim a float to at most two decimals without a trailing `.0`.
-fn format_decimal(value: f64) -> String {
+impl From<NumberStyle> for NumberFormat {
+    fn from(style: NumberStyle) -> Self {
+        Self {
+            style,
+            decimal_places: 2,
+        }
+    }
+}
+
+fn clamp_decimal_places(places: u8) -> u8 {
+    places.min(3)
+}
+
+fn format_number(value: f64, format: NumberFormat) -> String {
+    match format.style {
+        NumberStyle::Decimals => format_decimal(value, format.decimal_places),
+        NumberStyle::Fractions => format_fraction(value, format.decimal_places),
+    }
+}
+
+/// Trim a float to at most `places` decimals without a trailing `.0`.
+fn format_decimal(value: f64, places: u8) -> String {
+    let places = clamp_decimal_places(places);
     if (value - value.round()).abs() < 1e-9 {
         return format!("{}", value.round() as i64);
     }
-    let rounded = (value * 100.0).round() / 100.0;
-    format!("{rounded:.2}")
+    let factor = 10_f64.powi(i32::from(places));
+    let rounded = (value * factor).round() / factor;
+    let formatted = match places {
+        0 => format!("{rounded:.0}"),
+        1 => format!("{rounded:.1}"),
+        2 => format!("{rounded:.2}"),
+        _ => format!("{rounded:.3}"),
+    };
+    formatted
         .trim_end_matches('0')
         .trim_end_matches('.')
         .to_owned()
@@ -1019,12 +1070,12 @@ fn format_decimal(value: f64) -> String {
 /// Cooking fractions for the denominators a kitchen actually uses. Anything
 /// that is not close to one of them (a converted 236.59 ml, say) falls back to
 /// a decimal rather than inventing a fraction nobody can measure.
-fn format_fraction(value: f64) -> String {
+fn format_fraction(value: f64, decimal_places: u8) -> String {
     const DENOMINATORS: [u32; 4] = [2, 3, 4, 8];
     let whole = value.trunc();
     let remainder = value - whole;
     if remainder.abs() < 1e-9 {
-        return format_decimal(value);
+        return format_decimal(value, decimal_places);
     }
     for denominator in DENOMINATORS {
         let numerator = remainder * f64::from(denominator);
@@ -1037,7 +1088,7 @@ fn format_fraction(value: f64) -> String {
             return fraction;
         }
     }
-    format_decimal(value)
+    format_decimal(value, decimal_places)
 }
 
 /// The displayed unit, or `None` when the unit is a bare counter ("2 eggs",
@@ -1073,8 +1124,8 @@ fn display_unit(value: f64, unit: &str) -> Option<String> {
     }
 }
 
-fn display_quantity(quantity: &Quantity, style: NumberStyle) -> String {
-    let number = format_number(quantity.value, style);
+fn display_quantity(quantity: &Quantity, format: NumberFormat) -> String {
+    let number = format_number(quantity.value, format);
     match display_unit(quantity.value, &quantity.unit) {
         Some(unit) => format!("{number} {unit}"),
         None => number,
@@ -1082,14 +1133,18 @@ fn display_quantity(quantity: &Quantity, style: NumberStyle) -> String {
 }
 
 pub fn display_value(value: &Value, style: NumberStyle) -> String {
+    display_value_format(value, NumberFormat::from(style))
+}
+
+fn display_value_format(value: &Value, format: NumberFormat) -> String {
     match value {
         Value::Text(value) | Value::Symbol(value) => value.clone(),
-        Value::Number(value) => format_number(*value, style),
+        Value::Number(value) => format_number(*value, format),
         Value::Boolean(value) => value.to_string(),
-        Value::Quantity(quantity) => display_quantity(quantity, style),
+        Value::Quantity(quantity) => display_quantity(quantity, format),
         Value::List(values) => values
             .iter()
-            .map(|value| display_value(value, style))
+            .map(|value| display_value_format(value, format))
             .collect::<Vec<_>>()
             .join(", "),
         // Collapse a range's shared unit: "4–5 bananas", "100–200 g", not
@@ -1100,8 +1155,8 @@ pub fn display_value(value: &Value, style: NumberStyle) -> String {
             {
                 let numbers = format!(
                     "{}\u{2013}{}",
-                    format_number(low.value, style),
-                    format_number(high.value, style)
+                    format_number(low.value, format),
+                    format_number(high.value, format)
                 );
                 match display_unit(high.value, &high.unit) {
                     Some(unit) => format!("{numbers} {unit}"),
@@ -1110,8 +1165,8 @@ pub fn display_value(value: &Value, style: NumberStyle) -> String {
             }
             _ => format!(
                 "{}\u{2013}{}",
-                display_value(min, style),
-                display_value(max, style)
+                display_value_format(min, format),
+                display_value_format(max, format)
             ),
         },
         Value::Object(_) => String::new(),
@@ -1121,14 +1176,14 @@ pub fn display_value(value: &Value, style: NumberStyle) -> String {
 #[cfg(test)]
 mod test;
 
-/// Restate every quantity in `recipe` in the units `system` would use, leaving
-/// the rest of the model untouched.
+/// Restate mass, volume, and length quantities in `recipe` for `system`, leaving
+/// temperatures and the rest of the model untouched.
 ///
 /// Conversion happens once, up front, rather than being threaded through each
-/// rendering function — so ingredient lines, per-step amounts, oven
-/// temperatures, and internal-temp doneness cues all convert consistently, and
-/// presentation code stays unit-agnostic. Durations are stored as seconds
-/// rather than quantities and are deliberately unaffected.
+/// rendering function — so ingredient lines and per-step amounts convert
+/// consistently, and presentation code stays unit-agnostic. Temperatures are
+/// converted separately via [`convert_recipe_temperatures`]. Durations are
+/// stored as seconds rather than quantities and are deliberately unaffected.
 ///
 /// A quantity that cannot be converted (an unknown or count-based unit like
 /// `clove`) is left exactly as authored.
@@ -1145,14 +1200,23 @@ pub fn convert_recipe_units(recipe: &Recipe, system: UnitSystem) -> Recipe {
                 binding.quantity = Some(convert_quantity(quantity, system));
             }
         }
-        if let Some(temperature) = &operation.target_temperature {
-            operation.target_temperature = Some(convert_quantity(temperature, system));
-        }
-        for cue in &mut operation.doneness {
-            convert_value(&mut cue.value, system);
-        }
         for value in operation.properties.values_mut() {
             convert_value(value, system);
+        }
+    }
+    converted
+}
+
+/// Restate oven setpoints and internal-temp doneness cues in Celsius or
+/// Fahrenheit, leaving mass/volume quantities untouched.
+pub fn convert_recipe_temperatures(recipe: &Recipe, scale: culinator_core::TemperatureScale) -> Recipe {
+    let mut converted = recipe.clone();
+    for operation in &mut converted.operations {
+        if let Some(temperature) = &operation.target_temperature {
+            operation.target_temperature = Some(convert_temperature_quantity(temperature, scale));
+        }
+        for cue in &mut operation.doneness {
+            convert_temperature_value(&mut cue.value, scale);
         }
     }
     converted
@@ -1175,6 +1239,9 @@ fn convert_value(value: &mut Value, system: UnitSystem) {
 }
 
 fn convert_quantity(quantity: &Quantity, system: UnitSystem) -> Quantity {
+    if quantity.dimension == culinator_core::Dimension::Temperature {
+        return quantity.clone();
+    }
     match culinator_core::convert_for_system(quantity, system) {
         Ok((value, unit)) => Quantity {
             value,
@@ -1182,6 +1249,38 @@ fn convert_quantity(quantity: &Quantity, system: UnitSystem) -> Quantity {
             dimension: quantity.dimension,
         },
         // Count-based and unrecognized units have no metric/US equivalent.
+        Err(_) => quantity.clone(),
+    }
+}
+
+fn convert_temperature_value(value: &mut Value, scale: culinator_core::TemperatureScale) {
+    match value {
+        Value::Quantity(quantity) if quantity.dimension == culinator_core::Dimension::Temperature => {
+            *quantity = convert_temperature_quantity(quantity, scale);
+        }
+        Value::Range { min, max } => {
+            convert_temperature_value(min, scale);
+            convert_temperature_value(max, scale);
+        }
+        Value::List(items) => {
+            for item in items {
+                convert_temperature_value(item, scale);
+            }
+        }
+        _ => {}
+    }
+}
+
+fn convert_temperature_quantity(
+    quantity: &Quantity,
+    scale: culinator_core::TemperatureScale,
+) -> Quantity {
+    match culinator_core::convert_for_temperature_scale(quantity, scale) {
+        Ok((value, unit)) => Quantity {
+            value,
+            unit,
+            dimension: quantity.dimension,
+        },
         Err(_) => quantity.clone(),
     }
 }
@@ -1201,7 +1300,11 @@ pub struct Mise {
 }
 
 pub fn section_mise(recipe: &Recipe, process: &str, style: NumberStyle) -> Mise {
-    let labels = label_map(recipe, style);
+    section_mise_format(recipe, process, NumberFormat::from(style))
+}
+
+pub fn section_mise_format(recipe: &Recipe, process: &str, format: NumberFormat) -> Mise {
+    let labels = label_map(recipe, format);
     let by_symbol: BTreeMap<&str, &Resource> = recipe
         .resources
         .iter()
@@ -1222,7 +1325,7 @@ pub fn section_mise(recipe: &Recipe, process: &str, style: NumberStyle) -> Mise 
                     if resource.kind != ResourceKind::Ingredient {
                         continue;
                     }
-                    let line = ingredient_line_with(resource, binding.quantity.as_ref(), style);
+                    let line = ingredient_line_with_format(resource, binding.quantity.as_ref(), format);
                     // A divided ingredient legitimately appears more than once
                     // when steps take different amounts; identical lines do not.
                     if !mise.ingredients.contains(&line) {

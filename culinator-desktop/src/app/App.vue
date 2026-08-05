@@ -13,6 +13,7 @@ import {
   Hash,
   Ruler,
   Save,
+  Thermometer,
 } from "lucide-vue-next";
 import { useRecipeLibrary } from "../features/library/composables/useRecipeLibrary";
 import DiagnosticsPane from "../features/recipe-editor/components/DiagnosticsPane.vue";
@@ -40,7 +41,15 @@ import {
   useViewSettings,
 } from "../features/reading/composables/useViewSettings";
 import AppMenuBar, { type AppMenuAction } from "./components/AppMenuBar.vue";
+import AppSettingsDialog from "./components/AppSettingsDialog.vue";
+import { printBook } from "../features/bookshelf/printBook";
 import { printRecipeCards } from "../features/bookshelf/printRecipeCards";
+import { INDEX_CARD_MARGIN_NAMES } from "../features/reading/indexCardMargin";
+import { parseIndexCardMenuAction } from "../features/reading/indexCardFormat";
+import { printIndexCard, printableDocumentTitle } from "../features/reading/printIndexCard";
+import { RECIPE_TYPE_SCALE_LABELS } from "../features/reading/recipeTypeScale";
+import IndexCardStage from "../features/reading/components/IndexCardStage.vue";
+import IndexCardControls from "../features/reading/components/IndexCardControls.vue";
 import type { Diagnostic } from "../domain/types";
 
 const library = useRecipeLibrary();
@@ -58,9 +67,9 @@ watch(
   },
   { immediate: true },
 );
-// When the open recipe changes, match unit display to that recipe's authored
-// mass/volume quantities so a leftover Metric/US preference does not convert
-// cups↔ml or g↔oz away from how the recipe was written.
+// When the open recipe changes, match unit and temperature display to that
+// recipe's authored quantities so a leftover preference does not convert away
+// from how the recipe was written.
 watch(
   () => library.selectedRecipe.value?.id,
   (id) => {
@@ -74,9 +83,22 @@ const textSizeLabel = computed(() => {
   if (viewSettings.textSize.value === "x-large") return "A++";
   return "A";
 });
+const recipeHeaderTypeLabel = computed(
+  () => RECIPE_TYPE_SCALE_LABELS[viewSettings.recipeHeaderScale.value],
+);
+const recipeBodyTypeLabel = computed(
+  () => RECIPE_TYPE_SCALE_LABELS[viewSettings.recipeBodyScale.value],
+);
+const recipeAnnotationTypeLabel = computed(
+  () => RECIPE_TYPE_SCALE_LABELS[viewSettings.recipeAnnotationScale.value],
+);
+const indexCardMarginLabel = computed(
+  () => INDEX_CARD_MARGIN_NAMES[viewSettings.indexCardMargin.value],
+);
 
 const connection = ref<ConnectionStatus>("connecting");
 const importing = ref(false);
+const settingsOpen = ref(false);
 const activeTool = ref<InspectorTabId | null>(null);
 const kitchenMode = ref(false);
 const ingredientMatchSymbol = ref<string | null>(null);
@@ -112,6 +134,17 @@ const stopStatus = onConnectionStatus((status) => {
 
 const liveRecipeTitle = computed(
   () => editor.model.value.title || library.selectedRecipe.value?.title || "Untitled recipe",
+);
+
+const recipeBookTitle = computed(() => {
+  const bookId = library.selectedRecipe.value?.bookId ?? null;
+  if (!bookId) return null;
+  return library.books.value.find((book) => book.id === bookId)?.title ?? null;
+});
+
+/** Save-as-PDF / print job name: includes the recipe book when available. */
+const printRecipeDocumentTitle = computed(() =>
+  printableDocumentTitle(liveRecipeTitle.value, recipeBookTitle.value),
 );
 
 const openBookSummary = computed(
@@ -212,14 +245,29 @@ function onGlobalKeydown(event: KeyboardEvent): void {
     return;
   }
 
+  if (mod && event.key.toLowerCase() === "p" && nav.view.value === "book") {
+    event.preventDefault();
+    const bookTitle = openBookSummary.value?.title ?? "Book";
+    if (viewSettings.bookLayout.value === "cards") {
+      void printRecipeCards(bookTitle);
+    } else if (nav.bookId.value) {
+      void printBook(nav.bookId.value, bookTitle);
+    }
+    return;
+  }
+
   if (
     mod &&
     event.key.toLowerCase() === "p" &&
-    nav.view.value === "book" &&
-    viewSettings.bookLayout.value === "cards"
+    library.selectedRecipe.value &&
+    ["reading", "editing", "building"].includes(nav.view.value)
   ) {
     event.preventDefault();
-    printRecipeCards();
+    void printIndexCard({
+      format: viewSettings.indexCardFormat.value,
+      margin: viewSettings.indexCardMargin.value,
+      title: printRecipeDocumentTitle.value,
+    });
     return;
   }
 
@@ -350,10 +398,12 @@ async function importFromFile(): Promise<void> {
 }
 async function convertRecipeUnits(): Promise<void> {
   if (!library.selectedRecipe.value) return;
-  const target = unitDisplay.unitSystem.value === "metric" ? "metric" : "US customary";
+  const massVolume = unitDisplay.unitSystem.value === "metric" ? "metric" : "US customary";
+  const tempScale =
+    unitDisplay.temperatureScale.value === "celsius" ? "Celsius" : "Fahrenheit";
   if (
     !(await dialog.confirm(
-      `Convert convertible ingredient quantities and step temperatures in this recipe to ${target} units? Count-based measures (cloves, sticks, etc.) will stay unchanged.`,
+      `Convert convertible ingredient quantities to ${massVolume} units and step temperatures to ${tempScale}? Count-based measures (cloves, sticks, etc.) will stay unchanged.`,
       { title: "Convert units", confirmLabel: "Convert" },
     ))
   ) {
@@ -441,6 +491,11 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
     openTool(action.slice(5) as InspectorTabId);
     return;
   }
+  const indexCardFormat = parseIndexCardMenuAction(action);
+  if (indexCardFormat) {
+    viewSettings.setIndexCardFormat(indexCardFormat);
+    return;
+  }
   switch (action) {
     case "home":
       await goHome();
@@ -483,6 +538,9 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
     case "toggle-units":
       unitDisplay.toggleUnitSystem();
       break;
+    case "toggle-temperature":
+      unitDisplay.toggleTemperatureScale();
+      break;
     case "toggle-mise":
       viewSettings.toggleMisePlacement();
       break;
@@ -497,8 +555,40 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
       break;
     case "print-recipe-cards":
       if (nav.view.value === "book" && viewSettings.bookLayout.value === "cards") {
-        printRecipeCards();
+        void printRecipeCards(openBookSummary.value?.title ?? "Book");
       }
+      break;
+    case "print-book":
+      if (nav.view.value === "book" && nav.bookId.value) {
+        void printBook(nav.bookId.value, openBookSummary.value?.title ?? "Book");
+      }
+      break;
+    case "print-index-card":
+      if (library.selectedRecipe.value) {
+        void printIndexCard({
+          format: viewSettings.indexCardFormat.value,
+          margin: viewSettings.indexCardMargin.value,
+          title: printRecipeDocumentTitle.value,
+        });
+      }
+      break;
+    case "cycle-recipe-header-type":
+      viewSettings.cycleRecipeHeaderScale();
+      break;
+    case "cycle-recipe-body-type":
+      viewSettings.cycleRecipeBodyScale();
+      break;
+    case "cycle-recipe-annotation-type":
+      viewSettings.cycleRecipeAnnotationScale();
+      break;
+    case "cycle-index-card-margin":
+      viewSettings.cycleIndexCardMargin();
+      break;
+    case "toggle-index-card-pager":
+      viewSettings.toggleIndexCardPager();
+      break;
+    case "open-settings":
+      settingsOpen.value = true;
       break;
     case "convert-units":
       await convertRecipeUnits();
@@ -538,13 +628,25 @@ const saveBlocked = computed(
       :dirty="editor.dirty.value"
       :saving="editor.saving.value"
       :unit-system="unitDisplay.unitSystem.value"
+      :temperature-scale="unitDisplay.temperatureScale.value"
       :mise-placement="viewSettings.misePlacement.value"
       :number-style="viewSettings.numberStyle.value"
       :text-size-label="textSizeLabel"
       :book-layout="viewSettings.bookLayout.value"
+      :index-card-format="viewSettings.indexCardFormat.value"
+      :recipe-header-type-label="recipeHeaderTypeLabel"
+      :recipe-body-type-label="recipeBodyTypeLabel"
+      :recipe-annotation-type-label="recipeAnnotationTypeLabel"
+      :index-card-margin-label="indexCardMarginLabel"
+      :show-index-card-pager="viewSettings.showIndexCardPager.value"
       :on-book-view="nav.view.value === 'book'"
+      :on-recipe-view="
+        Boolean(library.selectedRecipe.value) &&
+        ['reading', 'editing', 'building'].includes(nav.view.value)
+      "
       @action="handleMenuAction"
     />
+    <AppSettingsDialog :open="settingsOpen" @close="settingsOpen = false" />
     <Bookshelf
       v-if="nav.view.value === 'shelf'"
       :books="library.books.value"
@@ -597,6 +699,50 @@ const saveBlocked = computed(
           /></small>
         </div>
         <div class="reading-bar-actions">
+          <IndexCardControls
+            v-if="!kitchenMode"
+            compact
+            :recipe-title="printRecipeDocumentTitle"
+          />
+          <button
+            v-if="!kitchenMode"
+            class="ghost compact"
+            :title="
+              unitDisplay.unitSystem.value === 'metric'
+                ? 'Showing metric — switch to US customary'
+                : 'Showing US customary — switch to metric'
+            "
+            @click="unitDisplay.toggleUnitSystem()"
+          >
+            <Ruler :size="14" />
+            {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+          </button>
+          <button
+            v-if="!kitchenMode"
+            class="ghost compact"
+            :title="
+              unitDisplay.temperatureScale.value === 'celsius'
+                ? 'Showing Celsius — switch to Fahrenheit'
+                : 'Showing Fahrenheit — switch to Celsius'
+            "
+            @click="unitDisplay.toggleTemperatureScale()"
+          >
+            <Thermometer :size="14" />
+            {{ unitDisplay.temperatureScale.value === "celsius" ? "°C" : "°F" }}
+          </button>
+          <button
+            v-if="!kitchenMode && viewSettings.indexCardFormat.value !== 'full'"
+            class="ghost compact"
+            :title="
+              viewSettings.misePlacement.value === 'colocated'
+                ? 'Mise with each section — switch to top list'
+                : 'Mise at top — switch to per-section'
+            "
+            @click="viewSettings.toggleMisePlacement()"
+          >
+            <Layers :size="14" />
+            {{ viewSettings.misePlacement.value === "colocated" ? "By section" : "Top mise" }}
+          </button>
           <button
             v-if="!kitchenMode"
             class="ghost"
@@ -624,13 +770,15 @@ const saveBlocked = computed(
         </div>
       </header>
       <div class="reading-stage">
-        <RecipePage
-          :model="editor.model.value"
-          :source="editor.source.value"
-          :recipe-id="library.selectedRecipe.value?.id"
-          :kitchen-mode="kitchenMode"
-          @kitchen-finished="kitchenMode = false"
-        />
+        <IndexCardStage>
+          <RecipePage
+            :model="editor.model.value"
+            :source="editor.source.value"
+            :recipe-id="library.selectedRecipe.value?.id"
+            :kitchen-mode="kitchenMode"
+            @kitchen-finished="kitchenMode = false"
+          />
+        </IndexCardStage>
       </div>
     </main>
 
@@ -654,6 +802,7 @@ const saveBlocked = computed(
         </div>
         <div class="reading-bar-actions">
           <div class="view-toggles" role="group" aria-label="Preview display">
+            <IndexCardControls compact :recipe-title="printRecipeDocumentTitle" />
             <button
               class="ghost compact"
               :title="
@@ -665,6 +814,18 @@ const saveBlocked = computed(
             >
               <Ruler :size="14" />
               {{ unitDisplay.unitSystem.value === "metric" ? "Metric" : "US" }}
+            </button>
+            <button
+              class="ghost compact"
+              :title="
+                unitDisplay.temperatureScale.value === 'celsius'
+                  ? 'Showing Celsius — switch to Fahrenheit'
+                  : 'Showing Fahrenheit — switch to Celsius'
+              "
+              @click="unitDisplay.toggleTemperatureScale()"
+            >
+              <Thermometer :size="14" />
+              {{ unitDisplay.temperatureScale.value === "celsius" ? "°C" : "°F" }}
             </button>
             <button
               class="ghost compact"
@@ -730,15 +891,17 @@ const saveBlocked = computed(
         }"
       >
         <div class="reading-stage">
-          <RecipePage
-            :model="editor.model.value"
-            :recipe-id="library.selectedRecipe.value?.id"
-            :source="editor.source.value"
-            :editable="true"
-            :highlighted-symbol="highlightedSymbol"
-            @update:source="editor.source.value = $event"
-            @select-symbol="onPreviewSelect"
-          />
+          <IndexCardStage>
+            <RecipePage
+              :model="editor.model.value"
+              :recipe-id="library.selectedRecipe.value?.id"
+              :source="editor.source.value"
+              :editable="true"
+              :highlighted-symbol="highlightedSymbol"
+              @update:source="editor.source.value = $event"
+              @select-symbol="onPreviewSelect"
+            />
+          </IndexCardStage>
         </div>
         <div
           class="pane-resizer"

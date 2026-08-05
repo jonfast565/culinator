@@ -6,9 +6,9 @@
 //! reading page render from the same generator, so a step reads identically in
 //! the app, in the EPUB, and in the printed page.
 
-use culinator_core::{Recipe, ResourceKind, UnitSystem};
+use culinator_core::{Recipe, ResourceKind, TemperatureScale, UnitSystem};
 use culinator_narrative as narrative;
-use culinator_narrative::NumberStyle;
+use culinator_narrative::NumberFormat;
 use serde::Serialize;
 
 #[derive(Serialize, Debug)]
@@ -91,8 +91,8 @@ pub struct UiNarrative {
     pub sections: Vec<UiSection>,
 }
 
-fn mise(recipe: &Recipe, process: &str, style: NumberStyle) -> UiMise {
-    let derived = narrative::section_mise(recipe, process, style);
+fn mise(recipe: &Recipe, process: &str, format: NumberFormat) -> UiMise {
+    let derived = narrative::section_mise_format(recipe, process, format);
     UiMise {
         ingredients: derived
             .ingredients
@@ -103,19 +103,24 @@ fn mise(recipe: &Recipe, process: &str, style: NumberStyle) -> UiMise {
     }
 }
 
-/// Build the reading-page narrative. `unit_system` restates every quantity in
-/// metric or US customary; `None` keeps the amounts exactly as authored.
-pub fn build(recipe: &Recipe, unit_system: Option<UnitSystem>, style: NumberStyle) -> UiNarrative {
-    // Convert once, up front, so prose and mise agree on every amount.
-    let converted;
-    let recipe = match unit_system {
-        Some(system) => {
-            converted = narrative::convert_recipe_units(recipe, system);
-            &converted
-        }
-        None => recipe,
-    };
-    let content = narrative::extract_with(recipe, style);
+/// Build the reading-page narrative. `unit_system` restates mass/volume amounts in
+/// metric or US customary; `None` keeps them as authored. `temperature_scale`
+/// restates oven and doneness temperatures; `None` keeps them as authored.
+pub fn build(
+    recipe: &Recipe,
+    unit_system: Option<UnitSystem>,
+    temperature_scale: Option<TemperatureScale>,
+    format: NumberFormat,
+) -> UiNarrative {
+    let mut working = recipe.clone();
+    if let Some(system) = unit_system {
+        working = narrative::convert_recipe_units(&working, system);
+    }
+    if let Some(scale) = temperature_scale {
+        working = narrative::convert_recipe_temperatures(&working, scale);
+    }
+    let recipe = &working;
+    let content = narrative::extract_with_format(recipe, format);
 
     // Ingredient groups come back as flat strings; re-derive the structured
     // lines so the UI can column-align amounts.
@@ -123,7 +128,7 @@ pub fn build(recipe: &Recipe, unit_system: Option<UnitSystem>, style: NumberStyl
         .resources
         .iter()
         .filter(|resource| resource.kind == ResourceKind::Ingredient)
-        .map(|resource| narrative::ingredient_line_with(resource, None, style))
+        .map(|resource| narrative::ingredient_line_with_format(resource, None, format))
         .collect();
     let ingredient_groups = content
         .ingredient_groups
@@ -166,7 +171,7 @@ pub fn build(recipe: &Recipe, unit_system: Option<UnitSystem>, style: NumberStyl
                         tools: step.tools.clone(),
                     })
                     .collect(),
-                mise: mise(recipe, &section.process, style),
+                mise: mise(recipe, &section.process, format),
             })
             .collect(),
     }

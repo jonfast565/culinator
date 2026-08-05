@@ -3,6 +3,7 @@ import { computed, ref } from "vue";
 import { Eye, TriangleAlert } from "lucide-vue-next";
 import type { UiRecipeModel } from "../../recipe-editor/model";
 import RecipePage from "../../reading/components/RecipePage.vue";
+import IndexCardStage from "../../reading/components/IndexCardStage.vue";
 
 /**
  * The live half of the builder: the same reading page the app renders
@@ -32,7 +33,9 @@ const diagnostics = computed(() => props.model.diagnostics);
     </nav>
 
     <div v-show="tab === 'preview'" class="preview-stage">
-      <RecipePage :model="model" :source="source" :recipe-id="recipeId" />
+      <IndexCardStage>
+        <RecipePage :model="model" :source="source" :recipe-id="recipeId" />
+      </IndexCardStage>
     </div>
 
     <div v-show="tab === 'issues'" class="issues">

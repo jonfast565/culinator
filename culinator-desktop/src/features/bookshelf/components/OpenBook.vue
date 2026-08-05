@@ -11,6 +11,7 @@ import {
   Printer,
   X,
 } from "lucide-vue-next";
+import { printBook } from "../printBook";
 import { printRecipeCards } from "../printRecipeCards";
 import { getRecipe } from "../../../services/api";
 import { parseUiModel } from "../../recipe-editor/model";
@@ -162,7 +163,16 @@ onBeforeUnmount(unregisterSearch);
           type="button"
           class="tool-btn"
           title="Print recipe cards (landscape)"
-          @click="printRecipeCards"
+          @click="printRecipeCards(bookTitle)"
+        >
+          <Printer :size="15" />
+        </button>
+        <button
+          v-if="book && bookLayout === 'book'"
+          type="button"
+          class="tool-btn"
+          title="Print whole book"
+          @click="void printBook(book.id, bookTitle)"
         >
           <Printer :size="15" />
         </button>

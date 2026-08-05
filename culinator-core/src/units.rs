@@ -8,6 +8,47 @@ pub enum UnitSystem {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TemperatureScale {
+    Celsius,
+    Fahrenheit,
+}
+
+impl TemperatureScale {
+    pub fn target_unit(self) -> &'static str {
+        match self {
+            Self::Celsius => "c",
+            Self::Fahrenheit => "f",
+        }
+    }
+}
+
+/// Temperature scale implied by a mass/volume unit system (export/CLI default).
+pub fn temperature_scale_for_system(system: UnitSystem) -> TemperatureScale {
+    match system {
+        UnitSystem::Metric => TemperatureScale::Celsius,
+        UnitSystem::UsCustomary => TemperatureScale::Fahrenheit,
+    }
+}
+
+fn is_celsius_unit(unit: &str) -> bool {
+    matches!(
+        normalize_unit(unit).as_str(),
+        "c" | "celsius" | "centigrade"
+    )
+}
+
+fn is_fahrenheit_unit(unit: &str) -> bool {
+    matches!(normalize_unit(unit).as_str(), "f" | "fahrenheit")
+}
+
+fn already_in_temperature_scale(unit: &str, scale: TemperatureScale) -> bool {
+    match scale {
+        TemperatureScale::Celsius => is_celsius_unit(unit),
+        TemperatureScale::Fahrenheit => is_fahrenheit_unit(unit),
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Locale {
     EnUs,
     EnGb,
@@ -454,6 +495,23 @@ pub fn convert_for_system(
     system: UnitSystem,
 ) -> Result<(f64, String), UnitError> {
     format_for_system(quantity, system)
+}
+
+/// Restate a temperature quantity in Celsius or Fahrenheit.
+pub fn convert_for_temperature_scale(
+    quantity: &Quantity,
+    scale: TemperatureScale,
+) -> Result<(f64, String), UnitError> {
+    if quantity.dimension != Dimension::Temperature {
+        return Ok((quantity.value, quantity.unit.clone()));
+    }
+    if already_in_temperature_scale(&quantity.unit, scale) {
+        return Ok((quantity.value, quantity.unit.clone()));
+    }
+    let canonical = to_canonical(quantity)?;
+    let unit = scale.target_unit();
+    let value = celsius_to_temperature(canonical, unit)?;
+    Ok((value, unit.to_owned()))
 }
 
 fn format_for_system(quantity: &Quantity, system: UnitSystem) -> Result<(f64, String), UnitError> {

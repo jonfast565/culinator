@@ -1,9 +1,25 @@
 <script setup lang="ts">
 /* global Event, HTMLElement, KeyboardEvent, navigator */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { BookOpen, ChevronDown, Circle, FilePlus2, Home, Import, Save } from "lucide-vue-next";
+import {
+  BookOpen,
+  ChevronDown,
+  Circle,
+  FilePlus2,
+  Home,
+  Import,
+  Save,
+  Settings,
+} from "lucide-vue-next";
+import AppIcon from "./AppIcon.vue";
 import type { AppView } from "../useNavigation";
 import type { InspectorTabId } from "../../features/recipe-editor/components/InspectorPanel.vue";
+import type { IndexCardFormat } from "../../features/reading/indexCardFormat";
+import {
+  INDEX_CARD_PICKER_OPTIONS,
+  indexCardFormatLabel,
+  indexCardMenuAction,
+} from "../../features/reading/indexCardFormat";
 
 export type AppMenuAction =
   | "home"
@@ -19,11 +35,21 @@ export type AppMenuAction =
   | "measures"
   | "ingredient-match"
   | "toggle-units"
+  | "toggle-temperature"
   | "toggle-mise"
   | "toggle-numbers"
   | "cycle-text"
   | "toggle-book-layout"
   | "print-recipe-cards"
+  | "print-book"
+  | "print-index-card"
+  | `set-index-card:${IndexCardFormat}`
+  | "cycle-recipe-header-type"
+  | "cycle-recipe-body-type"
+  | "cycle-recipe-annotation-type"
+  | "cycle-index-card-margin"
+  | "toggle-index-card-pager"
+  | "open-settings"
   | "convert-units"
   | `tool:${InspectorTabId}`;
 
@@ -48,11 +74,19 @@ const props = defineProps<{
   dirty?: boolean;
   saving?: boolean;
   unitSystem: "metric" | "us_customary";
+  temperatureScale: "celsius" | "fahrenheit";
   misePlacement: "top-matter" | "colocated";
   numberStyle: "fractions" | "decimals";
   textSizeLabel: string;
   bookLayout: "book" | "cards";
+  indexCardFormat: IndexCardFormat;
+  recipeHeaderTypeLabel: string;
+  recipeBodyTypeLabel: string;
+  recipeAnnotationTypeLabel: string;
+  indexCardMarginLabel: string;
+  showIndexCardPager: boolean;
   onBookView: boolean;
+  onRecipeView: boolean;
 }>();
 
 const emit = defineEmits<{ action: [action: AppMenuAction] }>();
@@ -104,6 +138,14 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
       },
       {
         label:
+          props.temperatureScale === "celsius"
+            ? "Show Fahrenheit"
+            : "Show Celsius",
+        action: "toggle-temperature",
+        disabled: !hasRecipe.value,
+      },
+      {
+        label:
           props.misePlacement === "colocated"
             ? "Use one ingredient list"
             : "Place mise beside steps",
@@ -129,8 +171,55 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
         label: "Print recipe cards…",
         action: "print-recipe-cards",
         disabled: !props.onBookView || props.bookLayout !== "cards",
-        shortcut: `${mod}P`,
+        shortcut: props.bookLayout === "cards" ? `${mod}P` : undefined,
       },
+      {
+        label: "Print book…",
+        action: "print-book",
+        disabled: !props.onBookView,
+        shortcut: props.bookLayout !== "cards" ? `${mod}P` : undefined,
+      },
+      ...INDEX_CARD_PICKER_OPTIONS.map((option, index) => ({
+        label: option.id === "full" ? "Recipe card: Full page" : `Recipe card: ${option.label}`,
+        action: indexCardMenuAction(option.id),
+        disabled: !props.onRecipeView,
+        divider: index === 0,
+      })),
+      {
+        label:
+          props.indexCardFormat === "full"
+            ? "Print recipe…"
+            : `Print ${indexCardFormatLabel(props.indexCardFormat)}…`,
+        action: "print-index-card",
+        disabled: !props.onRecipeView,
+      },
+      {
+        label: `Title type: ${props.recipeHeaderTypeLabel}`,
+        action: "cycle-recipe-header-type",
+        disabled: !props.onRecipeView,
+        divider: true,
+      },
+      {
+        label: `Body type: ${props.recipeBodyTypeLabel}`,
+        action: "cycle-recipe-body-type",
+        disabled: !props.onRecipeView,
+      },
+      {
+        label: `Notes type: ${props.recipeAnnotationTypeLabel}`,
+        action: "cycle-recipe-annotation-type",
+        disabled: !props.onRecipeView,
+      },
+      {
+        label: `Card margins: ${props.indexCardMarginLabel}`,
+        action: "cycle-index-card-margin",
+        disabled: !props.onRecipeView,
+      },
+      {
+        label: props.showIndexCardPager ? "Hide card numbers" : "Show card numbers",
+        action: "toggle-index-card-pager",
+        disabled: !props.onRecipeView,
+      },
+      { label: "Settings…", action: "open-settings", divider: true },
       { label: "Convert recipe units…", action: "convert-units", disabled: !hasRecipe.value },
       { label: "Measures & conversions", action: "measures", divider: true },
     ],
@@ -207,6 +296,9 @@ onBeforeUnmount(() => {
 
 <template>
   <header class="app-menu-bar">
+    <span class="app-brand" title="Culinator" aria-hidden="true">
+      <AppIcon :size="28" alt="" />
+    </span>
     <nav class="menu-strip" aria-label="Application menu">
       <div
         v-for="menu in menus"
@@ -261,6 +353,9 @@ onBeforeUnmount(() => {
       <button class="quick-import" title="Import recipe" @click="emit('action', 'import-recipe')">
         <Import :size="14" />
       </button>
+      <button class="quick-settings" title="Settings" @click="emit('action', 'open-settings')">
+        <Settings :size="14" />
+      </button>
     </div>
   </header>
 </template>
@@ -280,9 +375,21 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid #0e1913;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset;
 }
+.app-brand {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  border-radius: 8px;
+  overflow: hidden;
+}
 .menu-trigger,
 .quick-new,
-.quick-import {
+.quick-import,
+.quick-settings {
   border: 0;
   background: transparent;
   color: inherit;
@@ -290,7 +397,8 @@ onBeforeUnmount(() => {
 .menu-trigger:hover,
 .menu-root.open .menu-trigger,
 .quick-new:hover,
-.quick-import:hover {
+.quick-import:hover,
+.quick-settings:hover {
   background: rgba(255, 255, 255, 0.09);
 }
 .menu-strip {
@@ -399,13 +507,15 @@ onBeforeUnmount(() => {
   font-size: 10px;
 }
 .quick-new,
-.quick-import {
+.quick-import,
+.quick-settings {
   height: 30px;
   padding: 0 9px;
   border-radius: 6px;
   font-size: 11px;
 }
-.quick-import {
+.quick-import,
+.quick-settings {
   width: 30px;
   padding: 0;
 }

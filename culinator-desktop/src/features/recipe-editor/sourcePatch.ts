@@ -168,13 +168,14 @@ export async function convertRecipeQuantitiesInSource(
   source: string,
   ingredients: UiResource[],
   operations: UiOperation[],
-  convertQuantity: (text: string) => Promise<string | null>,
+  convertIngredientQuantity: (text: string) => Promise<string | null>,
+  convertTemperature: (text: string) => Promise<string | null> = convertIngredientQuantity,
 ): Promise<string> {
   const patches: SourcePatch[] = [];
 
   for (const ingredient of ingredients) {
     if (!ingredient.quantity || !ingredient.range) continue;
-    const converted = await convertQuantity(ingredient.quantity);
+    const converted = await convertIngredientQuantity(ingredient.quantity);
     if (!converted || converted === ingredient.quantity) continue;
     const patch = quantityPatchInSpan(
       source,
@@ -188,7 +189,7 @@ export async function convertRecipeQuantitiesInSource(
 
   for (const operation of operations) {
     if (!operation.targetTemperature || !operation.range) continue;
-    const converted = await convertQuantity(operation.targetTemperature);
+    const converted = await convertTemperature(operation.targetTemperature);
     if (!converted || converted === operation.targetTemperature) continue;
     const span = source.slice(operation.range.start, operation.range.end);
     const match = TEMPERATURE_PROPERTY.exec(span);

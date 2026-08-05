@@ -1,0 +1,271 @@
+/*
+ * Index-card printing — content is cloned into #culinator-print-root
+ * (see printIndexCard.ts) so page breaks aren’t killed by app layout
+ * (absolute ancestors / visibility hacks).
+ */
+
+@media print {
+  body.printing-index-card > *:not(#culinator-print-root):not(script):not(style) {
+    display: none !important;
+  }
+
+  body.printing-index-card,
+  body.printing-index-card #culinator-print-root {
+    display: block !important;
+    position: static !important;
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  body.printing-index-card #culinator-print-root .index-card-frame {
+    display: block;
+    width: 100%;
+    max-width: none;
+    aspect-ratio: auto;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    overflow: visible;
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+  }
+
+  body.printing-index-card #culinator-print-root .index-card-frame:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf {
+    max-width: none;
+    width: 100%;
+    height: auto;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #fff;
+    color: #23302a;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    position: relative;
+  }
+
+  body.printing-index-card #culinator-print-root .card-pager {
+    position: absolute;
+    right: 0.06in;
+    bottom: 0.08in;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 7pt;
+    font-weight: 600;
+    text-align: right;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #555;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-section {
+    flex: none;
+    margin-top: 0.12in;
+  }
+
+  body.printing-index-card #culinator-print-root .step-meta {
+    display: none !important;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-cover {
+    max-height: 1.1in;
+    margin-bottom: 0.12in;
+    border-radius: 2px;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-head {
+    padding-bottom: 0.06in;
+    border-bottom: 1px solid #23302a;
+  }
+
+  body.printing-index-card #culinator-print-root .eyebrow {
+    font-size: 8pt;
+    margin-bottom: 0.04in;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-title {
+    font-size: 15pt;
+    font-weight: 700;
+    line-height: 1.18;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-summary {
+    font-size: 8pt;
+    margin-top: 0.05in;
+  }
+
+  body.printing-index-card #culinator-print-root .section-label {
+    font-family: var(--reading-sans, system-ui, sans-serif);
+    font-size: 10pt;
+    font-weight: 700;
+    margin: 0 0 0.04in;
+    color: #28643b;
+    display: flex;
+    align-items: center;
+    gap: 0.06in;
+  }
+
+  body.printing-index-card #culinator-print-root .section-label::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #e0ded2;
+  }
+
+  body.printing-index-card #culinator-print-root .equipment-list {
+    columns: 1;
+    font-size: 9.5pt;
+  }
+
+  body.printing-index-card #culinator-print-root .steps {
+    gap: 0.05in;
+  }
+
+  body.printing-index-card #culinator-print-root .step {
+    grid-template-columns: 0.16in minmax(0, 1fr) auto;
+    gap: 0.03in 0.05in;
+  }
+
+  body.printing-index-card #culinator-print-root .step-number {
+    font-size: 10pt !important;
+    line-height: 1.2;
+  }
+
+  body.printing-index-card #culinator-print-root .step-text {
+    font-size: 9.5pt !important;
+    line-height: 1.3;
+  }
+
+  body.printing-index-card #culinator-print-root .step-time {
+    font-size: 7pt !important;
+    padding: 0 0.04in;
+  }
+
+  body.printing-index-card #culinator-print-root .step-time svg {
+    width: 8pt;
+    height: 8pt;
+  }
+
+  body.printing-index-card #culinator-print-root .ingredient-qty {
+    font-size: 9pt !important;
+  }
+
+  body.printing-index-card #culinator-print-root .ingredient-name,
+  body.printing-index-card #culinator-print-root .ingredient-aside {
+    font-size: 9.5pt !important;
+    line-height: 1.28;
+  }
+
+  body.printing-index-card #culinator-print-root .equipment-list li::before {
+    color: #28643b;
+  }
+
+  body.printing-index-card #culinator-print-root .process-heading {
+    font-size: 10.5pt;
+    font-weight: 700;
+    margin: 0.08in 0 0.02in;
+  }
+
+  body.printing-index-card #culinator-print-root .section-note {
+    font-size: 9pt;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-credit {
+    margin-top: 0.14in;
+    padding-top: 0.08in;
+    font-size: 8pt;
+  }
+
+  body.printing-index-card #culinator-print-root .leaf-credit a {
+    display: none;
+  }
+
+  body.printing-index-card #culinator-print-root .substitution-assistant,
+  body.printing-index-card #culinator-print-root .kitchen-strip,
+  body.printing-index-card #culinator-print-root .kitchen-error,
+  body.printing-index-card #culinator-print-root .step-delete,
+  body.printing-index-card #culinator-print-root .step-kitchen {
+    display: none !important;
+  }
+
+  body.printing-index-card #culinator-print-root .eyebrow,
+  body.printing-index-card #culinator-print-root .section-label,
+  body.printing-index-card #culinator-print-root .allergens-label {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Format-specific type tweaks — grouped by typography tier */
+  body.printing-index-card[data-index-card-print="2.5x4"] #culinator-print-root .leaf,
+  body.printing-index-card[data-index-card-print="4x2.5"] #culinator-print-root .leaf {
+    font-size: 7.5pt;
+  }
+
+  body.printing-index-card[data-index-card-print="2.5x4"] #culinator-print-root .leaf-title,
+  body.printing-index-card[data-index-card-print="4x2.5"] #culinator-print-root .leaf-title {
+    font-size: 11pt;
+  }
+
+  body.printing-index-card[data-index-card-print="2.5x4"] #culinator-print-root .leaf-cover,
+  body.printing-index-card[data-index-card-print="4x2.5"] #culinator-print-root .leaf-cover {
+    max-height: 0.6in;
+  }
+
+  body.printing-index-card[data-index-card-print="3x5"] #culinator-print-root .leaf,
+  body.printing-index-card[data-index-card-print="5x3"] #culinator-print-root .leaf {
+    font-size: 8pt;
+  }
+
+  body.printing-index-card[data-index-card-print="3x5"] #culinator-print-root .leaf-title,
+  body.printing-index-card[data-index-card-print="5x3"] #culinator-print-root .leaf-title {
+    font-size: 12pt;
+  }
+
+  body.printing-index-card[data-index-card-print="3x5"] #culinator-print-root .leaf-cover,
+  body.printing-index-card[data-index-card-print="5x3"] #culinator-print-root .leaf-cover {
+    max-height: 0.75in;
+  }
+
+  body.printing-index-card[data-index-card-print="4x6"] #culinator-print-root .leaf,
+  body.printing-index-card[data-index-card-print="6x4"] #culinator-print-root .leaf {
+    font-size: 8.5pt;
+  }
+
+  body.printing-index-card[data-index-card-print="4x6"] #culinator-print-root .leaf-title,
+  body.printing-index-card[data-index-card-print="6x4"] #culinator-print-root .leaf-title {
+    font-size: 13pt;
+  }
+
+  body.printing-index-card[data-index-card-print="4x6"] #culinator-print-root .leaf-cover,
+  body.printing-index-card[data-index-card-print="6x4"] #culinator-print-root .leaf-cover {
+    max-height: 0.9in;
+  }
+
+  body.printing-index-card[data-index-card-print="5x8"] #culinator-print-root .leaf,
+  body.printing-index-card[data-index-card-print="8x5"] #culinator-print-root .leaf {
+    font-size: 9pt;
+  }
+
+  body.printing-index-card[data-index-card-print="5x8"] #culinator-print-root .leaf-title,
+  body.printing-index-card[data-index-card-print="8x5"] #culinator-print-root .leaf-title {
+    font-size: 15pt;
+  }
+
+  body.printing-index-card[data-index-card-print="5x8"] #culinator-print-root .leaf-cover,
+  body.printing-index-card[data-index-card-print="8x5"] #culinator-print-root .leaf-cover {
+    max-height: 1.25in;
+  }
+}

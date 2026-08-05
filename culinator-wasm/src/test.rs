@@ -336,7 +336,7 @@ fn narrative_step_text_matches_the_exporter_for_every_seed() {
         let recipe = culinator_parser::parse_recipe(&source).expect("seed parses");
         let expected = culinator_narrative::extract(&recipe);
         // "as authored" must match the exporter exactly.
-        let actual = narrative_native(&source, "as_authored", "fractions");
+        let actual = narrative_native(&source, "as_authored", "as_authored", "fractions", 2);
 
         assert_eq!(actual.summary, expected.summary, "{name} summary");
         assert_eq!(
@@ -445,7 +445,7 @@ fn transfer_steps_name_their_destination() {
         "/../culinator-service/src/seed/baked_macaroni_and_cheese.cg"
     ))
     .unwrap();
-    let narrative = narrative_native(&source, "as_authored", "fractions");
+    let narrative = narrative_native(&source, "as_authored", "as_authored", "fractions", 2);
     let transfer = narrative
         .sections
         .iter()
@@ -468,7 +468,7 @@ recipe demo { title "Demo";
     operation warm does heat { input [milk]; temperature 180 celsius; duration 5 min; }
   }
 }"#;
-    let us = narrative_native(source, "us_customary", "fractions");
+    let us = narrative_native(source, "us_customary", "fahrenheit", "fractions", 2);
     let line = &us.ingredient_groups[0].items[0];
     assert!(
         !line.quantity.contains("ml"),
@@ -481,7 +481,31 @@ recipe demo { title "Demo";
         step.text
     );
 
-    // Metric leaves the authored ml alone and keeps celsius.
-    let metric = narrative_native(source, "metric", "fractions");
+    // Metric leaves the authored ml alone; celsius keeps oven temp in °C.
+    let metric = narrative_native(source, "metric", "celsius", "fractions", 2);
     assert!(metric.sections[0].steps[0].text.contains("°C"));
+}
+
+#[test]
+fn temperature_scale_converts_independently_of_mass_volume() {
+    let source = r#"culinator 0.3;
+recipe demo { title "Demo";
+  ingredient milk measured by volume { quantity 500 ml; }
+  process cook {
+    operation warm does heat { input [milk]; temperature 180 celsius; duration 5 min; }
+  }
+}"#;
+    // US volume with metric Celsius — cups for milk, °C for oven.
+    let hybrid = narrative_native(source, "us_customary", "celsius", "fractions", 2);
+    assert!(
+        hybrid.ingredient_groups[0].items[0].quantity.contains("cup")
+            || hybrid.ingredient_groups[0].items[0].quantity.contains("fl"),
+        "volume converted: {:?}",
+        hybrid.ingredient_groups[0].items[0].quantity
+    );
+    assert!(
+        hybrid.sections[0].steps[0].text.contains("°C"),
+        "temperature stayed celsius: {:?}",
+        hybrid.sections[0].steps[0].text
+    );
 }

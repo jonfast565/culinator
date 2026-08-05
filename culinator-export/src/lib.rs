@@ -39,15 +39,12 @@ impl RecipeExporter for StaticRecipeExporter {
         for format in formats {
             match format {
                 RecipeExportFormat::Web => {
+                    // Nutrition label SVG is inlined in the HTML — keep Web a
+                    // single file so export doesn’t zip unnecessarily.
                     files.push(file(
                         "index.html",
                         "text/html; charset=utf-8",
                         html::render(recipe, options, &label_svg)?.into_bytes(),
-                    ));
-                    files.push(file(
-                        "nutrition-facts.svg",
-                        "image/svg+xml",
-                        label_svg.clone().into_bytes(),
                     ));
                 }
                 RecipeExportFormat::Markdown => files.push(file(

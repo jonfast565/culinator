@@ -13,6 +13,7 @@ import { deleteOperationFromSource } from "../../recipe-editor/sourcePatch";
 import { UNIT_DISPLAY_KEY } from "../../units/composables/useUnitDisplay";
 import { useAppDialog } from "../../../shared/composables/useAppDialog";
 import { VIEW_SETTINGS_KEY } from "../composables/useViewSettings";
+import type { IndexCardFormat } from "../indexCardFormat";
 import { collectRecipeAllergens } from "../allergens";
 import AllergenBadges from "./AllergenBadges.vue";
 import SubstitutionAssistant from "./SubstitutionAssistant.vue";
@@ -20,6 +21,7 @@ import RecipeImage from "./RecipeImage.vue";
 import MiseBlock from "./MiseBlock.vue";
 import IngredientGroupList from "./IngredientGroupList.vue";
 import RecipeStepRow from "./RecipeStepRow.vue";
+import IndexCardRecipe from "./IndexCardRecipe.vue";
 
 const props = defineProps<{
   model: UiRecipeModel;
@@ -47,11 +49,20 @@ const { summary, ingredientGroups, equipment, sections } = useRecipeNarrative(
   toRef(props, "source"),
   {
     unitSystem: computed(() => units?.unitSystem.value ?? "as_authored"),
+    temperatureScale: computed(() => units?.temperatureScale.value ?? "as_authored"),
     numberStyle: computed(() => viewSettings?.numberStyle.value ?? "fractions"),
+    decimalPlaces: computed(() => viewSettings?.decimalPlaces.value ?? 2),
   },
 );
 
 const colocated = computed(() => viewSettings?.misePlacement.value === "colocated");
+const indexCardFormat = computed<IndexCardFormat>(
+  () => viewSettings?.indexCardFormat.value ?? "full",
+);
+const cardFormat = computed(() => {
+  const format = indexCardFormat.value;
+  return format === "full" ? null : format;
+});
 const hasSteps = computed(() => sections.value.some((section) => section.steps.length > 0));
 const allergens = computed(() => collectRecipeAllergens(props.model));
 const {
@@ -150,7 +161,24 @@ watch(
 </script>
 
 <template>
-  <article class="leaf" :class="{ 'kitchen-leaf': kitchenMode }">
+  <IndexCardRecipe
+    v-if="cardFormat && !kitchenMode"
+    :format="cardFormat"
+    :model="model"
+    :recipe-id="recipeId"
+    :editable="editable"
+    :highlighted-symbol="highlightedSymbol"
+    :summary="summary"
+    :eyebrow="eyebrow"
+    :allergens="allergens"
+    :ingredient-groups="ingredientGroups"
+    :equipment="equipment"
+    :sections="sections"
+    :operation-for="operationFor"
+    @select-symbol="emit('select-symbol', $event)"
+    @delete="removeStep"
+  />
+  <article v-else class="leaf" :class="{ 'kitchen-leaf': kitchenMode }">
     <div v-if="kitchenMode" class="kitchen-strip">
       <div class="kitchen-progress">
         <span><ChefHat :size="15" /> Kitchen mode</span>
@@ -280,36 +308,6 @@ watch(
 </template>
 
 <style scoped>
-.leaf {
-  --serif: var(--reading-serif);
-  --sans: var(--reading-sans);
-  --ink: #23302a;
-  --muted: #6d7972;
-  --herb: #28643b;
-  --rule: #e0ded2;
-  position: relative;
-  max-width: 720px;
-  margin: 0 auto;
-  padding: clamp(28px, 5vw, 60px) clamp(24px, 5vw, 64px);
-  background: #fbf9f3;
-  color: var(--ink);
-  font-family: var(--serif);
-  font-size: calc(16px * var(--reading-scale, 1));
-  border-radius: 3px;
-  /* A paper leaf: soft outer drop + a faint binding shadow down the left edge. */
-  box-shadow:
-    inset 14px 0 22px -18px rgba(60, 50, 30, 0.45),
-    0 1px 2px rgba(40, 40, 30, 0.1),
-    0 22px 50px -28px rgba(40, 40, 30, 0.45);
-}
-
-.leaf-cover {
-  margin: 0 0 24px;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: 4px;
-  box-shadow: 0 12px 30px -18px rgba(40, 40, 30, 0.5);
-}
 .kitchen-leaf {
   padding-top: 22px;
   box-shadow:
@@ -378,150 +376,5 @@ watch(
   margin: -10px 0 18px;
   color: #a83737;
   font-size: 13px;
-}
-.leaf-head {
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--ink);
-}
-.eyebrow {
-  margin: 0 0 10px;
-  font-family: var(--sans);
-  font-size: calc(11px * var(--reading-scale, 1));
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--herb);
-  font-weight: 600;
-}
-.leaf-title {
-  margin: 0;
-  font-weight: 600;
-  font-size: clamp(
-    calc(30px * var(--reading-scale, 1)),
-    calc(5vw * var(--reading-scale, 1)),
-    calc(46px * var(--reading-scale, 1))
-  );
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-}
-.leaf-summary {
-  margin: 12px 0 0;
-  font-family: var(--sans);
-  font-size: calc(12px * var(--reading-scale, 1));
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-.leaf-section {
-  margin-top: 34px;
-}
-.section-label {
-  margin: 0 0 16px;
-  font-size: calc(15px * var(--reading-scale, 1));
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--herb);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.section-label::after {
-  content: "";
-  flex: 1;
-  height: 1px;
-  background: var(--rule);
-}
-
-.ingredient-groups {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-/* Equipment names are short, so they flow in columns rather than stretching
-   across the leaf as full-width rules. */
-.equipment-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  columns: 2;
-  column-gap: 36px;
-  font-size: calc(15px * var(--reading-scale, 1));
-}
-.equipment-list li {
-  break-inside: avoid;
-  padding: 5px 0 5px 16px;
-  text-indent: -16px;
-  line-height: 1.45;
-}
-.equipment-list li::before {
-  content: "·";
-  margin-right: 8px;
-  color: var(--herb);
-  font-weight: 700;
-}
-
-@media (max-width: 520px) {
-  .equipment-list {
-    columns: 1;
-  }
-}
-
-.steps {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-.method.colocated {
-  display: flex;
-  flex-direction: column;
-  gap: 28px;
-}
-.method-section {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.method-section .section-label.process-heading {
-  margin-bottom: 0;
-}
-.method-section .steps {
-  gap: 16px;
-}
-.process-heading {
-  margin: 8px 0 -4px;
-  font-size: calc(16px * var(--reading-scale, 1));
-  font-weight: 600;
-  color: var(--ink);
-}
-.method-section .process-heading {
-  margin: 0;
-  font-size: calc(15px * var(--reading-scale, 1));
-  color: var(--herb);
-}
-
-.section-note {
-  margin: 0 0 4px;
-  font-size: calc(13px * var(--reading-scale, 1));
-  font-style: italic;
-  color: var(--muted);
-}
-.empty {
-  color: var(--muted);
-  font-style: italic;
-}
-
-.leaf-credit {
-  margin-top: 40px;
-  padding-top: 18px;
-  border-top: 1px solid var(--rule);
-  font-size: calc(12px * var(--reading-scale, 1));
-  color: var(--muted);
-}
-.leaf-credit p {
-  margin: 0 0 4px;
-}
-.leaf-credit a {
-  color: var(--herb);
-  word-break: break-all;
 }
 </style>

@@ -1,0 +1,72 @@
+culinator 0.3;
+
+recipe brigadeiro {
+    title "Brigadeiro";
+    section "Desserts";
+
+    source "daniel-kemmerich";
+    publisher "based.cooking";
+    source_url "https://based.cooking/brigadeiro/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient condensed_milk measured by count {
+        name "condensed milk";
+        quantity 1 can;
+    }
+    ingredient cocoa measured by volume {
+        name "chocolate or cocoa powder";
+        quantity 3 tbsp to 4 tbsp;
+        note "go easy - too much is easy to add and hard to undo";
+    }
+    ingredient butter measured by volume {
+        name "unsalted butter";
+        quantity 1 tbsp;
+        note "actual butter, not margarine";
+    }
+    ingredient sprinkles measured by volume {
+        optional true;
+        note "for rolling";
+    }
+
+    container pan { name "saucepan"; }
+    equipment wooden_spoon { name "wooden spoon"; }
+
+    material brigadeiro_mix measured by mass { }
+
+    process cooking {
+        operation combine does mix {
+            input [condensed_milk, cocoa, butter];
+            container pan;
+            duration 2 min;
+            labor active;
+            produces brigadeiro_mix;
+        }
+        operation cook does heat {
+            input [brigadeiro_mix];
+            after combine;
+            container pan;
+            tool wooden_spoon;
+            heat low;
+            note "stir constantly";
+            until texture "it stops sticking to the bottom of the pan";
+            duration estimated 12 min;
+            labor active;
+            produces cooked_brigadeiro;
+        }
+    }
+
+    process finishing {
+        operation roll does move {
+            input [cooked_brigadeiro, sprinkles];
+            after cook;
+            optional true;
+            note "roll into small balls and, while still hot, roll them through sprinkles - or skip this and just eat it with a spoon";
+            duration 10 min;
+            labor active;
+        }
+    }
+
+    yield servings measured by count {
+        amount 20 count;
+    }
+}

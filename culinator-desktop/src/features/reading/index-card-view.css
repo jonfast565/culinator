@@ -1,0 +1,487 @@
+/* On-screen index-card framing for recipe reading / editor preview */
+
+.reading-stage:has(.index-card-deck),
+.preview-stage:has(.index-card-deck) {
+  overflow-x: hidden;
+}
+
+.index-card-stage {
+  --recipe-header-scale: 1;
+  --recipe-body-scale: 1;
+  --recipe-annotation-scale: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 100%;
+  min-height: min-content;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.index-card-stage[data-format="full"] {
+  display: block;
+}
+
+/* Multi-card deck */
+.index-card-deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px 6px 16px;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.index-card-frame {
+  position: relative;
+  flex-shrink: 0;
+  max-width: 100%;
+  background: #fbf9f3;
+  border: 1px solid #d8d2c4;
+  border-radius: 4px;
+  box-shadow:
+    inset 10px 0 16px -14px rgba(60, 50, 30, 0.35),
+    0 1px 2px rgba(40, 40, 30, 0.1),
+    0 16px 36px -22px rgba(40, 40, 30, 0.4);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.index-card-stage:not([data-format="full"]) .index-card-frame {
+  width: min(100%, var(--index-card-width, 3in));
+  aspect-ratio: var(--index-card-aspect-ratio, 3 / 5);
+}
+
+.index-card-frame .leaf.index-card-leaf {
+  /* Pack from the top — never stretch sections to fill the card. */
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: 100%;
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+  box-sizing: border-box;
+  min-width: 0;
+  background: #fbf9f3;
+  position: relative;
+}
+
+/* Card typography — denser than full page, but sized to fill the card at Medium. */
+.leaf.index-card-leaf {
+  --card-header: calc(1px * var(--reading-scale, 1) * var(--recipe-header-scale, 1));
+  --card-body: calc(1px * var(--reading-scale, 1) * var(--recipe-body-scale, 1));
+  --card-note: calc(1px * var(--reading-scale, 1) * var(--recipe-annotation-scale, 1));
+  /* Matches print `@page` margin via --index-card-margin (set on the stage).
+   * Fallback is Medium (0.3in) — printer-safe and readable on card stock. */
+  padding: var(--index-card-margin, 0.3in);
+  font-size: calc(10.5 * var(--card-body));
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.index-card-stage[data-type-tier="mini"] .leaf.index-card-leaf {
+  font-size: calc(9 * var(--card-body));
+}
+
+.index-card-stage[data-type-tier="standard"] .leaf.index-card-leaf {
+  font-size: calc(9.5 * var(--card-body));
+}
+
+.index-card-stage[data-type-tier="medium"] .leaf.index-card-leaf {
+  font-size: calc(10.5 * var(--card-body));
+}
+
+.index-card-stage[data-type-tier="large"] .leaf.index-card-leaf {
+  font-size: calc(11 * var(--card-body));
+}
+
+.leaf.index-card-leaf * {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.leaf.index-card-leaf .leaf-cover {
+  flex: 0 0 auto;
+  margin: 0 0 2px;
+  max-height: 10%;
+  aspect-ratio: auto;
+  overflow: hidden;
+  border-radius: 2px;
+  box-shadow: 0 4px 10px -8px rgba(40, 40, 30, 0.45);
+}
+
+.index-card-stage[data-type-tier="mini"] .leaf.index-card-leaf .leaf-cover {
+  max-height: 8%;
+}
+
+.leaf.index-card-leaf .leaf-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.leaf.index-card-leaf .leaf-head {
+  flex: 0 0 auto;
+  padding-bottom: 4px;
+  margin-bottom: 0;
+  border-bottom: 1px solid var(--ink, #23302a);
+  min-width: 0;
+}
+
+.leaf.index-card-leaf .continuation-head {
+  padding-bottom: 3px;
+}
+
+.leaf.index-card-leaf .eyebrow {
+  margin: 0 0 3px;
+  font-size: calc(7 * var(--card-note));
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.leaf.index-card-leaf .leaf-title {
+  margin: 0;
+  font-size: calc(15 * var(--card-header));
+  font-weight: 700;
+  line-height: 1.18;
+  letter-spacing: -0.01em;
+  overflow-wrap: break-word;
+  /* Allow real/synthetic bold — root sets font-synthesis: none. */
+  font-synthesis: weight;
+}
+
+.index-card-stage[data-type-tier="mini"] .leaf.index-card-leaf .leaf-title {
+  font-size: calc(12 * var(--card-header));
+}
+
+.index-card-stage[data-type-tier="standard"] .leaf.index-card-leaf .leaf-title {
+  font-size: calc(13.5 * var(--card-header));
+}
+
+.index-card-stage[data-type-tier="medium"] .leaf.index-card-leaf .leaf-title {
+  font-size: calc(15 * var(--card-header));
+}
+
+.index-card-stage[data-type-tier="large"] .leaf.index-card-leaf .leaf-title {
+  font-size: calc(17 * var(--card-header));
+}
+
+.leaf.index-card-leaf .continuation-head .leaf-title {
+  font-size: calc(12 * var(--card-header));
+  line-height: 1.15;
+}
+
+.leaf.index-card-leaf .leaf-summary {
+  margin: 3px 0 0;
+  font-size: calc(7 * var(--card-note));
+  letter-spacing: 0.04em;
+}
+
+/* Critical: do NOT flex-grow sections — that created the huge empty band. */
+.leaf.index-card-leaf .leaf-section {
+  flex: 0 0 auto;
+  margin-top: 8px;
+  min-width: 0;
+  overflow: visible;
+}
+
+.leaf.index-card-leaf .leaf-section:first-of-type {
+  margin-top: 6px;
+}
+
+.leaf.index-card-leaf .section-label {
+  margin: 0 0 3px;
+  font-family: var(--sans, system-ui);
+  font-size: calc(9.5 * var(--card-header));
+  font-weight: 700;
+  line-height: 1.2;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  color: var(--herb, #28643b);
+  font-synthesis: weight;
+}
+
+.leaf.index-card-leaf .section-label::after {
+  display: block;
+  min-width: 0.5rem;
+}
+
+.leaf.index-card-leaf .equipment-list {
+  columns: 2;
+  column-gap: 8px;
+  font-size: calc(9.5 * var(--card-body));
+}
+
+.index-card-stage[data-type-tier="mini"] .leaf.index-card-leaf .equipment-list,
+.index-card-stage[data-type-tier="standard"] .leaf.index-card-leaf .equipment-list {
+  columns: 1;
+}
+
+.leaf.index-card-leaf .equipment-list li {
+  padding: 0 0 0 10px;
+  text-indent: -10px;
+  line-height: 1.2;
+}
+
+.leaf.index-card-leaf .equipment-list li::before {
+  margin-right: 4px;
+}
+
+.leaf.index-card-leaf .steps {
+  gap: 2px;
+}
+
+.leaf.index-card-leaf .process-heading {
+  margin: 3px 0 1px;
+  font-size: calc(9.5 * var(--card-header));
+  font-weight: 700;
+  color: var(--herb, #28643b);
+  font-synthesis: weight;
+}
+
+/* Compact per-section mise when “By section” layout is active on cards. */
+.leaf.index-card-leaf .mise {
+  gap: 4px;
+  margin: 2px 0 4px;
+  padding: 4px 6px;
+  border-left-width: 2px;
+  border-radius: 2px;
+}
+
+.leaf.index-card-leaf .mise-label {
+  margin: 0 0 2px;
+  font-size: calc(7 * var(--card-note));
+  letter-spacing: 0.04em;
+}
+
+.leaf.index-card-leaf .mise-list {
+  gap: 0;
+}
+
+.leaf.index-card-leaf .mise .ingredient-row {
+  padding: 1px 0;
+}
+
+.leaf.index-card-leaf .mise .equipment-list {
+  columns: 1;
+  font-size: calc(9 * var(--card-body));
+}
+
+.leaf.index-card-leaf .method.colocated .section-label.process-heading,
+.leaf.index-card-leaf .method.colocated > .section-label {
+  display: none;
+}
+
+.leaf.index-card-leaf .section-note {
+  margin: 0;
+  font-size: calc(7.5 * var(--card-note));
+  line-height: 1.2;
+}
+
+.leaf.index-card-leaf .leaf-credit {
+  display: none;
+}
+
+/*
+ * Child component overrides.
+ * This file is a GLOBAL stylesheet — Vue `:deep()` is a no-op here and was
+ * why RecipeStepRow’s 16px/26px fonts kept winning on cards.
+ */
+.leaf.index-card-leaf .ingredient-groups {
+  gap: 1px;
+}
+
+.leaf.index-card-leaf .variant-heading {
+  margin: 0;
+  font-size: calc(7 * var(--card-note));
+  letter-spacing: 0.04em;
+}
+
+.leaf.index-card-leaf .ingredient-row {
+  padding: 1px 0;
+  grid-template-columns: minmax(0, 3rem) minmax(0, 1fr);
+  gap: 4px;
+  align-items: baseline;
+  border-bottom: 1px dashed #e2e0d4;
+}
+
+.leaf.index-card-leaf .ingredient-row:last-child {
+  border-bottom: 0;
+}
+
+.leaf.index-card-leaf .ingredient-row.selectable {
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.leaf.index-card-leaf .ingredient-qty {
+  font-size: calc(10 * var(--card-body));
+  font-weight: 600;
+  color: var(--herb, #28643b);
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+}
+
+.leaf.index-card-leaf .ingredient-body {
+  line-height: 1.35;
+}
+
+.leaf.index-card-leaf .ingredient-name,
+.leaf.index-card-leaf .ingredient-aside {
+  font-size: calc(10 * var(--card-body));
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.leaf.index-card-leaf .ingredient-aside {
+  color: var(--muted, #6d7972);
+}
+
+.leaf.index-card-leaf .step {
+  display: grid;
+  grid-template-columns: 1.05rem minmax(0, 1fr) auto;
+  gap: 1px 4px;
+  align-items: start;
+}
+
+.leaf.index-card-leaf .step.selectable {
+  margin: 0;
+  padding: 0;
+  border-radius: 0;
+}
+
+.leaf.index-card-leaf .step-number {
+  font-family: var(--serif, Georgia, serif);
+  font-size: calc(11 * var(--card-header)) !important;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--herb, #28643b);
+  text-align: right;
+  font-variant-numeric: lining-nums;
+}
+
+.leaf.index-card-leaf .step-text {
+  /* Match ingredient body size so method doesn’t dwarf the list. */
+  font-size: calc(10 * var(--card-body)) !important;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.leaf.index-card-leaf .step-meta {
+  display: none !important;
+}
+
+.leaf.index-card-leaf .step-time {
+  padding: 1px 5px;
+  font-size: calc(7 * var(--card-note)) !important;
+  font-weight: 600;
+  line-height: 1.35;
+  background: #e8f0e6;
+  color: var(--herb, #28643b);
+  white-space: nowrap;
+}
+
+.leaf.index-card-leaf .step-time svg {
+  width: 9px;
+  height: 9px;
+}
+
+.leaf.index-card-leaf .step-aside {
+  min-width: 0;
+  gap: 1px;
+}
+
+.leaf.index-card-leaf .step-photo,
+.leaf.index-card-leaf .step-delete,
+.leaf.index-card-leaf .step-kitchen,
+.leaf.index-card-leaf .step-timer {
+  display: none !important;
+}
+
+.leaf.index-card-leaf .allergens {
+  margin-top: 2px;
+  gap: 2px;
+  font-family: var(--sans, system-ui);
+}
+
+.leaf.index-card-leaf .allergens-label {
+  font-size: calc(7 * var(--card-note));
+}
+
+.leaf.index-card-leaf .allergens li {
+  padding: 0 5px;
+  font-size: calc(7 * var(--card-note));
+}
+
+.leaf.index-card-leaf .substitution-assistant,
+.leaf.index-card-leaf .kitchen-strip,
+.leaf.index-card-leaf .kitchen-error {
+  display: none;
+}
+
+/* Bottom-right of the content box — a little higher/left than the raw corner. */
+.leaf.index-card-leaf .card-pager {
+  position: absolute;
+  /* Offset past leaf padding so we sit in the content, then nudge in. */
+  right: calc(var(--index-card-margin, 0.3in) + 4px);
+  bottom: calc(var(--index-card-margin, 0.3in) + 6px);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-family: var(--sans, system-ui);
+  font-size: calc(6.5 * var(--card-note));
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #6d7972);
+  text-align: right;
+  line-height: 1;
+}
+
+/*
+ * Offscreen measurement card (measureIndexCard.ts). Only one rendering
+ * difference is wanted: every ingredient row must measure as a mid-list row, so
+ * a row the packer moves to the middle of a card is never under-budgeted by the
+ * 1px the real last row saves.
+ */
+.index-card-measure-stage .ingredient-groups .ingredient-row:last-child {
+  border-bottom: 1px dashed #e2e0d4;
+}
+
+/* Full-page recipe also respects role scales */
+.index-card-stage[data-format="full"] .leaf {
+  font-size: calc(16px * var(--reading-scale, 1) * var(--recipe-body-scale, 1));
+}
+
+.index-card-stage[data-format="full"] .leaf-title {
+  font-size: clamp(
+    calc(28px * var(--reading-scale, 1) * var(--recipe-header-scale, 1)),
+    calc(4.5vw * var(--reading-scale, 1) * var(--recipe-header-scale, 1)),
+    calc(44px * var(--reading-scale, 1) * var(--recipe-header-scale, 1))
+  );
+}
+
+.index-card-stage[data-format="full"] .eyebrow,
+.index-card-stage[data-format="full"] .leaf-summary,
+.index-card-stage[data-format="full"] .section-label,
+.index-card-stage[data-format="full"] .section-note,
+.index-card-stage[data-format="full"] .leaf-credit {
+  font-size: calc(12px * var(--reading-scale, 1) * var(--recipe-annotation-scale, 1));
+}
+
+.index-card-stage[data-format="full"] .section-label {
+  font-size: calc(15px * var(--reading-scale, 1) * var(--recipe-annotation-scale, 1));
+}

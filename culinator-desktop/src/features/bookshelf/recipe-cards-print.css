@@ -1,9 +1,6 @@
-/* Landscape recipe-card printing — activated via body.printing-recipe-cards */
-
-@page {
-  size: landscape;
-  margin: 0.45in;
-}
+/* Landscape recipe-card printing — activated via body.printing-recipe-cards.
+ * `@page` size/margin is injected by printRecipeCards.ts so it doesn’t fight
+ * index-card print rules. */
 
 @media print {
   body.printing-recipe-cards * {

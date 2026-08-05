@@ -19,9 +19,16 @@ const options = reactive<RecipeExportOptions>({
   siteTitle: "My Recipe Book",
   author: "",
   description: "",
-  includeSource: true,
-  formats: ["web", "json", "markdown"],
+  includeSource: false,
+  formats: ["print_html"],
   nutrition: emptyNutritionFacts(),
+});
+
+const downloadLabel = computed(() => {
+  if (options.formats.length + (options.includeSource ? 1 : 0) > 1) {
+    return `Export ${props.recipeTitle} (zip)`;
+  }
+  return `Export ${props.recipeTitle}`;
 });
 
 const previewFacts = computed(() => options.nutrition);
@@ -99,10 +106,10 @@ onMounted(loadRecipeNutrition);
 <template>
   <section class="panel space-y-4">
     <div>
-      <h3 class="flex items-center gap-2"><PackageOpen :size="17" />Export bundle</h3>
+      <h3 class="flex items-center gap-2"><PackageOpen :size="17" />Export</h3>
       <p class="text-sm opacity-70">
-        Generate a standalone recipe webpage and matching Nutrition Facts label in one ZIP. Nutrition
-        comes from the Nutrition panel — link ingredients or save manual facts there first.
+        Download one file for a single format, or a zip when you pick multiple formats (or include
+        source). Nutrition comes from the Nutrition panel.
       </p>
     </div>
     <label class="field"><span>Site title</span><input v-model="options.siteTitle" /></label
@@ -162,7 +169,7 @@ onMounted(loadRecipeNutrition);
     <label class="flex items-center gap-2 text-sm"
       ><input v-model="options.includeSource" type="checkbox" /> Include DSL source</label
     ><button class="primary w-full justify-center" :disabled="busy" @click="generate">
-      <Download :size="16" />{{ busy ? "Generating…" : `Export ${recipeTitle}` }}
+      <Download :size="16" />{{ busy ? "Generating…" : downloadLabel }}
     </button>
     <p v-if="error" class="diagnostic error">{{ error }}</p>
     <div v-if="generated.length" class="text-xs opacity-70">

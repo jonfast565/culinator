@@ -1,0 +1,121 @@
+culinator 0.3;
+
+// Prose-audit corpus: converted from based.cooking (public domain).
+recipe beef_stew {
+    title "Traditional Beef or Lamb Stew";
+    section "Mains";
+    source "eoin-coogan";
+    publisher "based.cooking";
+    source_url "https://based.cooking/beef-stew/";
+    attribution "From based.cooking; recipes there are public domain.";
+
+    ingredient meat measured by mass {
+        name "lamb shoulder or beef chuck";
+        note "cut into bite-sized chunks";
+    }
+    ingredient onion measured by count { }
+    ingredient celery measured by count { }
+    ingredient carrot measured by count { }
+    ingredient garlic measured by count { note "goes in whole"; }
+    ingredient herbs measured by count {
+        name "thyme, rosemary, and bay leaves";
+    }
+    ingredient stock measured by volume {
+        name "beef or chicken stock";
+    }
+    ingredient stout measured by volume {
+        name "stout or porter";
+        optional true;
+        note "about a third of the bottle, for deglazing";
+    }
+    ingredient oil measured by volume { }
+    ingredient salt measured by volume { to_taste true; }
+    ingredient potatoes measured by count {
+        optional true;
+        note "cut up, for thickening in the last half hour";
+    }
+
+    container pot { name "large pot"; }
+
+    material browned_meat measured by mass { }
+    material set_aside_meat measured by mass { }
+    material sweated_vegetables measured by mass { }
+    material stew measured by mass { }
+
+    process preparation {
+        prep chop onion into chopped_onion {
+            note "bite-sized chunks, roughly the same size as the meat";
+            duration 3 min;
+        }
+        prep chop celery into chopped_celery { duration 2 min; }
+        prep chop carrot into chopped_carrot { duration 2 min; }
+    }
+
+    process browning {
+        operation brown_meat does heat {
+            input [meat, oil];
+            container pot;
+            heat medium_high;
+            note "sear the edges in batches and try not to overcrowd the pot; browning should not be skipped";
+            duration 5 min;
+            repeat 3;
+            labor active;
+            produces browned_meat;
+        }
+        operation remove_meat does move {
+            input [browned_meat];
+            after brown_meat;
+            note "set the meat aside, leaving the fat in the pot";
+            duration 1 min;
+            labor active;
+            produces set_aside_meat;
+        }
+    }
+
+    process stewing {
+        operation sweat_vegetables does heat {
+            input [chopped_onion, chopped_celery, chopped_carrot, garlic, salt];
+            after [remove_meat, chop_onion, chop_celery, chop_carrot];
+            container pot;
+            heat medium;
+            note "the salt draws out moisture and helps deglaze the caramelised bits at the bottom of the pot";
+            duration 5 min;
+            labor active;
+            produces sweated_vegetables;
+        }
+        operation deglaze does heat {
+            input [sweated_vegetables, set_aside_meat, stout];
+            after sweat_vegetables;
+            optional true;
+            container pot;
+            note "add the meat back in first; wait until the alcohol has completely evaporated before stirring";
+            until visual "the alcohol has completely evaporated";
+            duration 3 min;
+            labor monitor;
+            produces deglazed_base;
+        }
+        operation simmer does heat {
+            input [sweated_vegetables, set_aside_meat, stock, herbs];
+            after [sweat_vegetables, deglaze];
+            container pot;
+            heat low;
+            duration 120 min to 150 min;
+            labor passive;
+            produces stew;
+        }
+        operation thicken does heat {
+            input [stew, potatoes];
+            after simmer;
+            optional true;
+            container pot;
+            note "or whisk a teaspoon of flour mixed with water slowly into the stew";
+            duration 30 min;
+            labor passive;
+            produces thickened_stew;
+        }
+    }
+
+    yield servings measured by count {
+        amount 6 count;
+    }
+}

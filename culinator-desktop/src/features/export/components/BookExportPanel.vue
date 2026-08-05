@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /* global HTMLDialogElement */
-import { reactive, ref } from "vue";
+import { computed, reactive, ref } from "vue";
 import { Download, X } from "lucide-vue-next";
 import type { BookExportFormat, BookExportOptions } from "../../../domain/types";
 import { downloadExport, exportBook } from "../../../services/api/export-api";
@@ -11,7 +11,7 @@ const dialogEl = ref<HTMLDialogElement | null>(null);
 const busy = ref(false);
 const error = ref("");
 const options = reactive<BookExportOptions>({
-  formats: ["epub", "print_html"],
+  formats: ["print_html"],
   title: props.bookTitle,
   author: "",
   description: "",
@@ -20,6 +20,16 @@ const options = reactive<BookExportOptions>({
   toc: true,
   sectionDividers: true,
 });
+
+const multiFile = computed(() => options.formats.length > 1 || options.formats.includes("web"));
+const downloadLabel = computed(() =>
+  busy.value ? "Exporting…" : multiFile.value ? "Download zip" : "Download",
+);
+const lead = computed(() =>
+  multiFile.value
+    ? `Download ${props.bookTitle} as a zip (multiple formats or a static site).`
+    : `Download ${props.bookTitle} as a single file.`,
+);
 
 const formats: { value: BookExportFormat; label: string }[] = [
   { value: "epub", label: "EPUB" },
@@ -77,7 +87,7 @@ async function runExport(): Promise<void> {
         </button>
       </header>
 
-      <p class="export-lead">Download {{ bookTitle }} as a zip bundle.</p>
+      <p class="export-lead">{{ lead }}</p>
 
       <fieldset class="formats">
         <legend>Formats</legend>
@@ -102,7 +112,7 @@ async function runExport(): Promise<void> {
       <footer class="export-actions">
         <button type="button" class="ghost" @click="close">Cancel</button>
         <button type="submit" class="primary" :disabled="busy">
-          <Download :size="15" /> {{ busy ? "Exporting…" : "Download zip" }}
+          <Download :size="15" /> {{ downloadLabel }}
         </button>
       </footer>
 

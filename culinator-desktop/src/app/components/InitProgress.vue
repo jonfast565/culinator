@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
-import { AlertCircle, CheckCircle2, Database, Loader2, UtensilsCrossed } from "lucide-vue-next";
+import { AlertCircle, CheckCircle2, Database, Loader2 } from "lucide-vue-next";
+import AppIcon from "./AppIcon.vue";
 import type { InitPhase } from "../../services/api/init-api";
 import { fetchInitStatus, runInitialization } from "../../services/api/init-api";
 import { onConnectionStatus } from "../../services/transport/websocket-client";
@@ -89,7 +90,7 @@ onMounted(() => {
   <div class="init-screen">
     <div class="init-card">
       <header class="init-brand">
-        <span class="init-mark"><UtensilsCrossed :size="22" /></span>
+        <span class="init-mark"><AppIcon :size="44" alt="" /></span>
         <div>
           <strong>Culinator</strong>
           <small>Preparing your kitchen</small>
@@ -144,8 +145,8 @@ onMounted(() => {
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: #d9f0df;
-  color: #1f5130;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 .init-brand strong {
   display: block;

@@ -211,6 +211,13 @@ pub fn render_recipe(
                 }
             },
         );
+        recipe = culinator_narrative::convert_recipe_temperatures(
+            &recipe,
+            culinator_core::temperature_scale_for_system(match system {
+                culinator_models::UnitSystem::Metric => culinator_core::UnitSystem::Metric,
+                culinator_models::UnitSystem::UsCustomary => culinator_core::UnitSystem::UsCustomary,
+            }),
+        );
     }
     let content = culinator_narrative::extract_with(
         &recipe,

@@ -2,6 +2,7 @@ import { computed, type ComputedRef, type Ref, unref } from "vue";
 import {
   narrativeWasm,
   type WasmNumberStyle,
+  type WasmTemperatureScale,
   type WasmUnitSystem,
 } from "../../services/wasm/parser";
 
@@ -79,7 +80,9 @@ export interface RecipeNarrative {
 
 export interface NarrativeOptions {
   unitSystem?: Ref<WasmUnitSystem> | ComputedRef<WasmUnitSystem>;
+  temperatureScale?: Ref<WasmTemperatureScale> | ComputedRef<WasmTemperatureScale>;
   numberStyle?: Ref<WasmNumberStyle> | ComputedRef<WasmNumberStyle>;
+  decimalPlaces?: Ref<number> | ComputedRef<number>;
 }
 
 // The WASM boundary hands back plain JSON; these mirror its serde shape.
@@ -131,9 +134,17 @@ export interface BuiltNarrative {
 export function buildNarrative(
   source: string,
   unitSystem: WasmUnitSystem = "as_authored",
+  temperatureScale: WasmTemperatureScale = "as_authored",
   numberStyle: WasmNumberStyle = "fractions",
+  decimalPlaces = 2,
 ): BuiltNarrative {
-  const raw = narrativeWasm(source, unitSystem, numberStyle) as WasmNarrative;
+  const raw = narrativeWasm(
+    source,
+    unitSystem,
+    temperatureScale,
+    numberStyle,
+    decimalPlaces,
+  ) as WasmNarrative;
   return {
     summary: raw.summary,
     ingredientGroups: raw.ingredientGroups.map((group) => ({
@@ -162,7 +173,9 @@ export function useRecipeNarrative(
     buildNarrative(
       unref(source) ?? "",
       options.unitSystem ? unref(options.unitSystem) : "as_authored",
+      options.temperatureScale ? unref(options.temperatureScale) : "as_authored",
       options.numberStyle ? unref(options.numberStyle) : "fractions",
+      options.decimalPlaces ? unref(options.decimalPlaces) : 2,
     ),
   );
 

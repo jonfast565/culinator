@@ -15,7 +15,7 @@ const emit = defineEmits<{ select: [symbol: string] }>();
 <template>
   <div class="ingredient-groups">
     <div v-for="group in groups" :key="group.label ?? 'base'" class="ingredient-group">
-      <h3 v-if="group.label" class="variant-heading">{{ group.label }} finish</h3>
+      <h3 v-if="group.label" class="variant-heading">{{ group.label }}</h3>
       <ul class="ingredient-list">
         <IngredientListRow
           v-for="(item, index) in group.items"

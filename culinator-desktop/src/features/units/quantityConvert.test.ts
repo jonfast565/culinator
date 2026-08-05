@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  detectAuthoredTemperatureScale,
   detectAuthoredUnitSystem,
   dominantIngredientDimension,
+  temperatureScaleOf,
   unitSystemOf,
 } from "./quantityConvert";
 
@@ -56,5 +58,37 @@ describe("detectAuthoredUnitSystem", () => {
 
   it("leaves preference alone when systems tie within the dominant dimension", () => {
     expect(detectAuthoredUnitSystem(["100 g", "4 oz"])).toBeNull();
+  });
+});
+
+describe("temperatureScaleOf", () => {
+  it("classifies temperature units", () => {
+    expect(temperatureScaleOf("c")).toBe("celsius");
+    expect(temperatureScaleOf("celsius")).toBe("celsius");
+    expect(temperatureScaleOf("f")).toBe("fahrenheit");
+    expect(temperatureScaleOf("fahrenheit")).toBe("fahrenheit");
+    expect(temperatureScaleOf("g")).toBeNull();
+  });
+});
+
+describe("detectAuthoredTemperatureScale", () => {
+  it("prefers Fahrenheit when oven temps are mostly °F", () => {
+    expect(
+      detectAuthoredTemperatureScale(["350 f", "375 fahrenheit", "165 f"]),
+    ).toBe("fahrenheit");
+  });
+
+  it("prefers Celsius when oven and doneness temps are mostly °C", () => {
+    expect(
+      detectAuthoredTemperatureScale(["180 celsius", "200 c", "68 celsius"]),
+    ).toBe("celsius");
+  });
+
+  it("returns null when no temperatures are present", () => {
+    expect(detectAuthoredTemperatureScale([])).toBeNull();
+  });
+
+  it("returns null when Celsius and Fahrenheit tie", () => {
+    expect(detectAuthoredTemperatureScale(["350 f", "180 celsius"])).toBeNull();
   });
 });

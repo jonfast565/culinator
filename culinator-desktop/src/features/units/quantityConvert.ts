@@ -1,5 +1,9 @@
 import type { UnitSystem } from "../../domain/types";
+import type { UiRecipeModel } from "../recipe-editor/model";
 import { convertUnits, formatUnit } from "../../services/api/units-api";
+
+/** Display preference for oven and doneness temperatures. */
+export type TemperatureScale = "celsius" | "fahrenheit";
 
 const METRIC_MASS = new Set([
   "g",
@@ -237,6 +241,64 @@ export function detectAuthoredUnitSystem(quantities: Iterable<string>): UnitSyst
   return majority(massMetric + volumeMetric, massUs + volumeUs);
 }
 
+/** Celsius or Fahrenheit for a temperature unit; null for non-temperature units. */
+export function temperatureScaleOf(unit: string): TemperatureScale | null {
+  const normalized = normalizeUnit(unit);
+  if (normalized === "c" || normalized === "celsius" || normalized === "centigrade") {
+    return "celsius";
+  }
+  if (normalized === "f" || normalized === "fahrenheit") {
+    return "fahrenheit";
+  }
+  return null;
+}
+
+/** Step setpoints and internal-temp doneness cues from a parsed recipe model. */
+export function collectRecipeTemperatures(model: UiRecipeModel): string[] {
+  const temperatures: string[] = [];
+  for (const operation of model.operations ?? []) {
+    if (operation.targetTemperature) temperatures.push(operation.targetTemperature);
+    for (const cue of operation.doneness ?? []) {
+      if (cue.kind === "internal_temp") temperatures.push(cue.value);
+    }
+  }
+  return temperatures;
+}
+
+/**
+ * Temperature scale that keeps a recipe's oven and doneness temps as authored.
+ * Returns null when no temperatures are present or Celsius/Fahrenheit tie.
+ */
+export function detectAuthoredTemperatureScale(
+  temperatures: Iterable<string>,
+): TemperatureScale | null {
+  let celsius = 0;
+  let fahrenheit = 0;
+  for (const text of temperatures) {
+    const parsed = parseQuantity(text);
+    if (!parsed) continue;
+    const scale = temperatureScaleOf(parsed.unit);
+    if (scale === "celsius") celsius += 1;
+    else if (scale === "fahrenheit") fahrenheit += 1;
+  }
+  if (celsius === 0 && fahrenheit === 0) return null;
+  if (celsius === fahrenheit) return null;
+  return celsius > fahrenheit ? "celsius" : "fahrenheit";
+}
+
+export function targetTemperatureUnit(scale: TemperatureScale): string {
+  return scale === "celsius" ? "c" : "f";
+}
+
+export function alreadyInTemperatureScale(unit: string, scale: TemperatureScale): boolean {
+  const normalized = normalizeUnit(unit);
+  return (
+    (scale === "celsius" &&
+      (normalized === "c" || normalized === "celsius" || normalized === "centigrade")) ||
+    (scale === "fahrenheit" && (normalized === "f" || normalized === "fahrenheit"))
+  );
+}
+
 export function isConvertibleUnit(unit: string): boolean {
   const dimension = quantityDimension(unit);
   return dimension != null && dimension !== "count";
@@ -248,7 +310,7 @@ export function targetUnit(unit: string, system: UnitSystem): string | null {
   if (!dimension || dimension === "count") return null;
   if (dimension === "mass") return system === "metric" ? "g" : "oz";
   if (dimension === "volume") return system === "metric" ? "ml" : "cup";
-  if (dimension === "temperature") return system === "metric" ? "c" : "f";
+  if (dimension === "temperature") return null;
   if (dimension === "time") return normalized;
   return null;
 }
@@ -257,13 +319,7 @@ export function alreadyInSystem(unit: string, system: UnitSystem): boolean {
   const normalized = normalizeUnit(unit);
   if (METRIC_MASS.has(normalized) || METRIC_VOLUME.has(normalized)) return system === "metric";
   if (US_MASS.has(normalized) || US_VOLUME.has(normalized)) return system === "us_customary";
-  if (TEMPERATURE.has(normalized)) {
-    return (
-      (system === "metric" &&
-        (normalized === "c" || normalized === "celsius" || normalized === "centigrade")) ||
-      (system === "us_customary" && (normalized === "f" || normalized === "fahrenheit"))
-    );
-  }
+  if (TEMPERATURE.has(normalized)) return true;
   return true;
 }
 
@@ -315,6 +371,61 @@ export async function convertQuantityForDisplay(text: string, system: UnitSystem
 
   const converted = await convertSingle(parsed.value, parsed.unit, system);
   return converted ?? raw;
+}
+
+async function convertTemperatureSingle(
+  value: number,
+  unit: string,
+  scale: TemperatureScale,
+): Promise<string | null> {
+  const toUnit = targetTemperatureUnit(scale);
+  if (alreadyInTemperatureScale(unit, scale)) return null;
+  try {
+    const converted = await convertUnits({ value, fromUnit: unit, toUnit });
+    if (converted.dimension !== "temperature") return null;
+    const formatted = await formatUnit({
+      value: converted.value,
+      unit: converted.unit,
+      unitSystem: scale === "celsius" ? "metric" : "us_customary",
+    });
+    return formatted.formatted;
+  } catch {
+    return null;
+  }
+}
+
+/** Convert a temperature expression for display; returns the original when unchanged. */
+export async function convertTemperatureForDisplay(
+  text: string,
+  scale: TemperatureScale,
+): Promise<string> {
+  const raw = text.trim();
+  if (!raw) return raw;
+  const parsed = parseQuantity(raw);
+  if (!parsed || !TEMPERATURE.has(normalizeUnit(parsed.unit))) return raw;
+  if (alreadyInTemperatureScale(parsed.unit, scale)) return raw;
+  const converted = await convertTemperatureSingle(parsed.value, parsed.unit, scale);
+  return converted ?? raw;
+}
+
+/** Convert a temperature expression for source patching. */
+export async function convertTemperatureForSource(
+  text: string,
+  scale: TemperatureScale,
+): Promise<string | null> {
+  const raw = text.trim();
+  if (!raw) return null;
+  const parsed = parseQuantity(raw);
+  if (!parsed || !TEMPERATURE.has(normalizeUnit(parsed.unit))) return null;
+  const converted = await convertTemperatureSingle(parsed.value, parsed.unit, scale);
+  if (!converted) return null;
+  const parts = converted.match(/^([\d./]+)\s*(.*)$/);
+  if (!parts) return null;
+  const unit = parts[2]
+    .replace(/°[CFK]/i, "")
+    .trim()
+    .toLowerCase();
+  return `${parts[1]} ${unit}`.trim();
 }
 
 /** Convert a quantity expression for source patching; always targets the requested system. */

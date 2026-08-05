@@ -67,8 +67,10 @@ export function parseOutlineWasm(source: string): unknown {
   return JSON.parse(parse_outline(source));
 }
 
-/** Unit system for displayed amounts; anything else keeps them as authored. */
+/** Unit system for displayed mass/volume; anything else keeps them as authored. */
 export type WasmUnitSystem = "metric" | "us_customary" | "as_authored";
+/** Display scale for oven and doneness temperatures; anything else keeps as authored. */
+export type WasmTemperatureScale = "celsius" | "fahrenheit" | "as_authored";
 /** Whether amounts read as cooking fractions ("1/2") or decimals ("0.5"). */
 export type WasmNumberStyle = "fractions" | "decimals";
 
@@ -84,10 +86,14 @@ export type WasmNumberStyle = "fractions" | "decimals";
 export function narrativeWasm(
   source: string,
   unitSystem: WasmUnitSystem,
+  temperatureScale: WasmTemperatureScale,
   numberStyle: WasmNumberStyle,
+  decimalPlaces = 2,
 ): unknown {
   if (!ready) {
     throw new Error("culinator parser wasm used before initParser() resolved");
   }
-  return JSON.parse(narrative(source, unitSystem, numberStyle));
+  return JSON.parse(
+    narrative(source, unitSystem, temperatureScale, numberStyle, decimalPlaces),
+  );
 }

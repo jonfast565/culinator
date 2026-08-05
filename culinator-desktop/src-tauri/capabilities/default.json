@@ -3,5 +3,10 @@
   "identifier": "default",
   "description": "Default desktop capability",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:allow-save", "dialog:allow-open"]
+  "permissions": [
+    "core:default",
+    "core:webview:allow-print",
+    "dialog:allow-save",
+    "dialog:allow-open"
+  ]
 }

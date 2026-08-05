@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { Clock, ArrowRight } from "lucide-vue-next";
 import type { BookLeaf } from "../bookContents";
+import AppIcon from "../../../app/components/AppIcon.vue";
 import RecipeImage from "../../reading/components/RecipeImage.vue";
 import IngredientListRow from "../../reading/components/IngredientListRow.vue";
 
@@ -26,6 +27,9 @@ const folio = computed(() =>
 <template>
   <!-- Cover -->
   <div v-if="leaf.kind === 'cover'" class="leaf cover">
+    <figure class="cover-mark" aria-hidden="true">
+      <AppIcon :size="72" alt="" />
+    </figure>
     <p class="cover-kicker">Recipe book</p>
     <h1 class="cover-title">{{ leaf.title }}</h1>
     <p class="cover-sub">{{ leaf.subtitle }}</p>
@@ -147,6 +151,14 @@ const folio = computed(() =>
   background:
     linear-gradient(180deg, rgba(40, 100, 59, 0.06), rgba(40, 100, 59, 0.02)), var(--paper);
   border-left: 6px solid var(--herb);
+}
+.cover-mark {
+  margin: 0 0 20px;
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 10px 24px -16px rgba(40, 100, 59, 0.55);
 }
 .cover-kicker {
   margin: 0 0 14px;

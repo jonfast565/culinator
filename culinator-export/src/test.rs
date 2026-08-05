@@ -46,6 +46,41 @@ fn creates_zip_bundle() {
 }
 
 #[test]
+fn web_alone_returns_bare_html_not_zip() {
+    let recipe = Recipe {
+        id: Uuid::nil(),
+        book_id: None,
+        symbol: "tea".into(),
+        declared_type: TypeRef::named("Recipe"),
+        title: "Tea".into(),
+        protocol_version: "0.3".into(),
+        types: vec![],
+        resources: vec![],
+        processes: vec![],
+        operations: vec![],
+        servings: vec![],
+        formulas: vec![],
+        yields: vec![],
+        properties: BTreeMap::new(),
+    };
+    let options = RecipeExportOptions {
+        site_title: None,
+        author: None,
+        description: None,
+        include_source: false,
+        formats: vec![culinator_models::RecipeExportFormat::Web],
+        nutrition: NutritionFacts::default(),
+    };
+    let bundle = StaticRecipeExporter
+        .export(&recipe, "recipe tea {}", &options)
+        .unwrap();
+    assert_eq!(bundle.file_name, "tea.html");
+    assert!(bundle.media_type.starts_with("text/html"));
+    assert_eq!(bundle.files.len(), 1);
+    assert!(!bundle.archive.starts_with(b"PK"));
+}
+
+#[test]
 fn single_format_export_returns_the_bare_file() {
     let recipe = Recipe {
         id: Uuid::nil(),
