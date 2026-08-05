@@ -10,6 +10,7 @@ fn nutrition_catalog_is_object_safe() {
             &self,
             _: &str,
             _: usize,
+            _: crate::NutritionSearchOptions,
         ) -> Result<Vec<crate::NutritionSearchResult>, crate::ApplicationError> {
             Ok(vec![])
         }

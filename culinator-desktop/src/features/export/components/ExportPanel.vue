@@ -1,40 +1,30 @@
 <script setup lang="ts">
-import { reactive, ref } from "vue";
-import { Calculator, Download, PackageOpen } from "lucide-vue-next";
+import { computed, onMounted, reactive, ref } from "vue";
+import { Download, PackageOpen } from "lucide-vue-next";
 import type { RecipeExportFormat, RecipeExportOptions } from "../../../domain/types";
-import { calculateRecipeNutrition, downloadExport, exportRecipe } from "../../../services/api";
+import {
+  calculateRecipeNutrition,
+  downloadExport,
+  emptyNutritionFacts,
+  exportRecipe,
+  getNutritionState,
+} from "../../../services/api";
 const props = defineProps<{ recipeId: string; recipeTitle: string }>();
 const busy = ref(false);
-const calculating = ref(false);
+const loadingNutrition = ref(false);
 const error = ref("");
 const generated = ref<string[]>([]);
+const nutritionNote = ref("");
 const options = reactive<RecipeExportOptions>({
   siteTitle: "My Recipe Book",
   author: "",
   description: "",
   includeSource: true,
   formats: ["web", "json", "markdown"],
-  nutrition: {
-    servingsPerContainer: 1,
-    servingSize: "1 serving",
-    servingSizeGrams: null,
-    calories: 0,
-    totalFatGrams: 0,
-    saturatedFatGrams: 0,
-    transFatGrams: 0,
-    cholesterolMilligrams: 0,
-    sodiumMilligrams: 0,
-    totalCarbohydrateGrams: 0,
-    dietaryFiberGrams: 0,
-    totalSugarsGrams: 0,
-    addedSugarsGrams: 0,
-    proteinGrams: 0,
-    vitaminDMicrograms: null,
-    calciumMilligrams: null,
-    ironMilligrams: null,
-    potassiumMilligrams: null,
-  },
+  nutrition: emptyNutritionFacts(),
 });
+
+const previewFacts = computed(() => options.nutrition);
 
 const availableFormats: { value: RecipeExportFormat; label: string; detail: string }[] = [
   { value: "web", label: "Web page", detail: "Responsive HTML with embedded label" },
@@ -45,44 +35,55 @@ const availableFormats: { value: RecipeExportFormat; label: string; detail: stri
   { value: "json", label: "JSON", detail: "Structured recipe data" },
   { value: "epub", label: "EPUB", detail: "E-reader compatible recipe book file" },
 ];
+
+const hasNutritionData = computed(
+  () =>
+    previewFacts.value.calories > 0 ||
+    previewFacts.value.proteinGrams > 0 ||
+    previewFacts.value.totalFatGrams > 0 ||
+    previewFacts.value.totalCarbohydrateGrams > 0,
+);
+
 function toggleFormat(format: RecipeExportFormat) {
   const index = options.formats.indexOf(format);
   if (index >= 0) options.formats.splice(index, 1);
   else options.formats.push(format);
 }
-const numericFields = [
-  ["Calories", "calories"],
-  ["Total fat (g)", "totalFatGrams"],
-  ["Saturated fat (g)", "saturatedFatGrams"],
-  ["Trans fat (g)", "transFatGrams"],
-  ["Cholesterol (mg)", "cholesterolMilligrams"],
-  ["Sodium (mg)", "sodiumMilligrams"],
-  ["Carbohydrate (g)", "totalCarbohydrateGrams"],
-  ["Fiber (g)", "dietaryFiberGrams"],
-  ["Total sugars (g)", "totalSugarsGrams"],
-  ["Added sugars (g)", "addedSugarsGrams"],
-  ["Protein (g)", "proteinGrams"],
-] as const;
-async function calculateFromIngredients() {
-  calculating.value = true;
-  error.value = "";
+
+async function loadRecipeNutrition(): Promise<void> {
+  loadingNutrition.value = true;
+  nutritionNote.value = "";
   try {
-    const result = await calculateRecipeNutrition(props.recipeId, {
-      servingsPerContainer: options.nutrition.servingsPerContainer,
-      servingSize: options.nutrition.servingSize,
-      servingSizeGrams: options.nutrition.servingSizeGrams,
-    });
+    const state = await getNutritionState(props.recipeId);
+    if (state.manualOverride && state.manualFacts) {
+      Object.assign(options.nutrition, state.manualFacts);
+      nutritionNote.value = "Using saved manual nutrition from the Nutrition panel.";
+      return;
+    }
+    const result = await calculateRecipeNutrition(props.recipeId);
     Object.assign(options.nutrition, result.facts);
-  } catch (e) {
-    error.value = e instanceof Error ? e.message : String(e);
+    if (result.manualOverride) {
+      nutritionNote.value = "Using saved manual nutrition from the Nutrition panel.";
+    } else if (result.calculated && result.linkedIngredientCount > 0) {
+      nutritionNote.value = `Calculated from ${result.linkedIngredientCount} of ${result.totalIngredientCount} ingredients. Edit links in the Nutrition panel.`;
+    } else {
+      nutritionNote.value =
+        "No ingredient nutrition linked yet. Configure in the Nutrition panel before exporting.";
+    }
+  } catch (cause) {
+    nutritionNote.value = "Could not load nutrition. Configure in the Nutrition panel.";
+    Object.assign(options.nutrition, emptyNutritionFacts());
+    error.value = cause instanceof Error ? cause.message : String(cause);
   } finally {
-    calculating.value = false;
+    loadingNutrition.value = false;
   }
 }
+
 async function generate() {
   busy.value = true;
   error.value = "";
   try {
+    await loadRecipeNutrition();
     const result = await exportRecipe(props.recipeId, options);
     const saved = await downloadExport(result);
     generated.value = saved ? result.files : [];
@@ -92,13 +93,16 @@ async function generate() {
     busy.value = false;
   }
 }
+
+onMounted(loadRecipeNutrition);
 </script>
 <template>
   <section class="panel space-y-4">
     <div>
       <h3 class="flex items-center gap-2"><PackageOpen :size="17" />Export bundle</h3>
       <p class="text-sm opacity-70">
-        Generate a standalone recipe webpage and matching Nutrition Facts label in one ZIP.
+        Generate a standalone recipe webpage and matching Nutrition Facts label in one ZIP. Nutrition
+        comes from the Nutrition panel — link ingredients or save manual facts there first.
       </p>
     </div>
     <label class="field"><span>Site title</span><input v-model="options.siteTitle" /></label
@@ -106,30 +110,35 @@ async function generate() {
     ><label class="field"
       ><span>Description</span><textarea v-model="options.description" rows="2" />
     </label>
-    <div class="grid grid-cols-2 gap-2">
-      <label class="field"
-        ><span>Servings</span
-        ><input
-          v-model.number="options.nutrition.servingsPerContainer"
-          type="number"
-          min="0"
-          step="0.5" /></label
-      ><label class="field"
-        ><span>Serving size</span><input v-model="options.nutrition.servingSize" /></label
-      ><label v-for="field in numericFields" :key="field[1]" class="field"
-        ><span>{{ field[0] }}</span
-        ><input v-model.number="options.nutrition[field[1]]" type="number" min="0" step="0.1"
-      /></label>
+    <div class="rounded border border-current/15 p-3 text-sm">
+      <div class="font-semibold">Nutrition label preview</div>
+      <p v-if="loadingNutrition" class="opacity-70">Loading recipe nutrition…</p>
+      <template v-else>
+        <p class="opacity-70">{{ nutritionNote }}</p>
+        <dl v-if="hasNutritionData" class="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
+          <div>
+            <dt class="opacity-70">Calories</dt>
+            <dd>{{ previewFacts.calories }}</dd>
+          </div>
+          <div>
+            <dt class="opacity-70">Protein</dt>
+            <dd>{{ previewFacts.proteinGrams }} g</dd>
+          </div>
+          <div>
+            <dt class="opacity-70">Total fat</dt>
+            <dd>{{ previewFacts.totalFatGrams }} g</dd>
+          </div>
+          <div>
+            <dt class="opacity-70">Carbs</dt>
+            <dd>{{ previewFacts.totalCarbohydrateGrams }} g</dd>
+          </div>
+          <div class="col-span-2">
+            <dt class="opacity-70">Serving size</dt>
+            <dd>{{ previewFacts.servingSize }}</dd>
+          </div>
+        </dl>
+      </template>
     </div>
-    <button
-      class="secondary w-full justify-center"
-      :disabled="calculating"
-      @click="calculateFromIngredients"
-    >
-      <Calculator :size="16" />{{
-        calculating ? "Calculating…" : "Calculate from ingredients"
-      }}
-    </button>
     <div class="space-y-2">
       <div class="text-sm font-semibold">Formats</div>
       <div class="grid gap-2 sm:grid-cols-2">

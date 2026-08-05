@@ -25,6 +25,7 @@ import RecipeBuilderView from "../features/recipe-builder/components/RecipeBuild
 import Bookshelf from "../features/bookshelf/components/Bookshelf.vue";
 import OpenBook from "../features/bookshelf/components/OpenBook.vue";
 import MeasuresView from "../features/units/components/MeasuresView.vue";
+import IngredientMatchView from "../features/nutrition/components/IngredientMatchView.vue";
 import RecipeImportPanel from "../features/import/components/RecipeImportPanel.vue";
 import type { ImportAcceptPayload } from "../features/import/components/RecipeImportPanel.vue";
 import ConnectionBadge from "../shared/components/ConnectionBadge.vue";
@@ -39,6 +40,7 @@ import {
   useViewSettings,
 } from "../features/reading/composables/useViewSettings";
 import AppMenuBar, { type AppMenuAction } from "./components/AppMenuBar.vue";
+import { printRecipeCards } from "../features/bookshelf/printRecipeCards";
 import type { Diagnostic } from "../domain/types";
 
 const library = useRecipeLibrary();
@@ -77,6 +79,7 @@ const connection = ref<ConnectionStatus>("connecting");
 const importing = ref(false);
 const activeTool = ref<InspectorTabId | null>(null);
 const kitchenMode = ref(false);
+const ingredientMatchSymbol = ref<string | null>(null);
 const pendingDiagnostic = ref<Diagnostic | null>(null);
 const recipeBuilder = ref<{ focusSymbol: (symbol: string) => void } | null>(null);
 /** Symbol highlighted in the live preview (click sync with the builder). */
@@ -206,6 +209,17 @@ function onGlobalKeydown(event: KeyboardEvent): void {
     event.preventDefault();
     if (nav.view.value === "reading" || nav.view.value === "editing") nav.build();
     else if (nav.view.value === "building") editSource();
+    return;
+  }
+
+  if (
+    mod &&
+    event.key.toLowerCase() === "p" &&
+    nav.view.value === "book" &&
+    viewSettings.bookLayout.value === "cards"
+  ) {
+    event.preventDefault();
+    printRecipeCards();
     return;
   }
 
@@ -411,6 +425,13 @@ function openTool(tool: InspectorTabId): void {
   if (!library.selectedRecipe.value) return;
   activeTool.value = tool;
 }
+function openIngredientMatcher(symbol?: string): void {
+  if (!library.selectedRecipe.value) return;
+  activeTool.value = null;
+  kitchenMode.value = false;
+  ingredientMatchSymbol.value = symbol ?? null;
+  nav.ingredientMatch();
+}
 function enterKitchenMode(): void {
   activeTool.value = null;
   kitchenMode.value = true;
@@ -456,6 +477,9 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
       activeTool.value = null;
       nav.measures();
       break;
+    case "ingredient-match":
+      openIngredientMatcher();
+      break;
     case "toggle-units":
       unitDisplay.toggleUnitSystem();
       break;
@@ -467,6 +491,14 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
       break;
     case "cycle-text":
       viewSettings.cycleTextSize();
+      break;
+    case "toggle-book-layout":
+      viewSettings.toggleBookLayout();
+      break;
+    case "print-recipe-cards":
+      if (nav.view.value === "book" && viewSettings.bookLayout.value === "cards") {
+        printRecipeCards();
+      }
       break;
     case "convert-units":
       await convertRecipeUnits();
@@ -509,6 +541,8 @@ const saveBlocked = computed(
       :mise-placement="viewSettings.misePlacement.value"
       :number-style="viewSettings.numberStyle.value"
       :text-size-label="textSizeLabel"
+      :book-layout="viewSettings.bookLayout.value"
+      :on-book-view="nav.view.value === 'book'"
       @action="handleMenuAction"
     />
     <Bookshelf
@@ -527,6 +561,16 @@ const saveBlocked = computed(
     />
 
     <MeasuresView v-else-if="nav.view.value === 'measures'" @back="nav.shelf()" />
+
+    <IngredientMatchView
+      v-else-if="nav.view.value === 'ingredient-match' && library.selectedRecipe.value"
+      :key="library.selectedRecipe.value.id"
+      :recipe-id="library.selectedRecipe.value.id"
+      :resources="editor.model.value.resources"
+      :recipe-title="liveRecipeTitle"
+      :initial-symbol="ingredientMatchSymbol"
+      @back="nav.backFromIngredientMatch()"
+    />
 
     <OpenBook
       v-else-if="nav.view.value === 'book'"
@@ -759,6 +803,7 @@ const saveBlocked = computed(
       @close="activeTool = null"
       @update:source="editor.source.value = $event"
       @kitchen-started="enterKitchenMode"
+      @open-ingredient-matcher="openIngredientMatcher"
     />
   </div>
   <RecipeImportPanel v-if="importing" @close="importing = false" @accept="acceptImport" />

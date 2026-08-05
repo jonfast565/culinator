@@ -5,7 +5,8 @@ use axum::{
 };
 use culinator_models::{
     AutoLinkRequest, CalculateRecipeNutritionRequest, FuzzyMatchRequest,
-    LinkResourceNutritionRequest, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+    LinkResourceNutritionRequest, NutritionSearchOptions, SaveIngredientManualNutritionRequest,
+    SaveRecipeNutritionRequest,
 };
 use serde::Deserialize;
 use uuid::Uuid;
@@ -17,17 +18,33 @@ pub struct SearchQuery {
     pub q: String,
     #[serde(default = "default_limit")]
     pub limit: usize,
+    /// Defaults to true — ingredient matching should not scan branded UPC rows.
+    #[serde(default = "default_exclude_branded")]
+    pub exclude_branded: bool,
 }
 
 fn default_limit() -> usize {
     20
 }
 
+fn default_exclude_branded() -> bool {
+    true
+}
+
 pub async fn search(
     Query(query): Query<SearchQuery>,
     State(state): State<ServiceState>,
 ) -> Result<Json<Vec<culinator_models::NutritionSearchResult>>, ApiError> {
-    Ok(Json(state.nutrition().search_foods(&query.q, query.limit)?))
+    let options = if query.exclude_branded {
+        NutritionSearchOptions::generics_only()
+    } else {
+        NutritionSearchOptions::all()
+    };
+    Ok(Json(state.nutrition().search_foods(
+        &query.q,
+        query.limit,
+        options,
+    )?))
 }
 
 pub async fn fuzzy_match(

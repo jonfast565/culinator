@@ -98,10 +98,17 @@ pub struct FuzzyMatchRequest {
     pub query: String,
     #[serde(default = "default_fuzzy_limit")]
     pub limit: usize,
+    /// Prefer Foundation/SR/Survey only (default). Set false to include branded UPC rows.
+    #[serde(default = "default_exclude_branded")]
+    pub exclude_branded: bool,
 }
 
 fn default_fuzzy_limit() -> usize {
     5
+}
+
+fn default_exclude_branded() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -476,7 +483,8 @@ fn optional_nutrient(totals: &BTreeMap<i64, f64>, nutrient_id: i64, servings: f6
 
 const INGREDIENT_STOP_WORDS: &[&str] = &[
     "fresh", "diced", "chopped", "minced", "ripe", "large", "small", "medium", "organic", "raw",
-    "cooked", "hass", "whole", "ground", "grated", "sliced", "peeled", "seeded", "boneless",
+    // Keep "whole" — USDA uses it as a real distinguisher (whole milk, whole egg).
+    "cooked", "hass", "ground", "grated", "sliced", "peeled", "seeded", "boneless",
     "skinless", "unsalted", "salted", "extra", "virgin", "finely", "roughly", "about", "optional",
     "warm", "crushed", "for", "the", "pan", "plus", "more", "serving", "to", "taste", "divided",
     "room", "temperature", "softened", "melted", "cold", "hot", "dried", "canned", "packed",
@@ -712,14 +720,23 @@ fn tokens_match(left: &str, right: &str) -> bool {
 fn token_overlap_score(left: &str, right: &str) -> f64 {
     let left_tokens: Vec<&str> = left.split_whitespace().collect();
     let right_tokens: Vec<&str> = right.split_whitespace().collect();
-    if left_tokens.is_empty() {
+    if left_tokens.is_empty() || right_tokens.is_empty() {
         return 0.0;
     }
     let matches = left_tokens
         .iter()
         .filter(|token| right_tokens.iter().any(|other| tokens_match(token, other)))
-        .count();
-    matches as f64 / left_tokens.len() as f64
+        .count() as f64;
+    // F1 over tokens: requiring both recall (query covered) and precision
+    // (description not full of unrelated product words). Asymmetric recall-only
+    // scoring made "butter" look perfect against "butter flavored popcorn".
+    let recall = matches / left_tokens.len() as f64;
+    let precision = matches / right_tokens.len() as f64;
+    if recall + precision == 0.0 {
+        0.0
+    } else {
+        2.0 * recall * precision / (recall + precision)
+    }
 }
 
 pub fn string_similarity(left: &str, right: &str) -> f64 {
@@ -736,9 +753,27 @@ pub fn string_similarity(left: &str, right: &str) -> f64 {
     };
     let mut best = 0.0_f64;
     for left_variant in &left_variants {
-        if left_variant == &right_norm || right_norm.contains(left_variant) && !left_variant.is_empty()
+        if left_variant == &right_norm {
+            return 1.0;
+        }
+        // Prefix near-match only when the description is a short USDA-style
+        // qualifier tail ("milk 3 25 milkfat"), not a long product title that
+        // merely begins with the cooking name ("butter flavored gourmet…").
+        if !left_variant.is_empty() && right_norm.starts_with(left_variant) {
+            let rest = right_norm[left_variant.len()..].trim();
+            let rest_tokens = rest.split_whitespace().count();
+            if rest.is_empty() {
+                best = best.max(0.95);
+            } else if rest_tokens <= 2 {
+                // e.g. "avocados raw" after light qualifier noise — not
+                // "butter flavored gourmet popcorn butter".
+                best = best.max(0.88);
+            }
+        } else if !right_norm.is_empty()
+            && left_variant.starts_with(&right_norm)
+            && right_norm.len() >= 3
         {
-            best = best.max(0.95);
+            best = best.max(0.85);
         }
         let left_trigrams = trigrams(left_variant);
         let right_trigrams = trigrams(&right_norm);
@@ -759,13 +794,19 @@ pub fn string_similarity(left: &str, right: &str) -> f64 {
     best
 }
 
+/// True for USDA Branded Foods rows (retail UPC products).
+pub fn is_branded_food(data_type: &str) -> bool {
+    let lowered = data_type.to_ascii_lowercase().replace([' ', '-'], "_");
+    matches!(lowered.as_str(), "branded_food" | "branded")
+}
+
 fn data_type_bonus(data_type: &str) -> f64 {
     let lowered = data_type.to_ascii_lowercase().replace([' ', '-'], "_");
     match lowered.as_str() {
-        "foundation_food" | "foundation" => 0.18,
-        "sr_legacy_food" | "sr_legacy" => 0.15,
-        "survey_fndds_food" | "survey_fndds" | "fndds" => 0.05,
-        "branded_food" | "branded" => -0.12,
+        "foundation_food" | "foundation" => 0.22,
+        "sr_legacy_food" | "sr_legacy" => 0.18,
+        "survey_fndds_food" | "survey_fndds" | "fndds" => 0.08,
+        "branded_food" | "branded" => -0.45,
         _ => 0.0,
     }
 }
@@ -775,29 +816,49 @@ fn match_quality_bonus(query: &str, result: &NutritionSearchResult) -> f64 {
     let desc_norm = normalize_ingredient_name(&result.description);
     let mut bonus = data_type_bonus(&result.data_type);
 
-    if !query_norm.is_empty() && desc_norm.starts_with(&query_norm) {
-        bonus += 0.2;
-    } else if !query_norm.is_empty() && desc_norm.contains(&query_norm) {
-        bonus += 0.12;
+    if !query_norm.is_empty() && desc_norm == query_norm {
+        bonus += 0.25;
+    } else if !query_norm.is_empty() && desc_norm.starts_with(&query_norm) {
+        let rest_tokens = desc_norm[query_norm.len()..].trim().split_whitespace().count();
+        // Short USDA tails only — not "butter flavored gourmet popcorn…".
+        if rest_tokens <= 2 {
+            bonus += 0.2;
+        }
+    } else if !query_norm.is_empty()
+        && query_norm.split_whitespace().count() >= 2
+        && desc_norm.contains(&query_norm)
+    {
+        // Multi-word phrase containment only (avoid "egg" ⊂ "egg beaters…").
+        bonus += 0.08;
     }
 
     let query_tokens: Vec<&str> = query_norm.split_whitespace().collect();
+    let desc_tokens: Vec<&str> = desc_norm.split_whitespace().collect();
     if !query_tokens.is_empty()
         && query_tokens
             .iter()
-            .all(|token| desc_norm.split_whitespace().any(|other| tokens_match(token, other)))
+            .all(|token| desc_tokens.iter().any(|other| tokens_match(token, other)))
     {
         bonus += 0.1;
+        // Extra unmatched description tokens → manufactured / composite product.
+        let matched = query_tokens
+            .iter()
+            .filter(|token| desc_tokens.iter().any(|other| tokens_match(token, other)))
+            .count();
+        let extra = desc_tokens.len().saturating_sub(matched.saturating_add(1));
+        if extra > 0 {
+            bonus -= 0.07 * extra as f64;
+        }
     }
 
     if result.brand_owner.as_deref().is_some_and(|brand| !brand.is_empty()) {
-        bonus -= 0.08;
+        bonus -= 0.12;
     }
 
     // Long multi-ingredient branded descriptions are usually poor generic matches.
     let comma_count = result.description.matches(',').count();
-    if comma_count >= 3 && data_type_bonus(&result.data_type) < 0.0 {
-        bonus -= 0.05;
+    if comma_count >= 3 && is_branded_food(&result.data_type) {
+        bonus -= 0.08;
     }
 
     bonus

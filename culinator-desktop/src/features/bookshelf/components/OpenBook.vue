@@ -1,15 +1,28 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { ChevronLeft, Search, Loader2, BookOpen, ListChecks, Plus, X } from "lucide-vue-next";
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  ChevronLeft,
+  Search,
+  Loader2,
+  BookOpen,
+  LayoutGrid,
+  ListChecks,
+  Plus,
+  Printer,
+  X,
+} from "lucide-vue-next";
+import { printRecipeCards } from "../printRecipeCards";
 import { getRecipe } from "../../../services/api";
 import { parseUiModel } from "../../recipe-editor/model";
 import { buildLeaves, sectionOf, type LoadedRecipe } from "../bookContents";
 import type { RecipeBookSummary, RecipeSummary } from "../../../domain/types";
 import BookFlip from "./BookFlip.vue";
+import BookCardGrid from "./BookCardGrid.vue";
 import BookManage from "./BookManage.vue";
 import BookExportPanel from "../../export/components/BookExportPanel.vue";
 import RecipeSearchPanel from "../../search/components/RecipeSearchPanel.vue";
 import { registerSearchHandler } from "../../../shared/composables/useGlobalSearch";
+import { VIEW_SETTINGS_KEY } from "../../reading/composables/useViewSettings";
 
 const props = defineProps<{
   book: RecipeBookSummary | null;
@@ -24,7 +37,9 @@ const emit = defineEmits<{
   (event: "bulk-delete", ids: string[]): void;
 }>();
 
-const mode = ref<"flip" | "manage">("flip");
+const mode = ref<"browse" | "manage">("browse");
+const viewSettings = inject(VIEW_SETTINGS_KEY);
+const bookLayout = computed(() => viewSettings?.bookLayout.value ?? "book");
 const useServiceSearch = ref(true);
 const searchOpen = ref(false);
 const searchPanel = ref<InstanceType<typeof RecipeSearchPanel>>();
@@ -91,14 +106,28 @@ onBeforeUnmount(unregisterSearch);
       </button>
       <h1 class="book-name">{{ bookTitle }}</h1>
       <div class="book-tools">
-        <div class="mode-toggle" role="tablist">
+        <div class="mode-toggle" role="tablist" aria-label="Book view">
           <button
             type="button"
-            :class="{ active: mode === 'flip' }"
-            title="Flip through"
-            @click="mode = 'flip'"
+            :class="{ active: mode === 'browse' && bookLayout === 'book' }"
+            title="Page-flip book"
+            @click="
+              mode = 'browse';
+              viewSettings?.setBookLayout('book');
+            "
           >
             <BookOpen :size="15" />
+          </button>
+          <button
+            type="button"
+            :class="{ active: mode === 'browse' && bookLayout === 'cards' }"
+            title="Recipe cards"
+            @click="
+              mode = 'browse';
+              viewSettings?.setBookLayout('cards');
+            "
+          >
+            <LayoutGrid :size="15" />
           </button>
           <button
             type="button"
@@ -128,6 +157,15 @@ onBeforeUnmount(unregisterSearch);
             aria-label="Search recipes in this book"
           />
         </label>
+        <button
+          v-if="bookLayout === 'cards' && filtered.length"
+          type="button"
+          class="tool-btn"
+          title="Print recipe cards (landscape)"
+          @click="printRecipeCards"
+        >
+          <Printer :size="15" />
+        </button>
         <BookExportPanel v-if="book" :book-id="book.id" :book-title="book.title" />
       </div>
     </header>
@@ -170,6 +208,11 @@ onBeforeUnmount(unregisterSearch);
     <div v-else-if="!filtered.length" class="book-empty">
       <p>No recipes match “{{ query }}”.</p>
     </div>
+    <BookCardGrid
+      v-else-if="bookLayout === 'cards'"
+      :recipes="filtered"
+      @open-recipe="emit('open-recipe', $event)"
+    />
     <BookFlip v-else :key="flipKey" :leaves="leaves" @open-recipe="emit('open-recipe', $event)" />
   </div>
 </template>

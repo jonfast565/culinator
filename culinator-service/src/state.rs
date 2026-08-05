@@ -147,24 +147,26 @@ impl ServiceState {
             .map(PathBuf::from)
             .unwrap_or_else(|| settings_path.clone());
         let secrets = resolve_secret_store(&settings_dir);
+        let nutrition = NutritionService::new(
+            repository.clone(),
+            repository.clone(),
+            parser.clone(),
+            nutrition_catalog.clone(),
+        );
         Self {
             recipes: RecipeService::new(repository.clone(), parser.clone(), validator),
             books: BookService::new(repository.clone()),
             formulas: FormulaService::new(repository.clone()),
             haccp: HaccpService::new(repository.clone()),
             kitchen: KitchenService::new(repository.clone(), repository.clone(), schedules.clone()),
-            nutrition: NutritionService::new(
-                repository.clone(),
-                repository.clone(),
-                parser.clone(),
-                nutrition_catalog.clone(),
-            ),
+            nutrition: nutrition.clone(),
             exports: ExportService::new(
                 repository.clone(),
                 repository.clone(),
                 parser.clone(),
                 Arc::new(StaticRecipeExporter),
                 Arc::new(StaticRecipeBookExporter),
+                nutrition,
             ),
             imports: ImportService::new(
                 Arc::new(TesseractCommandOcr),

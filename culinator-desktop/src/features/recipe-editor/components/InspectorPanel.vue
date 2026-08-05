@@ -49,6 +49,7 @@ function partsFor(symbol: string) {
 const emit = defineEmits<{
   "update:source": [value: string];
   "kitchen-started": [];
+  "open-ingredient-matcher": [symbol?: string];
 }>();
 
 const tabGroups = [
@@ -208,6 +209,7 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
       v-else-if="tab === 'nutrition' && recipeId"
       :recipe-id="recipeId"
       :resources="model.resources"
+      @open-matcher="emit('open-ingredient-matcher', $event)"
     />
     <ExportPanel
       v-else-if="tab === 'export' && recipeId"

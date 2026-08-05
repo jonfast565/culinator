@@ -1,6 +1,6 @@
 use crate::seed::{needs_full_catalog, seed_minimal_catalog};
 use crate::store::SqliteNutritionCatalog;
-use culinator_models::NutritionCatalog;
+use culinator_models::{NutritionCatalog, NutritionSearchOptions};
 
 #[test]
 fn seed_minimal_catalog_is_searchable() {
@@ -8,7 +8,9 @@ fn seed_minimal_catalog_is_searchable() {
     let path = dir.path().join("fdc.sqlite3");
     seed_minimal_catalog(&path).expect("seed");
     let catalog = SqliteNutritionCatalog::open(&path).expect("open");
-    let hits = catalog.search_foods("flour", 5).expect("search");
+    let hits = catalog
+        .search_foods("flour", 5, NutritionSearchOptions::generics_only())
+        .expect("search");
     assert!(!hits.is_empty());
 }
 

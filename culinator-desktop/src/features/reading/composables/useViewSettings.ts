@@ -21,6 +21,14 @@ export type NumberStyle = "fractions" | "decimals";
 /** User-selected scale for recipe and search-result text. */
 export type TextSize = "default" | "large" | "x-large";
 
+/**
+ * How an open book presents its recipes.
+ *
+ * - `book` — page-flip folio with cover, table of contents, and section dividers.
+ * - `cards` — a scrollable grid of recipe cards.
+ */
+export type BookLayout = "book" | "cards";
+
 export interface ViewSettingsContext {
   misePlacement: Ref<MisePlacement>;
   toggleMisePlacement: () => void;
@@ -28,6 +36,9 @@ export interface ViewSettingsContext {
   toggleNumberStyle: () => void;
   textSize: Ref<TextSize>;
   cycleTextSize: () => void;
+  bookLayout: Ref<BookLayout>;
+  toggleBookLayout: () => void;
+  setBookLayout: (layout: BookLayout) => void;
 }
 
 export const VIEW_SETTINGS_KEY: InjectionKey<ViewSettingsContext> = Symbol("viewSettings");
@@ -35,6 +46,7 @@ export const VIEW_SETTINGS_KEY: InjectionKey<ViewSettingsContext> = Symbol("view
 const STORAGE_KEY = "culinator.misePlacement";
 const NUMBER_STYLE_KEY = "culinator.numberStyle";
 const TEXT_SIZE_KEY = "culinator.textSize";
+const BOOK_LAYOUT_KEY = "culinator.bookLayout";
 
 function readStoredPlacement(): MisePlacement {
   try {
@@ -64,6 +76,16 @@ function readStoredTextSize(): TextSize {
     // ignore
   }
   return "default";
+}
+
+function readStoredBookLayout(): BookLayout {
+  try {
+    const stored = window.localStorage.getItem(BOOK_LAYOUT_KEY);
+    if (stored === "book" || stored === "cards") return stored;
+  } catch {
+    // ignore
+  }
+  return "book";
 }
 
 export function useViewSettings(): ViewSettingsContext {
@@ -107,6 +129,23 @@ export function useViewSettings(): ViewSettingsContext {
       textSize.value === "default" ? "large" : textSize.value === "large" ? "x-large" : "default";
   }
 
+  const bookLayout = ref<BookLayout>(readStoredBookLayout());
+  watch(bookLayout, (value) => {
+    try {
+      window.localStorage.setItem(BOOK_LAYOUT_KEY, value);
+    } catch {
+      // ignore
+    }
+  });
+
+  function toggleBookLayout(): void {
+    bookLayout.value = bookLayout.value === "book" ? "cards" : "book";
+  }
+
+  function setBookLayout(layout: BookLayout): void {
+    bookLayout.value = layout;
+  }
+
   return {
     misePlacement,
     toggleMisePlacement,
@@ -114,5 +153,8 @@ export function useViewSettings(): ViewSettingsContext {
     toggleNumberStyle,
     textSize,
     cycleTextSize,
+    bookLayout,
+    toggleBookLayout,
+    setBookLayout,
   };
 }

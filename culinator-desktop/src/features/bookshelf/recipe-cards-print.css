@@ -1,0 +1,133 @@
+/* Landscape recipe-card printing — activated via body.printing-recipe-cards */
+
+@page {
+  size: landscape;
+  margin: 0.45in;
+}
+
+@media print {
+  body.printing-recipe-cards * {
+    visibility: hidden;
+  }
+
+  body.printing-recipe-cards .card-grid-wrap,
+  body.printing-recipe-cards .card-grid-wrap * {
+    visibility: visible;
+  }
+
+  body.printing-recipe-cards .card-grid-wrap {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    overflow: visible;
+    background: #fff;
+  }
+
+  body.printing-recipe-cards .card-grid-scroll {
+    overflow: visible;
+    padding: 0;
+  }
+
+  body.printing-recipe-cards .card-section + .card-section {
+    margin-top: 0;
+  }
+
+  body.printing-recipe-cards .section-heading {
+    page-break-before: always;
+    break-before: page;
+    margin: 0 0 0.35in;
+    padding-top: 0.15in;
+    font-size: 18pt;
+    color: #28643b;
+  }
+
+  body.printing-recipe-cards .card-section:first-child .section-heading {
+    page-break-before: auto;
+    break-before: auto;
+  }
+
+  body.printing-recipe-cards .card-grid {
+    display: block;
+    max-width: none;
+    margin: 0;
+    gap: 0;
+  }
+
+  body.printing-recipe-cards .recipe-card {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    max-width: 9.6in;
+    min-height: 6.6in;
+    margin: 0 auto 0;
+    padding: 0;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border: 1px solid #d8d2c4;
+    border-radius: 6px;
+    box-shadow: none;
+    background: #fbf9f3;
+    cursor: default;
+    transform: none;
+    overflow: hidden;
+  }
+
+  body.printing-recipe-cards .recipe-card:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+
+  body.printing-recipe-cards .card-cover {
+    max-height: 2.4in;
+    aspect-ratio: auto;
+    flex-shrink: 0;
+  }
+
+  body.printing-recipe-cards .card-cover img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  body.printing-recipe-cards .card-body {
+    flex: 1;
+    padding: 0.28in 0.38in 0.34in;
+    gap: 0.12in;
+  }
+
+  body.printing-recipe-cards .card-title {
+    font-size: 22pt;
+  }
+
+  body.printing-recipe-cards .card-body-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+    gap: 0.22in;
+    flex: 1;
+    min-height: 0;
+  }
+
+  body.printing-recipe-cards .block-label {
+    font-size: 9pt;
+  }
+
+  body.printing-recipe-cards .card-ings .ingredient-name,
+  body.printing-recipe-cards .card-ings .ingredient-aside,
+  body.printing-recipe-cards .card-steps {
+    font-size: 11pt;
+    line-height: 1.45;
+  }
+
+  body.printing-recipe-cards .open-link {
+    display: none !important;
+  }
+
+  body.printing-recipe-cards .card-eyebrow,
+  body.printing-recipe-cards .card-summary,
+  body.printing-recipe-cards .block-label {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

@@ -45,3 +45,31 @@ describe("reading text size", () => {
     expect(useViewSettings().textSize.value).toBe("default");
   });
 });
+
+describe("book layout", () => {
+  it("defaults to page-flip book and toggles to cards", () => {
+    installStorage();
+    const settings = useViewSettings();
+
+    expect(settings.bookLayout.value).toBe("book");
+    settings.toggleBookLayout();
+    expect(settings.bookLayout.value).toBe("cards");
+    settings.toggleBookLayout();
+    expect(settings.bookLayout.value).toBe("book");
+  });
+
+  it("loads and persists a valid setting", async () => {
+    const storage = installStorage({ "culinator.bookLayout": "cards" });
+    const settings = useViewSettings();
+
+    expect(settings.bookLayout.value).toBe("cards");
+    settings.setBookLayout("book");
+    await nextTick();
+    expect(storage.setItem).toHaveBeenCalledWith("culinator.bookLayout", "book");
+  });
+
+  it("ignores an invalid stored setting", () => {
+    installStorage({ "culinator.bookLayout": "scroll" });
+    expect(useViewSettings().bookLayout.value).toBe("book");
+  });
+});

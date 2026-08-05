@@ -4,6 +4,7 @@ import {
   Apple,
   Calculator,
   Link2,
+  Maximize2,
   PenLine,
   Save,
   Search,
@@ -24,6 +25,10 @@ import * as api from "../../../services/api";
 const props = defineProps<{
   recipeId: string;
   resources: UiResource[];
+}>();
+
+const emit = defineEmits<{
+  "open-matcher": [symbol?: string];
 }>();
 
 const catalogAvailable = ref(false);
@@ -114,11 +119,13 @@ async function runSearch(symbol?: string): Promise<void> {
   searching.value = true;
   error.value = "";
   try {
-    searchResults.value = await api.fuzzyMatchNutritionFoods(searchQuery.value);
+    searchResults.value = await api.fuzzyMatchNutritionFoods(searchQuery.value, 12, {
+      excludeBranded: true,
+    });
     if (symbol && searchResults.value.length === 0) {
-      searchResults.value = (await api.searchNutritionFoods(searchQuery.value)).map(
-        (result, index) => ({ result, score: 1 - index * 0.05 }),
-      );
+      searchResults.value = (
+        await api.searchNutritionFoods(searchQuery.value, 12, { excludeBranded: true })
+      ).map((result, index) => ({ result, score: 1 - index * 0.05 }));
     }
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause);
@@ -247,6 +254,11 @@ async function calculate(): Promise<void> {
 }
 
 function openMapping(resource: UiResource): void {
+  // Prefer the full-window matcher when the catalog is available.
+  if (catalogAvailable.value) {
+    emit("open-matcher", resource.symbol);
+    return;
+  }
   activeSymbol.value = activeSymbol.value === resource.symbol ? null : resource.symbol;
   manualSymbol.value = null;
   searchQuery.value = resource.name || resource.symbol;
@@ -291,6 +303,14 @@ watch(
     </p>
 
     <div class="flex flex-wrap gap-2">
+      <button
+        class="primary"
+        :disabled="!catalogAvailable"
+        title="Open the full-window ingredient matcher"
+        @click="emit('open-matcher')"
+      >
+        <Maximize2 :size="14" /> Open ingredient matcher
+      </button>
       <button
         class="secondary"
         :disabled="autoLinking || !catalogAvailable || busy"

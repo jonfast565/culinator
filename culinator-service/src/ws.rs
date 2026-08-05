@@ -715,8 +715,16 @@ async fn dispatch_inner(
         "nutrition.search" => {
             let query = required_string(&params, "query")?;
             let limit = params.get("limit").and_then(Value::as_u64).unwrap_or(20) as usize;
+            let exclude_branded = params
+                .get("excludeBranded")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
             let axum::Json(value) = routes::nutrition::search(
-                axum::extract::Query(routes::nutrition::SearchQuery { q: query, limit }),
+                axum::extract::Query(routes::nutrition::SearchQuery {
+                    q: query,
+                    limit,
+                    exclude_branded,
+                }),
                 State(state.service.clone()),
             )
             .await

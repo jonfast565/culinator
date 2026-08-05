@@ -1,7 +1,7 @@
 use anyhow::Result as AnyResult;
 use culinator_models::{
     ApplicationError, FoodNutrientRecord, FoodRecord, NutrientDefinition, NutritionCatalog,
-    NutritionImportStore, NutritionSearchResult,
+    NutritionImportStore, NutritionSearchOptions, NutritionSearchResult,
 };
 use rusqlite::{Connection, OptionalExtension, params};
 use std::path::Path;
@@ -52,6 +52,13 @@ CREATE VIRTUAL TABLE IF NOT EXISTS foods_fts USING fts5(
   description, brand_owner, brand_name, ingredients,
   content='foods', content_rowid='fdc_id', tokenize='unicode61 remove_diacritics 2'
 );
+-- Generics-only FTS (~100k rows) so ingredient search never scans ~2M branded UPC docs.
+CREATE VIRTUAL TABLE IF NOT EXISTS foods_generic_fts USING fts5(
+  description,
+  content='',
+  contentless_delete=1,
+  tokenize='unicode61 remove_diacritics 2'
+);
 CREATE TRIGGER IF NOT EXISTS foods_ai AFTER INSERT ON foods BEGIN
   INSERT INTO foods_fts(rowid, description, brand_owner, brand_name, ingredients)
   VALUES (new.fdc_id, new.description, new.brand_owner, new.brand_name, new.ingredients);
@@ -87,10 +94,12 @@ impl SqliteNutritionCatalog {
     pub fn open(path: impl AsRef<Path>) -> AnyResult<Self> {
         let connection = Connection::open(path)?;
         connection.execute_batch(SCHEMA)?;
-        Ok(Self {
+        let catalog = Self {
             connection: Mutex::new(connection),
             imported_rows: 0,
-        })
+        };
+        catalog.ensure_generic_fts()?;
+        Ok(catalog)
     }
 
     pub fn update_branded_fields(
@@ -122,6 +131,50 @@ impl SqliteNutritionCatalog {
             .lock()
             .expect("nutrition catalog connection mutex poisoned")
     }
+
+    fn generic_fts_is_built(connection: &Connection) -> bool {
+        connection
+            .query_row(
+                "SELECT value FROM metadata WHERE key='generic_fts_built'",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .ok()
+            .as_deref()
+            == Some("true")
+    }
+
+    fn rebuild_generic_fts(connection: &Connection) -> AnyResult<()> {
+        connection.execute_batch(
+            "DROP TABLE IF EXISTS foods_generic_fts;
+             CREATE VIRTUAL TABLE foods_generic_fts USING fts5(
+               description,
+               content='',
+               contentless_delete=1,
+               tokenize='unicode61 remove_diacritics 2'
+             );",
+        )?;
+        connection.execute(
+            "INSERT INTO foods_generic_fts(rowid, description)
+             SELECT fdc_id, description FROM foods
+             WHERE lower(data_type) NOT IN ('branded_food', 'branded')",
+            [],
+        )?;
+        connection.execute(
+            "INSERT INTO metadata(key,value) VALUES('generic_fts_built','true')
+             ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            [],
+        )?;
+        Ok(())
+    }
+
+    fn ensure_generic_fts(&self) -> AnyResult<()> {
+        let connection = self.lock();
+        if Self::generic_fts_is_built(&connection) {
+            return Ok(());
+        }
+        Self::rebuild_generic_fts(&connection)
+    }
 }
 
 impl NutritionImportStore for SqliteNutritionCatalog {
@@ -137,6 +190,13 @@ impl NutritionImportStore for SqliteNutritionCatalog {
             "INSERT INTO metadata(key,value) VALUES('import_complete','false') ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             [],
         ).map_err(Self::persistence)?;
+        self.lock()
+            .execute(
+                "INSERT INTO metadata(key,value) VALUES('generic_fts_built','false')
+                 ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                [],
+            )
+            .map_err(Self::persistence)?;
         Ok(())
     }
 
@@ -185,9 +245,19 @@ impl NutritionImportStore for SqliteNutritionCatalog {
             "INSERT INTO metadata(key,value) VALUES('import_complete','true') ON CONFLICT(key) DO UPDATE SET value=excluded.value",
             [],
         ).map_err(Self::persistence)?;
-        self.lock().execute_batch(
-            "PRAGMA foreign_keys=ON; INSERT INTO foods_fts(foods_fts) VALUES('rebuild'); ANALYZE; PRAGMA optimize; PRAGMA wal_checkpoint(TRUNCATE);",
-        ).map_err(Self::persistence)
+        {
+            let connection = self.lock();
+            connection
+                .execute_batch(
+                    "PRAGMA foreign_keys=ON; INSERT INTO foods_fts(foods_fts) VALUES('rebuild');",
+                )
+                .map_err(Self::persistence)?;
+            Self::rebuild_generic_fts(&connection).map_err(Self::persistence)?;
+            connection
+                .execute_batch("ANALYZE; PRAGMA optimize; PRAGMA wal_checkpoint(TRUNCATE);")
+                .map_err(Self::persistence)?;
+        }
+        Ok(())
     }
 }
 
@@ -196,12 +266,31 @@ impl NutritionCatalog for SqliteNutritionCatalog {
         &self,
         query: &str,
         limit: usize,
+        options: NutritionSearchOptions,
     ) -> std::result::Result<Vec<NutritionSearchResult>, ApplicationError> {
         let connection = self.lock();
-        let mut statement = connection.prepare(
+        // Generics-only uses a dedicated ~100k-row FTS index (not the 2M branded
+        // corpus). Full catalog keeps BM25 rank only — CASE-ordering over branded
+        // floods is extremely slow for short cooking names.
+        let sql = if options.exclude_branded {
             "SELECT f.fdc_id,f.description,f.data_type,f.brand_owner,f.serving_size,f.serving_size_unit
-             FROM foods_fts x JOIN foods f ON f.fdc_id=x.rowid WHERE foods_fts MATCH ?1 ORDER BY rank LIMIT ?2",
-        ).map_err(Self::persistence)?;
+             FROM foods_generic_fts x JOIN foods f ON f.fdc_id=x.rowid
+             WHERE foods_generic_fts MATCH ?1
+             ORDER BY CASE
+               WHEN lower(f.data_type) IN ('foundation_food', 'foundation') THEN 0
+               WHEN lower(f.data_type) IN ('sr_legacy_food', 'sr_legacy') THEN 1
+               WHEN lower(f.data_type) IN ('survey_fndds_food', 'survey_fndds', 'fndds') THEN 2
+               ELSE 3
+             END, rank
+             LIMIT ?2"
+        } else {
+            "SELECT f.fdc_id,f.description,f.data_type,f.brand_owner,f.serving_size,f.serving_size_unit
+             FROM foods_fts x JOIN foods f ON f.fdc_id=x.rowid
+             WHERE foods_fts MATCH ?1
+             ORDER BY rank
+             LIMIT ?2"
+        };
+        let mut statement = connection.prepare(sql).map_err(Self::persistence)?;
         statement
             .query_map(params![query, limit as i64], |row| {
                 Ok(NutritionSearchResult {

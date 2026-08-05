@@ -1,12 +1,12 @@
 use crate::{
     ApplicationError, AutoLinkRequest, AutoLinkResult, CalculateRecipeNutritionRequest,
     DocumentParser, FuzzyFoodMatch, FuzzyMatchRequest, IngredientMatchSuggestion,
-    LinkResourceNutritionRequest, NutritionCatalog, NutritionFacts, RecipeIngredientNutrition,
-    RecipeNutritionResult, RecipeNutritionState, RecipeRepository, ResourceNutritionRepository,
-    SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest, aggregate_nutrients,
-    default_serving_context, fts_queries_from_ingredient, ingredient_match_query,
-    ingredient_resources, manual_facts_to_nutrients, nutrients_to_facts, rank_fuzzy_matches,
-    resource_mass_grams, search_result_label,
+    LinkResourceNutritionRequest, NutritionCatalog, NutritionFacts, NutritionSearchOptions,
+    RecipeIngredientNutrition, RecipeNutritionResult, RecipeNutritionState, RecipeRepository,
+    ResourceNutritionRepository, SaveIngredientManualNutritionRequest, SaveRecipeNutritionRequest,
+    aggregate_nutrients, default_serving_context, fts_queries_from_ingredient,
+    ingredient_match_query, ingredient_resources, is_branded_food, manual_facts_to_nutrients,
+    nutrients_to_facts, rank_fuzzy_matches, resource_mass_grams, search_result_label,
 };
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
@@ -68,6 +68,7 @@ impl NutritionService {
         &self,
         query: &str,
         limit: usize,
+        options: NutritionSearchOptions,
     ) -> Result<Vec<crate::NutritionSearchResult>, ApplicationError> {
         let catalog = self.catalog()?;
         if query.trim().is_empty() {
@@ -75,7 +76,7 @@ impl NutritionService {
                 "search query cannot be empty".to_owned(),
             ));
         }
-        catalog.search_foods(query, limit.clamp(1, 50))
+        catalog.search_foods(query, limit.clamp(1, 50), options)
     }
 
     pub fn fuzzy_match(
@@ -88,24 +89,48 @@ impl NutritionService {
                 "search query cannot be empty".to_owned(),
             ));
         }
-        let candidate_limit = request.limit.clamp(1, 50).max(40);
+        let limit = request.limit.clamp(1, 50);
+        // Small candidate pool — generics-only FTS is tiny vs the full branded set.
+        let candidate_limit = limit.max(12);
+        let options = if request.exclude_branded {
+            NutritionSearchOptions::generics_only()
+        } else {
+            NutritionSearchOptions::all()
+        };
+
         let mut results = Vec::new();
         let mut seen = std::collections::BTreeSet::new();
         for fts_query in fts_queries_from_ingredient(&request.query) {
-            let batch = catalog.search_foods(&fts_query, candidate_limit)?;
+            let batch = catalog.search_foods(&fts_query, candidate_limit, options)?;
             for item in batch {
                 if seen.insert(item.fdc_id) {
                     results.push(item);
                 }
             }
-            // Prefer AND hits; only widen if the pool is thin.
-            if results.len() >= 10 {
+            // One solid AND/primary hit set is enough on the generics fast path.
+            if results.len() >= 3 {
                 break;
             }
         }
+
+        // Optional branded fallback when generics-only found nothing.
+        if results.is_empty() && request.exclude_branded {
+            let primary = fts_queries_from_ingredient(&request.query)
+                .into_iter()
+                .next()
+                .unwrap_or_default();
+            if !primary.is_empty() {
+                results = catalog.search_foods(
+                    &primary,
+                    candidate_limit,
+                    NutritionSearchOptions::all(),
+                )?;
+            }
+        }
+
         Ok(rank_fuzzy_matches(&request.query, &results)
             .into_iter()
-            .take(request.limit.clamp(1, 50))
+            .take(limit)
             .collect())
     }
 
@@ -225,9 +250,12 @@ impl NutritionService {
             let query = ingredient_match_query(resource);
             let matches = self.fuzzy_match(FuzzyMatchRequest {
                 query: query.clone(),
-                limit: 3,
+                limit: 8,
+                exclude_branded: true,
             })?;
-            let best = matches.into_iter().next();
+            let best = matches
+                .into_iter()
+                .find(|item| !is_branded_food(&item.result.data_type));
             suggestions.push(IngredientMatchSuggestion {
                 resource_symbol: resource.symbol.clone(),
                 resource_name: resource_name.clone(),

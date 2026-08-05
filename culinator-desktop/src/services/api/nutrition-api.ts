@@ -57,8 +57,12 @@ export async function getNutritionStatus(): Promise<NutritionCatalogStatus> {
 export async function searchNutritionFoods(
   query: string,
   limit = 20,
+  options: { excludeBranded?: boolean } = {},
 ): Promise<NutritionSearchResult[]> {
-  if (hasConfiguredService()) return serviceRpc("nutrition.search", { query, limit });
+  const excludeBranded = options.excludeBranded ?? true;
+  if (hasConfiguredService()) {
+    return serviceRpc("nutrition.search", { query, limit, excludeBranded });
+  }
   if (!query.trim()) return [];
   return [
     {
@@ -75,9 +79,13 @@ export async function searchNutritionFoods(
 export async function fuzzyMatchNutritionFoods(
   query: string,
   limit = 5,
+  options: { excludeBranded?: boolean } = {},
 ): Promise<FuzzyFoodMatch[]> {
-  if (hasConfiguredService()) return serviceRpc("nutrition.fuzzyMatch", { query, limit });
-  const results = await searchNutritionFoods(query, limit);
+  const excludeBranded = options.excludeBranded ?? true;
+  if (hasConfiguredService()) {
+    return serviceRpc("nutrition.fuzzyMatch", { query, limit, excludeBranded });
+  }
+  const results = await searchNutritionFoods(query, limit, { excludeBranded });
   return results.map((result, index) => ({
     result,
     score: 1 - index * 0.1,

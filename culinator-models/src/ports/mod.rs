@@ -20,7 +20,7 @@ pub use export::RecipeExporter;
 pub use haccp::HaccpRepository;
 pub use image::RecipeImageRepository;
 pub use import::{OcrEngine, RecipeImageInterpreter, SettingsStore};
-pub use nutrition::{NutritionCatalog, NutritionImportStore};
+pub use nutrition::{NutritionCatalog, NutritionImportStore, NutritionSearchOptions};
 pub use parser::DocumentParser;
 pub use repository::{
     CatalogRepository, FormulaRepository, RecipeBookRepository, RecipeRepository,

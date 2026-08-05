@@ -1,10 +1,10 @@
 use anyhow::{Context, Result};
-use culinator_application::ExportService;
+use culinator_application::{ExportService, NutritionService};
 use culinator_export::StaticRecipeBookExporter;
 use culinator_models::{BookExportFormat, BookExportOptions};
 use culinator_parser::CulinatorParser;
 use culinator_sqlite::SqliteCatalogRepository;
-use std::{fs, path::Path, sync::Arc};
+use std::{fs, path::Path, sync::{Arc, RwLock}};
 use uuid::Uuid;
 
 pub fn export_book(database: &Path, book_id: Uuid, output: &Path) -> Result<()> {
@@ -13,12 +13,19 @@ pub fn export_book(database: &Path, book_id: Uuid, output: &Path) -> Result<()> 
         .initialize()
         .map_err(|error| anyhow::anyhow!(error.to_string()))?;
     let parser = Arc::new(CulinatorParser);
+    let nutrition = NutritionService::new(
+        repository.clone(),
+        repository.clone(),
+        parser.clone(),
+        Arc::new(RwLock::new(None)),
+    );
     let service = ExportService::new(
         repository.clone(),
         repository,
         parser,
         Arc::new(culinator_export::StaticRecipeExporter),
         Arc::new(StaticRecipeBookExporter),
+        nutrition,
     );
     let options = BookExportOptions {
         formats: vec![

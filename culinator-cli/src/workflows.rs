@@ -22,7 +22,11 @@ pub fn nutrition_search(
     limit: usize,
     output: OutputFormat,
 ) -> Result<()> {
-    let foods = runtime.state.nutrition().search_foods(query, limit)?;
+    let foods = runtime.state.nutrition().search_foods(
+        query,
+        limit,
+        culinator_models::NutritionSearchOptions::generics_only(),
+    )?;
     output.values(&foods, |food| {
         format!("{}\t{}\t{}", food.fdc_id, food.data_type, food.description)
     })

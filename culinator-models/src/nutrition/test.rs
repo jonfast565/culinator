@@ -137,7 +137,8 @@ fn string_similarity_prefers_close_names() {
 #[test]
 fn string_similarity_uses_synonyms() {
     let score = string_similarity("scallion", "Onions, spring or scallions (includes tops and bulb), raw");
-    assert!(score > 0.3, "got {score}");
+    // Long USDA descriptors score modestly on F1; ranking bonuses still lift them.
+    assert!(score > 0.25, "got {score}");
 }
 
 #[test]
@@ -231,6 +232,85 @@ fn rank_fuzzy_matches_prefers_foundation_over_branded() {
     let ranked = rank_fuzzy_matches("whole milk", &results);
     assert_eq!(ranked.first().unwrap().result.fdc_id, 11);
     assert!(ranked[0].score > ranked[1].score);
+}
+
+#[test]
+fn rank_fuzzy_matches_rejects_branded_product_titles_for_short_names() {
+    // Regression: auto-link was picking retail UPC rows that merely mention
+    // the cooking name ("EGG BEATERS…", "BUTTER FLAVORED… POPCORN").
+    let cases = [
+        (
+            "egg",
+            "EGG BEATERS Egg Whites, 16 OZ",
+            "Egg, whole, raw",
+            Some("Conagra Brands"),
+        ),
+        (
+            "butter",
+            "BUTTER FLAVORED GOURMET POPCORN, BUTTER",
+            "Butter, salted",
+            Some("POPCORNOPOLIS"),
+        ),
+        (
+            "flour",
+            "MANINI'S, MULTI-PURPOSE FLOUR",
+            "Wheat flour, white, all-purpose, enriched, bleached",
+            Some("Maninis"),
+        ),
+        (
+            "chocolate",
+            "CHOCOLATE CHOCOLATE CHOCOLATE, MILK CHOCOLATE NONPAREILS",
+            "Chocolate, dark, 45-59% cacao solids",
+            Some("Chocolate Chocolate Chocolate"),
+        ),
+    ];
+    for (query, branded_desc, generic_desc, brand) in cases {
+        let results = vec![
+            NutritionSearchResult {
+                fdc_id: 1,
+                description: branded_desc.to_owned(),
+                data_type: "branded_food".to_owned(),
+                brand_owner: brand.map(|value| value.to_owned()),
+                serving_size: None,
+                serving_size_unit: None,
+            },
+            NutritionSearchResult {
+                fdc_id: 2,
+                description: generic_desc.to_owned(),
+                data_type: "foundation_food".to_owned(),
+                brand_owner: None,
+                serving_size: None,
+                serving_size_unit: None,
+            },
+        ];
+        let ranked = rank_fuzzy_matches(query, &results);
+        assert_eq!(
+            ranked.first().unwrap().result.fdc_id,
+            2,
+            "{query}: expected foundation food over {branded_desc:?}; scores {:?}",
+            ranked
+                .iter()
+                .map(|item| (item.result.fdc_id, item.score, &item.result.description))
+                .collect::<Vec<_>>()
+        );
+        assert!(
+            ranked[0].score > ranked[1].score,
+            "{query}: foundation score {} should beat branded {}",
+            ranked[0].score,
+            ranked[1].score
+        );
+    }
+}
+
+#[test]
+fn string_similarity_does_not_treat_substring_as_near_perfect() {
+    let popcorn = string_similarity("butter", "BUTTER FLAVORED GOURMET POPCORN, BUTTER");
+    let salted = string_similarity("butter", "Butter, salted");
+    assert!(
+        salted > popcorn + 0.25,
+        "salted={salted} should clearly beat popcorn={popcorn}"
+    );
+    assert!(popcorn < 0.55, "popcorn similarity too high: {popcorn}");
 }
 
 #[test]

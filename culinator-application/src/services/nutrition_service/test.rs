@@ -72,6 +72,7 @@ impl NutritionCatalog for MockCatalog {
         &self,
         query: &str,
         _limit: usize,
+        _options: crate::NutritionSearchOptions,
     ) -> Result<Vec<NutritionSearchResult>, crate::ApplicationError> {
         let lowered = query.to_ascii_lowercase();
         let mut hits = Vec::new();
@@ -383,6 +384,7 @@ fn calculate_soft_fails_when_nothing_matches() {
             &self,
             _: &str,
             _: usize,
+            _: crate::NutritionSearchOptions,
         ) -> Result<Vec<NutritionSearchResult>, crate::ApplicationError> {
             Ok(vec![])
         }

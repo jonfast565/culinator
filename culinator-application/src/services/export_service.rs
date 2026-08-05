@@ -1,8 +1,10 @@
 use crate::{
-    ApplicationError, BookExportOptions, DocumentParser, RecipeBookExporter, RecipeBookRepository,
-    RecipeExportBundle, RecipeExporter, RecipeRepository,
+    ApplicationError, BookExportOptions, CalculateRecipeNutritionRequest, DocumentParser,
+    NutritionService, RecipeBookExporter, RecipeBookRepository, RecipeExportBundle, RecipeExporter,
+    RecipeRepository,
 };
 use culinator_core::{RecipeBook, TypeRef};
+use culinator_models::{NutritionFacts, RecipeExportOptions};
 use std::{collections::BTreeMap, sync::Arc};
 use uuid::Uuid;
 
@@ -13,6 +15,7 @@ pub struct ExportService {
     parser: Arc<dyn DocumentParser>,
     exporter: Arc<dyn RecipeExporter>,
     book_exporter: Arc<dyn RecipeBookExporter>,
+    nutrition: NutritionService,
 }
 
 impl ExportService {
@@ -22,6 +25,7 @@ impl ExportService {
         parser: Arc<dyn DocumentParser>,
         exporter: Arc<dyn RecipeExporter>,
         book_exporter: Arc<dyn RecipeBookExporter>,
+        nutrition: NutritionService,
     ) -> Self {
         Self {
             repository,
@@ -29,13 +33,14 @@ impl ExportService {
             parser,
             exporter,
             book_exporter,
+            nutrition,
         }
     }
 
     pub fn export_recipe(
         &self,
         id: Uuid,
-        options: &culinator_models::RecipeExportOptions,
+        options: &RecipeExportOptions,
     ) -> Result<RecipeExportBundle, ApplicationError> {
         let document = self
             .repository
@@ -44,8 +49,26 @@ impl ExportService {
         let mut recipe = self.parser.parse_recipe(&document.source_text)?;
         recipe.id = document.id;
         recipe.book_id = document.book_id;
+        let mut resolved = options.clone();
+        resolved.nutrition = self.resolve_recipe_nutrition(id, &options.nutrition);
         self.exporter
-            .export(&recipe, &document.source_text, options)
+            .export(&recipe, &document.source_text, &resolved)
+    }
+
+    fn resolve_recipe_nutrition(
+        &self,
+        recipe_id: Uuid,
+        hints: &NutritionFacts,
+    ) -> NutritionFacts {
+        let request = CalculateRecipeNutritionRequest {
+            servings_per_container: Some(hints.servings_per_container),
+            serving_size: Some(hints.serving_size.clone()),
+            serving_size_grams: hints.serving_size_grams,
+        };
+        self.nutrition
+            .calculate(recipe_id, request)
+            .map(|result| result.facts)
+            .unwrap_or_else(|_| hints.clone())
     }
 
     pub fn export_book(

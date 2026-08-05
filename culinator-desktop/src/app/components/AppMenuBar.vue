@@ -17,10 +17,13 @@ export type AppMenuAction =
   | "save"
   | "delete"
   | "measures"
+  | "ingredient-match"
   | "toggle-units"
   | "toggle-mise"
   | "toggle-numbers"
   | "cycle-text"
+  | "toggle-book-layout"
+  | "print-recipe-cards"
   | "convert-units"
   | `tool:${InspectorTabId}`;
 
@@ -48,6 +51,8 @@ const props = defineProps<{
   misePlacement: "top-matter" | "colocated";
   numberStyle: "fractions" | "decimals";
   textSizeLabel: string;
+  bookLayout: "book" | "cards";
+  onBookView: boolean;
 }>();
 
 const emit = defineEmits<{ action: [action: AppMenuAction] }>();
@@ -115,6 +120,17 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
         action: "cycle-text",
         disabled: !hasRecipe.value,
       },
+      {
+        label: props.bookLayout === "book" ? "Use recipe cards" : "Use page-flip book",
+        action: "toggle-book-layout",
+        disabled: !props.onBookView,
+      },
+      {
+        label: "Print recipe cards…",
+        action: "print-recipe-cards",
+        disabled: !props.onBookView || props.bookLayout !== "cards",
+        shortcut: `${mod}P`,
+      },
       { label: "Convert recipe units…", action: "convert-units", disabled: !hasRecipe.value },
       { label: "Measures & conversions", action: "measures", divider: true },
     ],
@@ -151,6 +167,7 @@ const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean 
       { label: "Cook mode", action: "tool:kitchen" },
       { label: "Food safety", action: "tool:haccp" },
       { label: "Nutrition", action: "tool:nutrition" },
+      { label: "Ingredient matcher", action: "ingredient-match" },
     ],
   },
   {

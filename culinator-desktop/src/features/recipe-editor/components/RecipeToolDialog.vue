@@ -16,6 +16,7 @@ const emit = defineEmits<{
   close: [];
   "update:source": [value: string];
   "kitchen-started": [];
+  "open-ingredient-matcher": [symbol?: string];
 }>();
 
 const toolMeta: Record<InspectorTabId, { group: string; title: string; description: string }> = {
@@ -110,6 +111,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
             :show-navigation="false"
             @update:source="emit('update:source', $event)"
             @kitchen-started="emit('kitchen-started')"
+            @open-ingredient-matcher="emit('open-ingredient-matcher', $event)"
           />
         </div>
       </section>
