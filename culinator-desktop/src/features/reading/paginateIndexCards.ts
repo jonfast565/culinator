@@ -1,5 +1,6 @@
 import type { IndexCardFormat, IndexCardTypeTier } from "./indexCardFormat";
 import {
+  CSS_PX_PER_INCH,
   INDEX_CARD_BODY_BASE_PX,
   INDEX_CARD_HEADER_BASE_PX,
   INDEX_CARD_SPECS,
@@ -23,9 +24,30 @@ export type IndexCardMiseLayout = "top-matter" | "colocated";
 export interface IndexCardMethodBlock {
   title?: string;
   note?: string;
-  /** Present in colocated (mise-by-section) layout. */
+  /**
+   * Present in colocated (mise-by-section) layout. A mise taller than a card is
+   * sliced, so this can be part of the section's list rather than all of it.
+   */
   mise?: SectionMise;
+  /** The slice resumes a list that began on an earlier card. */
+  miseIngredientsContinued?: boolean;
+  miseEquipmentContinued?: boolean;
   steps: NarrativeStep[];
+}
+
+/** Group headings inside a mise — `MiseBlock.vue` renders exactly these. */
+export const MISE_INGREDIENTS_LABEL = "You'll need";
+export const MISE_EQUIPMENT_LABEL = "Equipment";
+
+export function indexCardMiseLabel(label: string, continued?: boolean): string {
+  return continued ? (indexCardContinuationLabel(label) ?? label) : label;
+}
+
+/** One mise as placed on a single card, with the flags its labels need. */
+interface MiseSlice {
+  mise: SectionMise;
+  ingredientsContinued: boolean;
+  equipmentContinued: boolean;
 }
 
 export interface IndexCardPage {
@@ -41,9 +63,6 @@ export interface IndexCardPage {
   equipment: string[];
   methodBlocks: IndexCardMethodBlock[];
 }
-
-/** CSS px per inch — matches browser default for `in` lengths. */
-const DPI = 96;
 
 /** Space reserved for the “Card N of M” footer inside the leaf. */
 const PAGER_RESERVE_PX = 14;
@@ -88,6 +107,11 @@ const INGREDIENT_GRID_GAP_PX = 4;
 const INGREDIENT_LINE_HEIGHT = 1.35;
 /** 1px padding top/bottom + 1px dashed border — matches `.ingredient-row`. */
 const INGREDIENT_ROW_CHROME_PX = 3;
+
+/** `.mise` padding + margins, and the room its labels claim above each group. */
+const MISE_CHROME_PX = 18;
+const MISE_LABEL_CHROME_PX = 4;
+const MISE_EQUIPMENT_LINE_HEIGHT = 1.28;
 
 /** Vertical gap between leaf sections (matches index-card-view.css). */
 const SECTION_GAP_PX = 8;
@@ -138,10 +162,10 @@ export function cardContentBox(
   const pagerReserve = showPager ? (measure?.pagerReserve ?? PAGER_RESERVE_PX) : 0;
   const width = measure
     ? Math.max(40, measure.contentWidth)
-    : Math.max(40, (spec.widthIn - 2 * marginIn) * DPI);
+    : Math.max(40, (spec.widthIn - 2 * marginIn) * CSS_PX_PER_INCH);
   const height = measure
     ? Math.max(40, measure.contentHeight - pagerReserve)
-    : Math.max(40, (spec.heightIn - 2 * marginIn) * DPI - pagerReserve);
+    : Math.max(40, (spec.heightIn - 2 * marginIn) * CSS_PX_PER_INCH - pagerReserve);
   const bodyScale = RECIPE_TYPE_SCALE_FACTORS[scales.body ?? "md"];
   const headerScale = RECIPE_TYPE_SCALE_FACTORS[scales.header ?? "md"];
   const body = BODY_BASE_PX[spec.typeTier] * bodyScale;
@@ -196,7 +220,16 @@ interface HeightModel {
   ingredientRow(item: IngredientDisplayParts): number;
   equipmentList(items: string[]): number;
   processHeading(text: string): number;
-  miseBlock(mise: SectionMise): number;
+  /**
+   * A mise is budgeted from its parts rather than as one block, so the packer
+   * can slice one that is taller than a whole card.
+   */
+  miseChrome: number;
+  /** Charged between a mise's ingredient group and its equipment group. */
+  miseGroupGap: number;
+  miseLabel(text: string): number;
+  miseIngredientRow(item: IngredientDisplayParts): number;
+  miseEquipmentRow(text: string): number;
   sectionNote(text: string): number;
   stepRow(step: NarrativeStep): number;
 }
@@ -218,22 +251,6 @@ function estimateIngredientRow(m: PackMetrics, item: IngredientDisplayParts): nu
   const lines = Math.max(qtyLines(m, item.amount), descLines);
   const lineH = m.ingredientBody * INGREDIENT_LINE_HEIGHT;
   return Math.max(lineH + INGREDIENT_ROW_CHROME_PX, lines * lineH + INGREDIENT_ROW_CHROME_PX);
-}
-
-function estimateMiseBlock(m: PackMetrics, mise: SectionMise): number {
-  if (!mise.ingredients.length && !mise.equipment.length) return 0;
-  let h = 14; // padding + border
-  if (mise.ingredients.length) {
-    h += m.note * 1.2 + 4;
-    for (const item of mise.ingredients) {
-      h += estimateIngredientRow(m, item);
-    }
-  }
-  if (mise.equipment.length) {
-    h += m.note * 1.2 + 4;
-    h += mise.equipment.length * (m.body * 1.28 + 1);
-  }
-  return h + 4;
 }
 
 /** Width-aware step prose wrap — number column + gap reserved. */
@@ -275,7 +292,11 @@ function heuristicHeights(m: PackMetrics, hasCover: boolean): HeightModel {
     ingredientRow: (item) => estimateIngredientRow(m, item),
     equipmentList: (items) => estimateEquipmentList(m, items),
     processHeading: () => m.sectionLabel * 1.2 + PROCESS_HEADING_CHROME_PX,
-    miseBlock: (mise) => estimateMiseBlock(m, mise),
+    miseChrome: MISE_CHROME_PX,
+    miseGroupGap: 0,
+    miseLabel: () => m.note * 1.2 + MISE_LABEL_CHROME_PX,
+    miseIngredientRow: (item) => estimateIngredientRow(m, item),
+    miseEquipmentRow: () => m.body * MISE_EQUIPMENT_LINE_HEIGHT + 1,
     sectionNote: (text) => linesFor(text, m.charsPerLine) * m.note * 1.25 + 2,
     stepRow: (step) => estimateStepRow(m, step.text, Boolean(step.time)),
   };
@@ -307,41 +328,164 @@ function measuredHeights(
       items.length ? at(indexCardBlockKey.equipmentList(items), estimate.equipmentList(items)) : 0,
     processHeading: (text) =>
       at(indexCardBlockKey.processHeading(text), estimate.processHeading(text)),
-    miseBlock: (mise) =>
-      mise.ingredients.length || mise.equipment.length
-        ? at(indexCardBlockKey.mise(mise), estimate.miseBlock(mise))
-        : 0,
+    miseChrome: measure.miseChrome,
+    miseGroupGap: measure.miseGroupGap,
+    miseLabel: (text) => at(indexCardBlockKey.miseLabel(text), estimate.miseLabel(text)),
+    miseIngredientRow: (item) =>
+      at(indexCardBlockKey.miseIngredientRow(item), estimate.miseIngredientRow(item)),
+    miseEquipmentRow: (text) =>
+      at(indexCardBlockKey.miseEquipmentRow(text), estimate.miseEquipmentRow(text)),
     sectionNote: (text) => at(indexCardBlockKey.sectionNote(text), estimate.sectionNote(text)),
     stepRow: (step) => at(indexCardBlockKey.step(step), estimate.stepRow(step)),
   };
 }
 
-interface FlatStep {
-  process: string;
-  title?: string;
-  note?: string;
-  step: NarrativeStep;
-  leadIn: boolean;
+function wholeMiseSlice(mise: SectionMise): MiseSlice | undefined {
+  if (!mise.ingredients.length && !mise.equipment.length) return undefined;
+  return { mise, ingredientsContinued: false, equipmentContinued: false };
 }
 
-function flattenSteps(sections: MethodSection[]): FlatStep[] {
+function blockMiseSlice(block: IndexCardMethodBlock): MiseSlice | undefined {
+  if (!block.mise) return undefined;
+  return {
+    mise: block.mise,
+    ingredientsContinued: block.miseIngredientsContinued ?? false,
+    equipmentContinued: block.miseEquipmentContinued ?? false,
+  };
+}
+
+function miseSliceHeight(h: HeightModel, slice: MiseSlice | undefined): number {
+  if (!slice) return 0;
+  const { ingredients, equipment } = slice.mise;
+  if (!ingredients.length && !equipment.length) return 0;
+  let used = h.miseChrome;
+  if (ingredients.length) {
+    used += h.miseLabel(indexCardMiseLabel(MISE_INGREDIENTS_LABEL, slice.ingredientsContinued));
+    for (const item of ingredients) {
+      used += h.miseIngredientRow(item);
+    }
+  }
+  if (equipment.length) {
+    if (ingredients.length) used += h.miseGroupGap;
+    used += h.miseLabel(indexCardMiseLabel(MISE_EQUIPMENT_LABEL, slice.equipmentContinued));
+    for (const tool of equipment) {
+      used += h.miseEquipmentRow(tool);
+    }
+  }
+  return used;
+}
+
+/**
+ * Take as much of `slice` as fits in `room`, in reading order: ingredient rows
+ * first, then equipment. `head` is null when not even one row fits, in which
+ * case the whole mise has to try again on a card with more room.
+ */
+function splitMiseSlice(
+  h: HeightModel,
+  slice: MiseSlice,
+  room: number,
+): { head: MiseSlice | null; tail: MiseSlice | null } {
+  const { ingredients, equipment } = slice.mise;
+  let used = h.miseChrome;
+  let ingredientCount = 0;
+
+  if (ingredients.length) {
+    const label = h.miseLabel(
+      indexCardMiseLabel(MISE_INGREDIENTS_LABEL, slice.ingredientsContinued),
+    );
+    if (used + label + h.miseIngredientRow(ingredients[0]) <= room) {
+      used += label;
+      while (ingredientCount < ingredients.length) {
+        const row = h.miseIngredientRow(ingredients[ingredientCount]);
+        if (used + row > room) break;
+        used += row;
+        ingredientCount += 1;
+      }
+    }
+  }
+
+  let equipmentCount = 0;
+  // Equipment starts only once the ingredient list is complete — a card must
+  // never show the two groups out of order.
+  if (ingredientCount === ingredients.length && equipment.length) {
+    const gap = ingredients.length ? h.miseGroupGap : 0;
+    const label = h.miseLabel(indexCardMiseLabel(MISE_EQUIPMENT_LABEL, slice.equipmentContinued));
+    if (used + gap + label + h.miseEquipmentRow(equipment[0]) <= room) {
+      used += gap + label;
+      while (equipmentCount < equipment.length) {
+        const row = h.miseEquipmentRow(equipment[equipmentCount]);
+        if (used + row > room) break;
+        used += row;
+        equipmentCount += 1;
+      }
+    }
+  }
+
+  if (!ingredientCount && !equipmentCount) return { head: null, tail: slice };
+
+  const head: MiseSlice = {
+    mise: {
+      ingredients: ingredients.slice(0, ingredientCount),
+      equipment: equipment.slice(0, equipmentCount),
+    },
+    ingredientsContinued: slice.ingredientsContinued,
+    equipmentContinued: slice.equipmentContinued,
+  };
+  if (ingredientCount === ingredients.length && equipmentCount === equipment.length) {
+    return { head, tail: null };
+  }
+  return {
+    head,
+    tail: {
+      mise: {
+        ingredients: ingredients.slice(ingredientCount),
+        equipment: equipment.slice(equipmentCount),
+      },
+      ingredientsContinued: ingredientCount > 0 || slice.ingredientsContinued,
+      equipmentContinued: equipmentCount > 0 || slice.equipmentContinued,
+    },
+  };
+}
+
+interface FlatStep {
+  title?: string;
+  /** Only on the entry that opens a section, so it is never repeated per card. */
+  note?: string;
+  /** Absent on a mise slice that left no room for the step it introduces. */
+  step?: NarrativeStep;
+  leadIn: boolean;
+  /** Colocated layout only; a partial slice once the packer has split it. */
+  mise?: MiseSlice;
+}
+
+function flattenSteps(sections: MethodSection[], colocated = false): FlatStep[] {
   const flat: FlatStep[] = [];
   for (const section of sections) {
+    const mise = colocated ? wholeMiseSlice(section.mise) : undefined;
+    if (!section.steps.length) {
+      if (mise) flat.push({ title: section.title, note: section.note, leadIn: true, mise });
+      continue;
+    }
     section.steps.forEach((step, index) => {
+      const leadIn = index === 0;
       flat.push({
-        process: section.process,
         title: section.title,
-        note: section.note,
+        note: leadIn ? section.note : undefined,
         step,
-        leadIn: index === 0,
+        leadIn,
+        mise: leadIn ? mise : undefined,
       });
     });
   }
   return flat;
 }
 
-function miseMap(sections: MethodSection[]): Map<string, SectionMise> {
-  return new Map(sections.map((section) => [section.process, section.mise]));
+/** Upper bound on the extra cards a colocated deck needs once mises split. */
+function misePartCount(sections: MethodSection[]): number {
+  return sections.reduce(
+    (sum, section) => sum + section.mise.ingredients.length + section.mise.equipment.length,
+    0,
+  );
 }
 
 function countItems(groups: IngredientGroup[]): number {
@@ -387,47 +531,45 @@ export function chunkIngredientGroups(
   return slices;
 }
 
-function toBlocks(
-  flat: FlatStep[],
-  miseByProcess?: Map<string, SectionMise>,
-): IndexCardMethodBlock[] {
+function toBlocks(flat: FlatStep[], dropLeadHeading = false): IndexCardMethodBlock[] {
   const blocks: IndexCardMethodBlock[] = [];
   for (const item of flat) {
     if (item.leadIn || blocks.length === 0) {
-      const mise = item.leadIn && item.process && miseByProcess?.get(item.process);
       let title: string | undefined;
       if (item.leadIn) {
         title = item.title;
-      } else if (item.title) {
+      } else if (item.title && !(dropLeadHeading && blocks.length === 0)) {
         title = indexCardContinuationLabel(item.title);
       }
       blocks.push({
         title,
-        note: item.leadIn ? item.note : undefined,
-        mise: mise && (mise.ingredients.length || mise.equipment.length) ? mise : undefined,
-        steps: [item.step],
+        note: item.note,
+        mise: item.mise?.mise,
+        miseIngredientsContinued: item.mise?.ingredientsContinued,
+        miseEquipmentContinued: item.mise?.equipmentContinued,
+        steps: item.step ? [item.step] : [],
       });
-    } else {
+    } else if (item.step) {
       blocks[blocks.length - 1].steps.push(item.step);
     }
   }
   return blocks;
 }
 
+function blankPage(showTitle: boolean): IndexCardPage {
+  return {
+    index: 0,
+    total: 0,
+    showTitle,
+    continuation: !showTitle,
+    ingredientGroups: [],
+    equipment: [],
+    methodBlocks: [],
+  };
+}
+
 function finalize(pages: IndexCardPage[]): IndexCardPage[] {
-  if (pages.length === 0) {
-    return [
-      {
-        index: 0,
-        total: 1,
-        showTitle: true,
-        continuation: false,
-        ingredientGroups: [],
-        equipment: [],
-        methodBlocks: [],
-      },
-    ];
-  }
+  if (pages.length === 0) return [{ ...blankPage(true), total: 1 }];
   const total = pages.length;
   return pages.map((page, index) => ({ ...page, index, total }));
 }
@@ -499,7 +641,7 @@ function methodSectionHeight(
   };
   for (const block of blocks) {
     if (block.title) add(h.processHeading(block.title));
-    if (block.mise) add(h.miseBlock(block.mise));
+    if (block.mise) add(miseSliceHeight(h, blockMiseSlice(block)));
     if (block.note) add(h.sectionNote(block.note));
     for (const step of block.steps) {
       add(h.stepRow(step));
@@ -618,13 +760,24 @@ function takeIngredients(
   return { taken, rest: [], used };
 }
 
+/** Room the method section gets on a fresh continuation card. */
+function freshMethodRoom(h: HeightModel): number {
+  const fresh = { showTitle: false, ingredientGroups: [] };
+  return Math.max(
+    0,
+    h.metrics.height -
+      h.continuationHeader() -
+      h.sectionTopGap(true) -
+      h.sectionLabel(indexCardSectionLabel("Method", fresh)),
+  );
+}
+
 function takeSteps(
   flat: FlatStep[],
   page: IndexCardPage,
   h: HeightModel,
-  mises?: Map<string, SectionMise>,
-): { taken: FlatStep[]; rest: FlatStep[]; used: number } {
-  if (!flat.length) return { taken: [], rest: [], used: 0 };
+): { taken: FlatStep[]; rest: FlatStep[]; used: number; dropLeadHeading: boolean } {
+  if (!flat.length) return { taken: [], rest: [], used: 0, dropLeadHeading: false };
 
   const baseUsed = pageHeight(page, h);
   const methodRoom = Math.max(0, (h.metrics.height - baseUsed) * h.methodSafety);
@@ -633,40 +786,79 @@ function takeSteps(
 
   let used = h.sectionTopGap(first) + h.sectionLabel(label);
   if (used > methodRoom) {
-    return { taken: [], rest: flat, used: 0 };
+    return { taken: [], rest: flat, used: 0, dropLeadHeading: false };
   }
 
   const taken: FlatStep[] = [];
   let children = 0;
   let index = 0;
+  let dropLeadHeading = false;
+  /** Flex children pay `stepsGap` for every sibling before them. */
+  const costOf = (blocks: number[], startChildren: number): number =>
+    blocks.reduce(
+      (sum, height, offset) => sum + height + (startChildren + offset > 0 ? h.stepsGap : 0),
+      0,
+    );
+
   while (index < flat.length) {
     const item = flat[index];
-    const mise = item.leadIn ? mises?.get(item.process) : undefined;
-    let cost = 0;
-    let nextChildren = children;
-    const add = (blockHeight: number): void => {
-      cost += blockHeight + (nextChildren > 0 ? h.stepsGap : 0);
-      nextChildren += 1;
-    };
+    /** A repeated heading `toBlocks` adds to a section carried from a card. */
+    let headingIsCarried = false;
+    let headingText: string | undefined;
     if (item.leadIn && item.title) {
-      add(h.processHeading(item.title));
+      headingText = item.title;
     } else if (!taken.length && item.title) {
-      // `toBlocks` re-heads a split section on the card it continues onto.
-      add(h.processHeading(indexCardContinuationLabel(item.title) ?? item.title));
+      headingText = indexCardContinuationLabel(item.title) ?? item.title;
+      headingIsCarried = true;
     }
-    if (item.leadIn && mise) add(h.miseBlock(mise));
-    if (item.leadIn && item.note) add(h.sectionNote(item.note));
-    add(h.stepRow(item.step));
 
-    if (baseUsed + used + cost > h.metrics.height) break;
+    // Render order: heading, mise, section note, then the step itself.
+    let blocks: number[] = [];
+    if (headingText) blocks.push(h.processHeading(headingText));
+    if (item.mise) blocks.push(miseSliceHeight(h, item.mise));
+    if (item.note) blocks.push(h.sectionNote(item.note));
+    if (item.step) blocks.push(h.stepRow(item.step));
+
+    let cost = costOf(blocks, children);
+    if (baseUsed + used + cost > h.metrics.height && headingIsCarried) {
+      // The repeated heading is decorative — the section was already titled on
+      // the previous card — so drop it rather than clip the step it introduces.
+      const withoutHeading = costOf(blocks.slice(1), children);
+      if (baseUsed + used + withoutHeading <= h.metrics.height) {
+        dropLeadHeading = true;
+        headingText = undefined;
+        blocks = blocks.slice(1);
+        cost = withoutHeading;
+      }
+    }
+
+    if (baseUsed + used + cost > h.metrics.height) {
+      // A mise no card can hold whole is sliced across cards; anything else
+      // simply starts the next one.
+      const headingCost = headingText ? h.processHeading(headingText) : 0;
+      const beforeMise = headingCost ? headingCost + h.stepsGap : 0;
+      const split =
+        item.mise && !taken.length && cost > freshMethodRoom(h)
+          ? splitMiseSlice(h, item.mise, h.metrics.height - baseUsed - used - beforeMise)
+          : null;
+      if (!split?.head) break;
+      taken.push({ ...item, mise: split.head, note: undefined, step: undefined });
+      used += beforeMise + miseSliceHeight(h, split.head);
+      const tail: FlatStep = { ...item, mise: split.tail ?? undefined, leadIn: false };
+      const rest =
+        tail.mise || tail.step || tail.note
+          ? [tail, ...flat.slice(index + 1)]
+          : flat.slice(index + 1);
+      return { taken, rest, used, dropLeadHeading };
+    }
     if (used + cost > methodRoom && taken.length > 0) break;
     taken.push(item);
     used += cost;
-    children = nextChildren;
+    children += blocks.length;
     index += 1;
   }
 
-  return { taken, rest: flat.slice(index), used };
+  return { taken, rest: flat.slice(index), used, dropLeadHeading };
 }
 
 /** Place leftover equipment on the earliest page with room, or add a continuation card. */
@@ -687,15 +879,7 @@ function attachRemainingEquipment(
       return;
     }
   }
-  pages.push({
-    index: 0,
-    total: 0,
-    showTitle: false,
-    continuation: true,
-    ingredientGroups: [],
-    equipment,
-    methodBlocks: [],
-  });
+  pages.push({ ...blankPage(false), equipment });
 }
 
 function equipmentCost(page: IndexCardPage, equipment: string[], h: HeightModel): number {
@@ -783,15 +967,7 @@ export function paginateIndexCards(input: {
       pages.length === 0) &&
     pages.length < maxPages
   ) {
-    const page: IndexCardPage = {
-      index: 0,
-      total: 0,
-      showTitle: isFirst,
-      continuation: !isFirst,
-      ingredientGroups: [],
-      equipment: [],
-      methodBlocks: [],
-    };
+    const page = blankPage(isFirst);
 
     if (remainingIngredients.length > 0) {
       const { taken, rest } = takeIngredients(remainingIngredients, page, h);
@@ -812,9 +988,9 @@ export function paginateIndexCards(input: {
       remainingSteps.length > 0 &&
       remainingEquipment.length === 0
     ) {
-      const { taken, rest } = takeSteps(remainingSteps, page, h);
+      const { taken, rest, dropLeadHeading } = takeSteps(remainingSteps, page, h);
       if (taken.length) {
-        page.methodBlocks = toBlocks(taken);
+        page.methodBlocks = toBlocks(taken, dropLeadHeading);
         remainingSteps = rest;
       }
     }
@@ -838,9 +1014,9 @@ export function paginateIndexCards(input: {
         page.equipment = [remainingEquipment[0]];
         remainingEquipment = remainingEquipment.slice(1);
       } else if (remainingSteps.length) {
-        const { taken, rest } = takeSteps(remainingSteps, page, h);
+        const { taken, rest, dropLeadHeading } = takeSteps(remainingSteps, page, h);
         if (taken.length) {
-          page.methodBlocks = toBlocks(taken);
+          page.methodBlocks = toBlocks(taken, dropLeadHeading);
           remainingSteps = rest;
         } else {
           page.methodBlocks = toBlocks([remainingSteps[0]]);
@@ -867,15 +1043,7 @@ export function paginateIndexCards(input: {
     remainingSteps.length > 0 ||
     remainingEquipment.length > 0
   ) {
-    const page: IndexCardPage = {
-      index: 0,
-      total: 0,
-      showTitle: false,
-      continuation: true,
-      ingredientGroups: [],
-      equipment: [],
-      methodBlocks: [],
-    };
+    const page = blankPage(false);
     if (remainingIngredients.length) {
       const { taken, rest } = takeIngredients(remainingIngredients, page, h);
       if (taken.length) {
@@ -896,9 +1064,9 @@ export function paginateIndexCards(input: {
         remainingEquipment = remainingEquipment.slice(1);
       }
     } else if (remainingSteps.length) {
-      const { taken, rest } = takeSteps(remainingSteps, page, h);
+      const { taken, rest, dropLeadHeading } = takeSteps(remainingSteps, page, h);
       if (taken.length) {
-        page.methodBlocks = toBlocks(taken);
+        page.methodBlocks = toBlocks(taken, dropLeadHeading);
         remainingSteps = rest;
       } else {
         page.methodBlocks = toBlocks([remainingSteps[0]]);
@@ -915,29 +1083,24 @@ export function paginateIndexCards(input: {
 
 /** Pack per-section mise + steps (no top-matter ingredient list). */
 function paginateColocated(h: HeightModel, sections: MethodSection[]): IndexCardPage[] {
-  const mises = miseMap(sections);
-  let remainingSteps = flattenSteps(sections);
+  let remainingSteps = flattenSteps(sections, true);
   const pages: IndexCardPage[] = [];
   let isFirst = true;
-  const maxPages = Math.max(4, remainingSteps.length + 4);
+  // A split mise can turn one entry into several cards, so the ceiling counts
+  // the slices it could produce as well as the steps.
+  const maxPages = Math.max(4, remainingSteps.length + misePartCount(sections) + 4);
 
   while ((remainingSteps.length > 0 || pages.length === 0) && pages.length < maxPages) {
-    const page: IndexCardPage = {
-      index: 0,
-      total: 0,
-      showTitle: isFirst,
-      continuation: !isFirst,
-      ingredientGroups: [],
-      equipment: [],
-      methodBlocks: [],
-    };
-
-    const { taken, rest } = takeSteps(remainingSteps, page, h, mises);
+    const page = blankPage(isFirst);
+    const { taken, rest, dropLeadHeading } = takeSteps(remainingSteps, page, h);
     if (taken.length) {
-      page.methodBlocks = toBlocks(taken, mises);
+      page.methodBlocks = toBlocks(taken, dropLeadHeading);
       remainingSteps = rest;
-    } else if (remainingSteps.length) {
-      page.methodBlocks = toBlocks([remainingSteps[0]], mises);
+    } else if (!isFirst && remainingSteps.length) {
+      // A continuation card already offers all the room there is, so place the
+      // block rather than emit empty cards forever. The title card instead
+      // hands its content to the roomier card that follows.
+      page.methodBlocks = toBlocks([remainingSteps[0]]);
       remainingSteps = remainingSteps.slice(1);
     }
 
@@ -947,21 +1110,13 @@ function paginateColocated(h: HeightModel, sections: MethodSection[]): IndexCard
   }
 
   while (remainingSteps.length) {
-    const page: IndexCardPage = {
-      index: 0,
-      total: 0,
-      showTitle: false,
-      continuation: true,
-      ingredientGroups: [],
-      equipment: [],
-      methodBlocks: [],
-    };
-    const { taken, rest } = takeSteps(remainingSteps, page, h, mises);
+    const page = blankPage(false);
+    const { taken, rest, dropLeadHeading } = takeSteps(remainingSteps, page, h);
     if (taken.length) {
-      page.methodBlocks = toBlocks(taken, mises);
+      page.methodBlocks = toBlocks(taken, dropLeadHeading);
       remainingSteps = rest;
     } else {
-      page.methodBlocks = toBlocks([remainingSteps[0]], mises);
+      page.methodBlocks = toBlocks([remainingSteps[0]]);
       remainingSteps = remainingSteps.slice(1);
     }
     pages.push(page);

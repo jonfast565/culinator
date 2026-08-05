@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from "vitest";
 import type {
+  IngredientDisplayParts,
   IngredientGroup,
   MethodSection,
   NarrativeStep,
@@ -15,12 +16,16 @@ import { INDEX_CARD_SPECS, type IndexCardFormat } from "./indexCardFormat";
 import { INDEX_CARD_MARGIN_IN, type IndexCardMargin } from "./indexCardMargin";
 import { indexCardBlockKey, type IndexCardMeasurements } from "./measureIndexCard";
 import {
+  MISE_EQUIPMENT_LABEL,
+  MISE_INGREDIENTS_LABEL,
   cardContentBox,
   estimateIndexCardPageHeight,
   indexCardContinuationLabel,
   indexCardIngredientsSectionLabel,
+  indexCardMiseLabel,
   indexCardSectionLabel,
   paginateIndexCards,
+  type IndexCardMethodBlock,
   type IndexCardPage,
 } from "./paginateIndexCards";
 
@@ -53,7 +58,10 @@ const FAKE = {
   noteLine: 10,
   equipmentRow: 12,
   miseChrome: 18,
+  miseGroupGap: 4,
   miseLabel: 9,
+  miseRowLine: 15,
+  miseEquipmentRow: 11,
   sectionGap: 8,
   firstSectionGap: 6,
   stepsGap: 2,
@@ -79,16 +87,48 @@ function fakeEquipmentHeight(items: readonly string[], width: number): number {
   return Math.ceil(items.length / columns) * FAKE.equipmentRow;
 }
 
-function fakeMiseHeight(mise: SectionMise, width: number): number {
-  let height = FAKE.miseChrome;
+/** Mise rows are their own typography — wider labels, so more wrapping. */
+function fakeMiseRowHeight(item: IngredientDisplayParts, width: number): number {
+  const text = item.aside ? `${item.description} ${item.aside}` : item.description;
+  return fakeLines(text, width - 110) * FAKE.miseRowLine + FAKE.rowChrome;
+}
+
+/**
+ * Independent oracle for a mise as placed on one card: the packer composes the
+ * same parts, so a slice and a whole block are budgeted identically.
+ */
+function composedMiseHeight(
+  mise: SectionMise,
+  measure: IndexCardMeasurements,
+  continued: { ingredients?: boolean; equipment?: boolean } = {},
+): number {
+  if (!mise.ingredients.length && !mise.equipment.length) return 0;
+  const at = (key: string): number => measure.heights.get(key) ?? 0;
+  let height = measure.miseChrome;
   if (mise.ingredients.length) {
-    height += FAKE.miseLabel;
-    for (const item of mise.ingredients) height += fakeRowHeight(item, width);
+    height += at(
+      indexCardBlockKey.miseLabel(
+        indexCardMiseLabel(MISE_INGREDIENTS_LABEL, continued.ingredients),
+      ),
+    );
+    for (const item of mise.ingredients) height += at(indexCardBlockKey.miseIngredientRow(item));
   }
   if (mise.equipment.length) {
-    height += FAKE.miseLabel + fakeEquipmentHeight(mise.equipment, width);
+    if (mise.ingredients.length) height += measure.miseGroupGap;
+    height += at(
+      indexCardBlockKey.miseLabel(indexCardMiseLabel(MISE_EQUIPMENT_LABEL, continued.equipment)),
+    );
+    for (const tool of mise.equipment) height += at(indexCardBlockKey.miseEquipmentRow(tool));
   }
   return height;
+}
+
+function blockMiseHeight(block: IndexCardMethodBlock, measure: IndexCardMeasurements): number {
+  if (!block.mise) return 0;
+  return composedMiseHeight(block.mise, measure, {
+    ingredients: block.miseIngredientsContinued,
+    equipment: block.miseEquipmentContinued,
+  });
 }
 
 function labelVariants(label: string | undefined): string[] {
@@ -151,8 +191,16 @@ function fakeMeasurements(content: CardContent, geometry: CardGeometry): IndexCa
         fakeLines(section.note, width) * FAKE.noteLine,
       );
     }
-    if (section.mise.ingredients.length || section.mise.equipment.length) {
-      heights.set(indexCardBlockKey.mise(section.mise), fakeMiseHeight(section.mise, width));
+    for (const label of [MISE_INGREDIENTS_LABEL, MISE_EQUIPMENT_LABEL]) {
+      for (const variant of labelVariants(label)) {
+        heights.set(indexCardBlockKey.miseLabel(variant), FAKE.miseLabel);
+      }
+    }
+    for (const entry of section.mise.ingredients) {
+      heights.set(indexCardBlockKey.miseIngredientRow(entry), fakeMiseRowHeight(entry, width));
+    }
+    for (const tool of section.mise.equipment) {
+      heights.set(indexCardBlockKey.miseEquipmentRow(tool), FAKE.miseEquipmentRow);
     }
     for (const step of section.steps) {
       heights.set(indexCardBlockKey.step(step), fakeStepHeight(step, width));
@@ -166,6 +214,8 @@ function fakeMeasurements(content: CardContent, geometry: CardGeometry): IndexCa
     firstSectionGap: FAKE.firstSectionGap,
     stepsGap: FAKE.stepsGap,
     pagerReserve: FAKE.pagerReserve,
+    miseChrome: FAKE.miseChrome,
+    miseGroupGap: FAKE.miseGroupGap,
   };
 }
 
@@ -317,9 +367,7 @@ function firstMethodBlockCost(
     block.title && !block.title.endsWith("(cont.)")
       ? (measure.heights.get(indexCardBlockKey.processHeading(block.title)) ?? 0) + FAKE.stepsGap
       : 0;
-  const mise = block.mise
-    ? (measure.heights.get(indexCardBlockKey.mise(block.mise)) ?? 0) + FAKE.stepsGap
-    : 0;
+  const mise = block.mise ? blockMiseHeight(block, measure) + FAKE.stepsGap : 0;
   return heading + mise + stepHeight + FAKE.stepsGap;
 }
 
@@ -405,6 +453,8 @@ describe("measured index-card packing", () => {
       firstSectionGap: 6,
       stepsGap: 2,
       pagerReserve: 0,
+      miseChrome: 18,
+      miseGroupGap: 4,
     };
     const pages = paginateIndexCards({
       format: "6x4",
@@ -446,6 +496,8 @@ describe("measured index-card packing", () => {
       firstSectionGap: 6,
       stepsGap: 2,
       pagerReserve: 0,
+      miseChrome: 18,
+      miseGroupGap: 4,
     };
     const pages = paginateIndexCards({
       format: "6x4",
@@ -605,6 +657,168 @@ describe("measured index-card packing", () => {
     const m = metricsFor("6x4", "medium", sparse);
     expectWithinBudget(pages, m, sparse);
   });
+});
+
+/** A mise long enough to out-measure the small cards it has to be placed on. */
+function bigMiseContent(): CardContent {
+  return {
+    ingredientGroups: [],
+    equipment: [],
+    sections: [
+      {
+        process: "prep",
+        title: "Prep",
+        note: "Have everything measured before the pan is hot.",
+        steps: [
+          step("s1", 1, "Warm the pan and add the aromatics."),
+          step("s2", 2, "Stir until fragrant, then pour in the stock."),
+        ],
+        mise: {
+          ingredients: [
+            item("onion", "yellow onion", "1 count", "diced"),
+            item("carrot", "carrots", "2 count", "sliced"),
+            item("celery", "celery ribs", "2 count", "sliced"),
+            item("garlic", "garlic cloves", "3 count", "minced"),
+            item("thyme", "thyme sprigs", "4 count"),
+            item("butter", "unsalted butter", "30 g"),
+            item("flour", "flour", "25 g"),
+            item("stock", "chicken stock", "900 ml", "warmed"),
+            item("cream", "heavy cream", "120 ml"),
+            item("pepper", "black pepper", "2 g", "freshly ground"),
+          ],
+          equipment: ["heavy skillet", "wooden spoon", "measuring jug", "ladle", "fine sieve"],
+        },
+      },
+      {
+        process: "finish",
+        title: "Finish",
+        steps: [step("s3", 3, "Simmer until thickened, then season to taste.")],
+        mise: emptyMise(),
+      },
+    ],
+  };
+}
+
+function miseBlocks(pages: IndexCardPage[]): IndexCardMethodBlock[] {
+  return pages.flatMap((page) => page.methodBlocks).filter((block) => block.mise);
+}
+
+function placedMise(pages: IndexCardPage[]): { ingredients: string[]; equipment: string[] } {
+  const blocks = miseBlocks(pages);
+  return {
+    ingredients: blocks.flatMap((block) => block.mise!.ingredients.map((entry) => entry.symbol)),
+    equipment: blocks.flatMap((block) => block.mise!.equipment),
+  };
+}
+
+function allMise(content: CardContent): { ingredients: string[]; equipment: string[] } {
+  return {
+    ingredients: content.sections.flatMap((section) =>
+      section.mise.ingredients.map((entry) => entry.symbol),
+    ),
+    equipment: content.sections.flatMap((section) => section.mise.equipment),
+  };
+}
+
+/** Each slice after the first resumes its list, so its label says so. */
+function expectMiseContinuationLabels(blocks: IndexCardMethodBlock[], context = ""): void {
+  let ingredientsSeen = 0;
+  let equipmentSeen = 0;
+  for (const block of blocks) {
+    const mise = block.mise!;
+    if (mise.ingredients.length) {
+      expect(Boolean(block.miseIngredientsContinued), `${context} you'll-need label`).toBe(
+        ingredientsSeen > 0,
+      );
+    }
+    if (mise.equipment.length) {
+      expect(Boolean(block.miseEquipmentContinued), `${context} equipment label`).toBe(
+        equipmentSeen > 0,
+      );
+    }
+    ingredientsSeen += mise.ingredients.length;
+    equipmentSeen += mise.equipment.length;
+  }
+}
+
+describe("measured index-card packing (split mise)", () => {
+  it("slices a mise taller than a 4x2.5 card instead of overflowing it", () => {
+    const content = bigMiseContent();
+    const measure = fakeMeasurements(content, cardGeometry("4x2.5", "medium"));
+    const m = metricsFor("4x2.5", "medium", measure);
+    const whole = content.sections[0].mise;
+
+    expect(composedMiseHeight(whole, measure)).toBeGreaterThan(m.height);
+
+    const pages = paginateIndexCards({
+      format: "4x2.5",
+      margin: "medium",
+      miseLayout: "colocated",
+      ...content,
+      measure,
+    });
+    const blocks = miseBlocks(pages);
+
+    expect(blocks.length).toBeGreaterThan(1);
+    expect(placedMise(pages)).toEqual(allMise(content));
+    expect(countSteps(pages)).toBe(3);
+    expectMiseContinuationLabels(blocks);
+    expect(blocks.some((block) => block.miseIngredientsContinued)).toBe(true);
+    expect(indexCardMiseLabel(MISE_INGREDIENTS_LABEL, true)).toBe("You'll need (cont.)");
+    expect(indexCardMiseLabel(MISE_EQUIPMENT_LABEL, true)).toBe("Equipment (cont.)");
+    expectWithinBudget(pages, m, measure, "4x2.5/medium");
+  });
+
+  it("keeps a partial mise and the step it introduces on separate cards in order", () => {
+    const content = bigMiseContent();
+    const measure = fakeMeasurements(content, cardGeometry("2.5x4", "wide"));
+    const pages = paginateIndexCards({
+      format: "2.5x4",
+      margin: "wide",
+      miseLayout: "colocated",
+      ...content,
+      measure,
+    });
+    const blocks = pages.flatMap((page) => page.methodBlocks);
+    const firstStep = blocks.findIndex((block) => block.steps.length > 0);
+    const lastMise = blocks.reduce((last, block, index) => (block.mise ? index : last), -1);
+
+    expect(lastMise).toBeGreaterThanOrEqual(0);
+    expect(firstStep).toBeGreaterThanOrEqual(lastMise);
+    for (const block of blocks.slice(0, lastMise)) {
+      expect(block.steps).toHaveLength(0);
+    }
+  });
+
+  const presets = ALL_CARD_FORMATS.flatMap((format) =>
+    ALL_MARGINS.map((margin) => ({ format, margin })),
+  );
+
+  it.each(presets)(
+    "never drops or overflows a long mise on $format / $margin",
+    ({ format, margin }) => {
+      const content = bigMiseContent();
+      const measure = fakeMeasurements(content, cardGeometry(format, margin));
+      const m = metricsFor(format, margin, measure);
+      const pages = paginateIndexCards({
+        format,
+        margin,
+        miseLayout: "colocated",
+        ...content,
+        measure,
+      });
+      const context = `${format}/${margin}`;
+
+      expect(placedMise(pages), context).toEqual(allMise(content));
+      expect(countSteps(pages), context).toBe(3);
+      expect(
+        pages.every((page) => page.ingredientGroups.length === 0 && page.equipment.length === 0),
+        context,
+      ).toBe(true);
+      expectMiseContinuationLabels(miseBlocks(pages), context);
+      expectWithinBudget(pages, m, measure, context);
+    },
+  );
 });
 
 describe("measured index-card packing (all presets)", () => {

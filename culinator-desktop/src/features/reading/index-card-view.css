@@ -51,8 +51,24 @@
   box-sizing: border-box;
 }
 
+/*
+ * A card is always laid out at its true physical size and scaled down visually
+ * when the reading pane is narrower. Shrinking the layout width instead would
+ * rewrap the text taller than the pagination it was packed for, and clip it.
+ * `--index-card-fit-scale` is set on the deck by IndexCardRecipe.vue.
+ */
 .index-card-stage:not([data-format="full"]) .index-card-frame {
-  width: min(100%, var(--index-card-width, 3in));
+  width: var(--index-card-width, 3in);
+  max-width: none;
+  aspect-ratio: var(--index-card-aspect-ratio, 3 / 5);
+  transform: scale(var(--index-card-fit-scale, 1));
+  transform-origin: top left;
+}
+
+/* Holds the scaled box so the deck's own layout and scrolling stay correct. */
+.index-card-fit {
+  flex: 0 0 auto;
+  width: calc(var(--index-card-width, 3in) * var(--index-card-fit-scale, 1));
   aspect-ratio: var(--index-card-aspect-ratio, 3 / 5);
 }
 
@@ -457,7 +473,8 @@
  * a row the packer moves to the middle of a card is never under-budgeted by the
  * 1px the real last row saves.
  */
-.index-card-measure-stage .ingredient-groups .ingredient-row:last-child {
+.index-card-measure-stage .ingredient-groups .ingredient-row:last-child,
+.index-card-measure-stage .mise-list .ingredient-row:last-child {
   border-bottom: 1px dashed #e2e0d4;
 }
 

@@ -25,6 +25,8 @@
     display: block;
     width: 100%;
     max-width: none;
+    /* Printing always uses full physical geometry, never the on-screen fit. */
+    transform: none;
     aspect-ratio: auto;
     border: 0;
     border-radius: 0;

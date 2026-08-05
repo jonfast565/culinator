@@ -19,11 +19,7 @@ import type { IndexCardMargin } from "./indexCardMargin";
 import { INDEX_CARD_MARGIN_IN } from "./indexCardMargin";
 import type { RecipeTypeScale } from "./recipeTypeScale";
 import { recipeTypeScaleFactor } from "./recipeTypeScale";
-import type {
-  IngredientDisplayParts,
-  NarrativeStep,
-  SectionMise,
-} from "../recipe-editor/narrative";
+import type { IngredientDisplayParts, NarrativeStep } from "../recipe-editor/narrative";
 
 /** Everything outside the recipe text that changes a rendered height. */
 export interface IndexCardMeasureContext {
@@ -52,6 +48,10 @@ export interface IndexCardMeasurements {
   stepsGap: number;
   /** Height the absolutely positioned pager takes out of the content box. */
   pagerReserve: number;
+  /** `.mise` padding, borders, and margins — the cost of the frame itself. */
+  miseChrome: number;
+  /** `.mise` row-gap, charged between its ingredient and equipment groups. */
+  miseGroupGap: number;
 }
 
 export interface IndexCardProbeHost {
@@ -72,6 +72,10 @@ function ingredientRowKey(item: IngredientDisplayParts): string {
  * Block keys shared by the probe (which renders them) and the packer (which
  * looks them up). Keys are content-derived, so the packer can ask for any
  * subset it ends up placing without tracking probe indices.
+ *
+ * A mise block is keyed by its parts rather than as a whole, because the packer
+ * has to be able to slice one across cards; its rows carry their own keys since
+ * mise typography differs from the top-matter ingredient list.
  */
 export const indexCardBlockKey = {
   titleCover: "title-cover",
@@ -82,10 +86,9 @@ export const indexCardBlockKey = {
   ingredientRow: ingredientRowKey,
   equipmentList: (items: readonly string[]): string => `equipment${SEP}${items.join(SEP)}`,
   processHeading: (text: string): string => `process-heading${SEP}${text}`,
-  mise: (mise: SectionMise): string =>
-    ["mise", mise.ingredients.map(ingredientRowKey).join(SEP), mise.equipment.join(SEP)].join(
-      `${SEP}|${SEP}`,
-    ),
+  miseLabel: (text: string): string => `mise-label${SEP}${text}`,
+  miseIngredientRow: (item: IngredientDisplayParts): string => `mise-${ingredientRowKey(item)}`,
+  miseEquipmentRow: (text: string): string => `mise-equipment${SEP}${text}`,
   sectionNote: (text: string): string => `section-note${SEP}${text}`,
   step: (step: NarrativeStep): string =>
     ["step", step.symbol, String(step.number), step.text, step.time ?? ""].join(SEP),
@@ -96,6 +99,8 @@ const DEFAULT_SECTION_GAP_PX = 8;
 const DEFAULT_FIRST_SECTION_GAP_PX = 6;
 const DEFAULT_STEPS_GAP_PX = 2;
 const DEFAULT_PAGER_RESERVE_PX = 14;
+const DEFAULT_MISE_CHROME_PX = 14;
+const DEFAULT_MISE_GROUP_GAP_PX = 4;
 
 /** Give up waiting on a stalled web font or image and measure what we have. */
 const PROBE_ASSET_TIMEOUT_MS = 1500;
@@ -182,6 +187,9 @@ export function configureIndexCardProbeHost(
   frame.style.maxWidth = "none";
   frame.style.flex = "0 0 auto";
   frame.style.overflow = "visible";
+  // Rects are transformed rects; the probe must always measure at 1:1 even
+  // though on-screen cards are scaled down to fit a narrow reading pane.
+  frame.style.transform = "none";
 
   leaf.style.height = "100%";
   leaf.style.maxHeight = "none";
@@ -230,6 +238,24 @@ function sectionMarginTop(element: HTMLElement | null, fallback: number): number
   return px(window.getComputedStyle(element).marginTop);
 }
 
+/**
+ * Everything a mise costs before any of its rows: padding, borders, and its own
+ * margins. Read from the frame rather than a `data-measure-key` block because
+ * an empty mise renders nothing to measure.
+ */
+function miseChrome(mise: HTMLElement | null): number {
+  if (!mise) return DEFAULT_MISE_CHROME_PX;
+  const style = window.getComputedStyle(mise);
+  return (
+    px(style.paddingTop) +
+    px(style.paddingBottom) +
+    px(style.borderTopWidth) +
+    px(style.borderBottomWidth) +
+    px(style.marginTop) +
+    px(style.marginBottom)
+  );
+}
+
 function pagerReserve(leaf: HTMLElement, pager: HTMLElement | null): number {
   if (!pager) return DEFAULT_PAGER_RESERVE_PX;
   const pagerStyle = window.getComputedStyle(pager);
@@ -254,6 +280,7 @@ export function readIndexCardMeasurements(host: IndexCardProbeHost): IndexCardMe
 
   const gapProbes = leaf.querySelectorAll<HTMLElement>('[data-measure-role="section-gap"]');
   const steps = leaf.querySelector<HTMLElement>('[data-measure-role="steps"]');
+  const mise = leaf.querySelector<HTMLElement>('[data-measure-role="mise"]');
 
   return {
     heights,
@@ -272,6 +299,8 @@ export function readIndexCardMeasurements(host: IndexCardProbeHost): IndexCardMe
       leaf,
       leaf.querySelector<HTMLElement>('[data-measure-role="pager"]'),
     ),
+    miseChrome: miseChrome(mise),
+    miseGroupGap: mise ? px(window.getComputedStyle(mise).rowGap) : DEFAULT_MISE_GROUP_GAP_PX,
   };
 }
 

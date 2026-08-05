@@ -161,11 +161,15 @@ function hasMise(section: MethodSection): boolean {
         >
           {{ variant }}
         </h3>
+        <!-- Both label forms: a mise the packer slices resumes with “(cont.)”. -->
         <MiseBlock
-          v-if="hasMise(section)"
+          v-for="continued in hasMise(section) ? [false, true] : []"
+          :key="String(continued)"
+          measured
           :mise="section.mise"
           :selectable="editable"
-          :data-measure-key="indexCardBlockKey.mise(section.mise)"
+          :ingredients-continued="continued"
+          :equipment-continued="continued"
         />
         <p
           v-if="section.note"

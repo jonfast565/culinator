@@ -10,6 +10,9 @@ export type IndexCardFormat =
   | "5x8"
   | "8x5";
 
+/** CSS px per inch — the browser's fixed conversion for `in` lengths. */
+export const CSS_PX_PER_INCH = 96;
+
 /** Typography tier keyed to card area — shared by portrait/landscape pairs. */
 export type IndexCardTypeTier = "mini" | "standard" | "medium" | "large";
 
