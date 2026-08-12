@@ -105,8 +105,39 @@ export interface UiRecipeModel {
   section?: string;
   /** Cover image: an asset handle or an external URL, from `image "…";`. */
   coverImage?: string;
+  /** Baker's / ratio formulas from `formula …` blocks in the source. */
+  formulas?: UiFormula[];
   /** Problems the parser recovered from. Empty for well-formed source. */
   diagnostics: UiDiagnostic[];
+}
+
+export interface UiFormulaIngredient {
+  id: string;
+  symbol: string;
+  name: string;
+  stage: string;
+  basis: string;
+  percentage?: number;
+  massGrams?: number;
+  isReference: boolean;
+  isFlour: boolean;
+  waterFraction: number;
+  scalable: boolean;
+  role?: string;
+}
+
+export interface UiFormula {
+  id: string;
+  symbol: string;
+  name: string;
+  basis: string;
+  target?: string;
+  pieces?: number;
+  pieceMass?: string;
+  panDiameter?: string;
+  panDepth?: string;
+  doughDensity?: number;
+  ingredients: UiFormulaIngredient[];
 }
 
 /**

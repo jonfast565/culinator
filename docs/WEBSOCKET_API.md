@@ -79,6 +79,7 @@ Current event names:
 - `recipes.delete`
 - `recipes.validate`
 - `formulas.calculate`
+- `formulas.solve`
 - `formulas.percentages`
 - `formulas.save`
 - `formulas.list`

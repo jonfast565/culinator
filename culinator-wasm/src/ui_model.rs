@@ -7,8 +7,8 @@
 
 use crate::offsets::Utf16Offsets;
 use culinator_core::{
-    BindingRole, DonenessCue, HeatLevel, LaborMode, Operation, Quantity, Recipe, Resource,
-    ResourceKind, SourceSpan, Value,
+    BindingRole, DonenessCue, Formula, FormulaBasis, HeatLevel, LaborMode, Operation, Quantity,
+    Recipe, Resource, ResourceKind, SourceSpan, Value,
 };
 use serde::Serialize;
 
@@ -125,6 +125,48 @@ pub struct UiOperation {
 
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
+pub struct UiFormulaIngredient {
+    pub id: String,
+    pub symbol: String,
+    pub name: String,
+    pub stage: String,
+    pub basis: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub percentage: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub mass_grams: Option<f64>,
+    pub is_reference: bool,
+    pub is_flour: bool,
+    pub water_fraction: f64,
+    pub scalable: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct UiFormula {
+    pub id: String,
+    pub symbol: String,
+    pub name: String,
+    pub basis: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub target: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pieces: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub piece_mass: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pan_diameter: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pan_depth: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dough_density: Option<f64>,
+    pub ingredients: Vec<UiFormulaIngredient>,
+}
+
+#[derive(Serialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct UiDiagnostic {
     pub message: String,
     pub start: usize,
@@ -158,6 +200,9 @@ pub struct UiRecipeModel {
     pub section: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub cover_image: Option<String>,
+    /// Baker's / ratio formulas declared in the recipe source.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub formulas: Vec<UiFormula>,
     /// Recovery diagnostics. Empty for well-formed source.
     pub diagnostics: Vec<UiDiagnostic>,
 }
@@ -364,6 +409,66 @@ fn operation(operation: &Operation, offsets: &Utf16Offsets) -> UiOperation {
     }
 }
 
+fn formula_basis_text(basis: FormulaBasis) -> &'static str {
+    match basis {
+        FormulaBasis::ReferencePercent => "reference_percent",
+        FormulaBasis::PercentOfTotal => "percent_of_total",
+        FormulaBasis::AbsoluteMass => "absolute_mass",
+    }
+}
+
+fn formula_role(item: &culinator_core::FormulaIngredient) -> Option<String> {
+    if item.is_flour {
+        return Some("flour".into());
+    }
+    if item.water_fraction > 0.0 {
+        return Some("liquid".into());
+    }
+    match item.properties.get("role").and_then(value_text) {
+        Some(role) if matches!(role.as_str(), "salt" | "fat" | "sugar") => Some(role),
+        _ => None,
+    }
+}
+
+fn formula(item: &Formula) -> UiFormula {
+    let property = |key: &str| item.properties.get(key).and_then(value_text);
+    let number = |key: &str| match item.properties.get(key) {
+        Some(Value::Number(n)) => Some(*n),
+        Some(Value::Quantity(q)) => Some(q.value),
+        _ => None,
+    };
+    UiFormula {
+        id: item.id.to_string(),
+        symbol: item.symbol.clone(),
+        name: item.name.clone(),
+        basis: formula_basis_text(item.basis).to_owned(),
+        target: property("target"),
+        pieces: number("pieces"),
+        piece_mass: property("piece_mass"),
+        pan_diameter: property("pan_diameter"),
+        pan_depth: property("pan_depth"),
+        dough_density: number("dough_density"),
+        ingredients: item
+            .ingredients
+            .iter()
+            .map(|line| UiFormulaIngredient {
+                id: line.id.to_string(),
+                symbol: line.symbol.clone(),
+                name: line.name.clone(),
+                stage: line.stage.clone(),
+                basis: formula_basis_text(line.basis).to_owned(),
+                percentage: line.percentage,
+                mass_grams: line.mass_grams,
+                is_reference: line.is_reference,
+                is_flour: line.is_flour,
+                water_fraction: line.water_fraction,
+                scalable: line.scalable,
+                role: formula_role(line),
+            })
+            .collect(),
+    }
+}
+
 pub fn project(source: &str, recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel {
     let offsets = Utf16Offsets::new(source);
     let property = |key: &str| recipe.properties.get(key).and_then(value_text);
@@ -410,6 +515,7 @@ pub fn project(source: &str, recipe: &Recipe, diagnostics: Vec<UiDiagnostic>) ->
         total_time: property("total_time"),
         section: property("section"),
         cover_image: property("image"),
+        formulas: recipe.formulas.iter().map(formula).collect(),
         diagnostics,
     }
 }
@@ -433,6 +539,7 @@ pub fn empty(diagnostics: Vec<UiDiagnostic>) -> UiRecipeModel {
         total_time: None,
         section: None,
         cover_image: None,
+        formulas: vec![],
         diagnostics,
     }
 }

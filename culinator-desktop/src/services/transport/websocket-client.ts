@@ -255,6 +255,7 @@ export async function serviceRequest<T>(path: string, init?: RequestInit): Promi
     return serviceRpc("recipes.delete", { id: decodeURIComponent(recipe[1]) });
   if (path === "/api/v1/validation") return serviceRpc("recipes.validate", body);
   if (path === "/api/v1/formulas/calculate") return serviceRpc("formulas.calculate", body);
+  if (path === "/api/v1/formulas/solve") return serviceRpc("formulas.solve", body);
   if (path === "/api/v1/formulas/percentages") return serviceRpc("formulas.percentages", body);
   if (path === "/api/v1/formulas" && method === "PUT")
     return serviceRpc("formulas.save", { formula: body });

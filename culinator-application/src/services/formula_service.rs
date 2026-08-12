@@ -27,6 +27,25 @@ impl FormulaService {
             .map_err(|error| ApplicationError::InvalidInput(error.to_string()))
     }
 
+    /// Solve from any supported constraint (mass, flour, pieces, pan, servings…).
+    pub fn solve(
+        &self,
+        formula: &Formula,
+        constraint: &culinator_core::FormulaConstraint,
+    ) -> Result<FormulaResult, ApplicationError> {
+        formula
+            .solve(constraint)
+            .map_err(|error| ApplicationError::InvalidInput(error.to_string()))
+    }
+
+    pub fn compare_versions(
+        &self,
+        left: &Formula,
+        right: &Formula,
+    ) -> culinator_core::FormulaVersionDiff {
+        left.compare_versions(right)
+    }
+
     pub fn percentages(
         &self,
         formula: &Formula,

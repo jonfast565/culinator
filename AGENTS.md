@@ -126,6 +126,52 @@ step's product, not something to have on hand). A divided ingredient's
 that is the entire point of the layout. Both the layout and its per-step amounts are derived by
 `culinator-narrative::section_mise`, so the mise agrees with the prose.
 
+## One menu, two renderers
+
+`app/appMenuModel.ts` is the single description of the application menu:
+`buildAppMenus(state)` returns labels, enablement, dividers, and accelerators.
+Two things render it, and neither owns it:
+
+- `AppMenuBar.vue` — the in-app bar. It can be hidden (View ▸ Hide menu bar,
+  ⇧⌘M, or Settings ▸ Window); a pull-tab at the top edge brings it back.
+- `app/useNativeMenu.ts` — inside Tauri only, pushes the same model to the shell
+  (`set_app_menu` in `src-tauri/src/lib.rs`), which rebuilds the system menu and
+  emits the chosen item's id back on `culinator://menu-action`. Menu ids **are**
+  `AppMenuAction`s, so the Rust side never interprets a command.
+
+Because labels are state-dependent ("Use US units" / "Use metric units"), the
+native menu is rebuilt on every change rather than declared once in Rust.
+The in-app bar therefore defaults to hidden in the desktop shell
+(`showMenuBar` in `useViewSettings`) and visible in the browser, which has no
+system menu.
+
+Two rules keep the keyboard sane, both covered by `appMenuModel.test.ts`:
+
+- **Accelerators are dropped from disabled items** when serialized for the
+  shell — a native key equivalent is registered regardless of whether the item
+  can run, and no two live items may claim the same key. ⌘E is therefore given
+  to whichever editor it would switch *to*, never to both.
+- **The webview stops handling those keys inside Tauri** (`nativeMenu.active`
+  in `App.vue`'s `onGlobalKeydown`); the menu already runs the command, and
+  handling it twice would, e.g., toggle the editor back again.
+
+Replacing the native menu also replaces the default Edit menu, so
+`edit_submenu` puts the standard clipboard/undo items back — without them the
+webview loses ⌘C/⌘V.
+
+## Formulas live in the recipe
+
+Baker's percentages are a `formula` block in the `.cg` source (not a side-table
+document). `FormulaCalculator` loads from `UiRecipeModel.formulas` (WASM
+projection), and **Apply to recipe** writes the block plus scaled `quantity`
+lines back via `features/formulas/formulaSync.ts`. `baker` is accepted as an
+alias of `percentage`. Scaling constraints (target mass, flour mass, pieces,
+servings, pan geometry, concentration) live in `culinator-core::FormulaConstraint`
+and `formulas.solve`. Named `reference_group`s, rounding, minimums, preferment
+kinds including scald/old dough, and `inherit_from` / `compare_versions` cover
+ENHANCEMENTS §7. Catalog `formulas.save` / `list` are CLI leftovers, not the
+editor path. Pizza dough is the seed that exercises the integrated path.
+
 ## DSL specifics worth remembering
 
 - **Scheduling uses only explicit `after` dependencies** (`culinator-scheduler`).

@@ -303,3 +303,35 @@ fn duration_accepts_long_form_time_units() {
     let step = op(&days, "step");
     assert_eq!(step.duration_max_seconds, Some(172_800));
 }
+
+#[test]
+fn formula_accepts_baker_as_percentage_alias() {
+    let recipe = parse_semantic_recipe(
+        r#"culinator 0.3;
+recipe loaf {
+    title "Loaf";
+    formula dough as BakersFormula {
+        target 1000 g;
+        ingredient flour as Flour<BakersPercent> {
+            stage final;
+            baker 100%;
+            reference true;
+            flour true;
+        }
+        ingredient water as Liquid<BakersPercent> {
+            stage final;
+            baker 70%;
+            water_fraction 1;
+        }
+    }
+}
+"#,
+    )
+    .expect("parses");
+    let formula = recipe.formulas.first().expect("formula");
+    assert_eq!(formula.ingredients.len(), 2);
+    assert_eq!(formula.ingredients[0].percentage, Some(100.0));
+    assert_eq!(formula.ingredients[1].percentage, Some(70.0));
+    assert!(formula.ingredients[0].is_reference);
+    assert!(formula.ingredients[0].is_flour);
+}

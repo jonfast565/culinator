@@ -29,6 +29,10 @@ serving slice measured by mass { mass 50 g; }
 
 ```cg
 formula dough relative to flour {
+    target 1000 g;
+    pieces 2 count;
+    piece_mass 500 g;
+
     ingredient flour measured by mass {
         percentage 100%;
         reference true;
@@ -40,6 +44,12 @@ formula dough relative to flour {
     }
 }
 ```
+
+`percentage` is the baker's-percent spelling; `baker 80%` is accepted as an alias.
+`pieces` / `piece_mass` scale by count; `pan_diameter` / `pan_depth` (or an
+explicit pan volume) scale by pan geometry using `dough_density` (g/ml, default 1.1).
+`reference_group "levain";` tags an ingredient into a named basis (beyond flour).
+`min_mass 1 g;` floors a line after scaling.
 
 Use `formula blend of total` for percentages of total product mass. Fixed mass lines use `basis absolute`.
 

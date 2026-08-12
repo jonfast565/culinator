@@ -15,11 +15,20 @@ const outDir = resolve(here, "..", "src", "generated", "wasm");
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: workspace, stdio: "inherit" });
 
 run("cargo", ["build", "-p", "culinator-wasm", "--target", "wasm32-unknown-unknown", "--release"]);
-run("wasm-bindgen", [
-  resolve(workspace, "target/wasm32-unknown-unknown/release/culinator_wasm.wasm"),
-  "--out-dir",
-  outDir,
-  "--target",
-  "web",
-]);
+
+// Honor CARGO_TARGET_DIR (Cursor sandboxes redirect it); fall back to ./target.
+const metadata = JSON.parse(
+  execFileSync("cargo", ["metadata", "--format-version", "1", "--no-deps"], {
+    cwd: workspace,
+    encoding: "utf8",
+  }),
+);
+const wasmArtifact = resolve(
+  metadata.target_directory,
+  "wasm32-unknown-unknown",
+  "release",
+  "culinator_wasm.wasm",
+);
+
+run("wasm-bindgen", [wasmArtifact, "--out-dir", outDir, "--target", "web"]);
 console.log(`\nwasm bindings written to ${outDir}`);

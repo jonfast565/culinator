@@ -452,6 +452,25 @@ async fn dispatch_inner(
             .map_err(to_string)?;
             serde_json::to_value(value).map_err(to_string)
         }
+        "formulas.solve" => {
+            let formula: Formula =
+                serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?)
+                    .map_err(to_string)?;
+            let constraint: culinator_core::FormulaConstraint = serde_json::from_value(
+                params
+                    .get("constraint")
+                    .cloned()
+                    .ok_or("Missing constraint")?,
+            )
+            .map_err(to_string)?;
+            let axum::Json(value) = routes::formulas::solve(
+                State(state.service.clone()),
+                axum::Json(crate::models::FormulaSolveRequest { formula, constraint }),
+            )
+            .await
+            .map_err(to_string)?;
+            serde_json::to_value(value).map_err(to_string)
+        }
         "formulas.percentages" => {
             let formula: Formula =
                 serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?)

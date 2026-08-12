@@ -5,6 +5,9 @@ use uuid::Uuid;
 mod units;
 pub use units::*;
 
+mod formula_scale;
+pub use formula_scale::*;
+
 pub mod order;
 
 pub type Symbol = String;
@@ -494,6 +497,10 @@ pub enum PrefermentKind {
     Sponge,
     Soaker,
     Tangzhong,
+    /// Cooked flour paste; treated like tangzhong for stage emission.
+    Scald,
+    /// Mature dough carried into a new mix.
+    OldDough,
 }
 
 impl PrefermentKind {
@@ -505,6 +512,8 @@ impl PrefermentKind {
             "sponge" => Ok(Self::Sponge),
             "soaker" => Ok(Self::Soaker),
             "tangzhong" => Ok(Self::Tangzhong),
+            "scald" => Ok(Self::Scald),
+            "old_dough" | "olddough" | "old-dough" => Ok(Self::OldDough),
             _ => Err(FormulaError::InvalidPrefermentKind {
                 kind: value.to_owned(),
             }),
@@ -519,6 +528,8 @@ impl PrefermentKind {
             Self::Sponge => "sponge",
             Self::Soaker => "soaker",
             Self::Tangzhong => "tangzhong",
+            Self::Scald => "scald",
+            Self::OldDough => "old_dough",
         }
     }
 }
@@ -591,10 +602,15 @@ impl Preferment {
             properties: water_props,
         });
 
-        if self.inoculation > 0.0 && !matches!(self.kind, PrefermentKind::Soaker) {
+        if self.inoculation > 0.0
+            && !matches!(
+                self.kind,
+                PrefermentKind::Soaker | PrefermentKind::Scald | PrefermentKind::Tangzhong
+            )
+        {
             let culture_pct = self.flour_pct * self.inoculation / 100.0;
             let water_fraction = match self.kind {
-                PrefermentKind::Levain => 0.5,
+                PrefermentKind::Levain | PrefermentKind::OldDough => 0.5,
                 _ => 0.0,
             };
             let mut culture_props = BTreeMap::new();
@@ -778,6 +794,14 @@ pub enum FormulaError {
     MissingReferenceIngredients,
     PercentOfTotalExceedsOneHundred,
     InvalidPrefermentKind { kind: Symbol },
+    InvalidPieceCount,
+    MissingPieceMass,
+    InvalidPanGeometry,
+    MissingDoughDensity,
+    MissingReferenceGroup { group: Symbol },
+    InvalidConcentration,
+    InvalidServings,
+    UnsolvableConstraint { reason: String },
 }
 
 impl std::fmt::Display for FormulaError {
@@ -805,6 +829,28 @@ impl std::fmt::Display for FormulaError {
             ),
             Self::InvalidPrefermentKind { kind } => {
                 write!(f, "unknown preferment kind `{kind}`")
+            }
+            Self::InvalidPieceCount => write!(f, "piece count must be greater than zero"),
+            Self::MissingPieceMass => write!(
+                f,
+                "piece scaling needs a piece_mass property (or set a target mass and pieces together)"
+            ),
+            Self::InvalidPanGeometry => {
+                write!(f, "pan diameter/depth/area/volume must be greater than zero")
+            }
+            Self::MissingDoughDensity => write!(
+                f,
+                "pan scaling needs a dough_density property in grams per millilitre"
+            ),
+            Self::MissingReferenceGroup { group } => {
+                write!(f, "no ingredients belong to reference group `{group}`")
+            }
+            Self::InvalidConcentration => {
+                write!(f, "concentration must be greater than zero and less than 100%")
+            }
+            Self::InvalidServings => write!(f, "serving count and mass must be greater than zero"),
+            Self::UnsolvableConstraint { reason } => {
+                write!(f, "cannot solve formula constraint: {reason}")
             }
         }
     }
@@ -986,6 +1032,87 @@ impl Formula {
         })
     }
 
+    /// Grams per piece from `piece_mass`, or `target` mass ÷ `pieces` when both
+    /// are declared on the formula.
+    pub fn piece_mass_grams(&self) -> Option<f64> {
+        property_mass_grams(&self.properties, "piece_mass").or_else(|| {
+            let pieces = property_number(&self.properties, "pieces")?;
+            let target = property_mass_grams(&self.properties, "target")?;
+            if pieces > 0.0 {
+                Some(target / pieces)
+            } else {
+                None
+            }
+        })
+    }
+
+    /// Dough density in g/ml. Defaults to 1.1 when unset — typical lean dough.
+    pub fn dough_density_g_per_ml(&self) -> f64 {
+        property_number(&self.properties, "dough_density").unwrap_or(1.1)
+    }
+
+    /// Target dough mass for a piece count, using `piece_mass` (or target÷pieces).
+    pub fn solve_for_pieces(&self, pieces: f64) -> Result<FormulaResult, FormulaError> {
+        if !pieces.is_finite() || pieces <= 0.0 {
+            return Err(FormulaError::InvalidPieceCount);
+        }
+        let piece_mass = self
+            .piece_mass_grams()
+            .ok_or(FormulaError::MissingPieceMass)?;
+        self.solve_for_target_mass(pieces * piece_mass)
+    }
+
+    /// Target dough mass for a circular pan: π·(d/2)²·depth · density.
+    /// `depth_cm` is dough thickness (pizza) or pan fill depth.
+    pub fn solve_for_round_pan(
+        &self,
+        diameter_cm: f64,
+        depth_cm: f64,
+    ) -> Result<FormulaResult, FormulaError> {
+        if !diameter_cm.is_finite()
+            || diameter_cm <= 0.0
+            || !depth_cm.is_finite()
+            || depth_cm <= 0.0
+        {
+            return Err(FormulaError::InvalidPanGeometry);
+        }
+        let density = self.dough_density_g_per_ml();
+        if !density.is_finite() || density <= 0.0 {
+            return Err(FormulaError::MissingDoughDensity);
+        }
+        let radius = diameter_cm / 2.0;
+        let volume_ml = std::f64::consts::PI * radius * radius * depth_cm;
+        self.solve_for_target_mass(volume_ml * density)
+    }
+
+    /// Target dough mass for an explicit pan volume in millilitres.
+    pub fn solve_for_pan_volume(&self, volume_ml: f64) -> Result<FormulaResult, FormulaError> {
+        if !volume_ml.is_finite() || volume_ml <= 0.0 {
+            return Err(FormulaError::InvalidPanGeometry);
+        }
+        let density = self.dough_density_g_per_ml();
+        if !density.is_finite() || density <= 0.0 {
+            return Err(FormulaError::MissingDoughDensity);
+        }
+        self.solve_for_target_mass(volume_ml * density)
+    }
+
+    /// Target dough mass for a rectangular pan footprint × depth.
+    pub fn solve_for_pan_area(
+        &self,
+        area_cm2: f64,
+        depth_cm: f64,
+    ) -> Result<FormulaResult, FormulaError> {
+        if !area_cm2.is_finite() || area_cm2 <= 0.0 || !depth_cm.is_finite() || depth_cm <= 0.0 {
+            return Err(FormulaError::InvalidPanGeometry);
+        }
+        let density = self.dough_density_g_per_ml();
+        if !density.is_finite() || density <= 0.0 {
+            return Err(FormulaError::MissingDoughDensity);
+        }
+        self.solve_for_target_mass(area_cm2 * depth_cm * density)
+    }
+
     /// Convert entered ingredient weights back to either percentages of the
     /// selected reference group or percentages of total recipe mass.
     pub fn weights_to_percentages(
@@ -1047,5 +1174,22 @@ impl Formula {
         })
     }
 }
+
+pub(crate) fn property_number(properties: &BTreeMap<Symbol, Value>, key: &str) -> Option<f64> {
+    match properties.get(key)? {
+        Value::Number(n) => Some(*n),
+        Value::Quantity(q) => Some(q.value),
+        _ => None,
+    }
+}
+
+pub(crate) fn property_mass_grams(properties: &BTreeMap<Symbol, Value>, key: &str) -> Option<f64> {
+    match properties.get(key)? {
+        Value::Quantity(q) => q.as_grams(),
+        Value::Number(n) => Some(*n),
+        _ => None,
+    }
+}
+
 #[cfg(test)]
 mod test;

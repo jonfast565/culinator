@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { Plus, Trash2, X } from "lucide-vue-next";
+import { Beaker, Plus, Trash2, X } from "lucide-vue-next";
 import type { BuilderFormula } from "../composables/useRecipeBuilder";
 import BuilderTextField from "./BuilderTextField.vue";
 
 /**
- * Baker's-percentage formulas — flour-relative ratios that scale to a target
- * weight. A niche construct (no seed uses it), so the editor stays to the
- * essentials: a target and per-ingredient baker's percentages.
+ * Compact baker's-percentage editor. The full calculator (preferment, pan/piece
+ * scaling, apply-to-recipe) lives in the Formulas tool — this section keeps
+ * the DSL block editable inline and offers a door into that tool.
  */
 defineProps<{ formulas: BuilderFormula[]; disabled?: boolean }>();
 
@@ -17,6 +17,7 @@ const emit = defineEmits<{
   remove: [symbol: string];
   addIngredient: [formula: string];
   removeIngredient: [formula: string, ingredient: string];
+  openTool: [];
 }>();
 </script>
 
@@ -24,16 +25,24 @@ const emit = defineEmits<{
   <section id="builder-formulas" class="panel builder-section">
     <div class="panel-header">
       <h3>Formulas</h3>
+      <button class="ghost open-tool" type="button" :disabled="disabled" @click="emit('openTool')">
+        <Beaker :size="14" /> Open formula tool
+      </button>
     </div>
 
     <div v-if="!formulas.length" class="empty-cta">
       <p class="empty">
-        Baker's percentages scale a dough or batter from flour. Optional — skip unless you bake by
-        ratio.
+        Baker's percentages scale a dough or batter from flour. Add a formula here, or open the
+        formula tool to seed one from the recipe and apply scaled amounts back.
       </p>
-      <button class="primary" :disabled="disabled" @click="emit('add')">
-        <Plus :size="14" /> Add formula
-      </button>
+      <div class="empty-actions">
+        <button class="primary" :disabled="disabled" @click="emit('add')">
+          <Plus :size="14" /> Add formula
+        </button>
+        <button :disabled="disabled" @click="emit('openTool')">
+          <Beaker :size="14" /> Open formula tool
+        </button>
+      </div>
     </div>
 
     <div class="formulas">
@@ -105,6 +114,18 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.open-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+}
 .empty-cta {
   display: grid;
   gap: 10px;
@@ -114,6 +135,11 @@ const emit = defineEmits<{
   border: 1px dashed #cfd6d0;
   border-radius: 10px;
   background: #fbfcfa;
+}
+.empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .empty {
   color: #6d7972;
@@ -153,45 +179,30 @@ const emit = defineEmits<{
   display: grid;
   gap: 6px;
 }
-.ingredients-head {
-  display: grid;
-  grid-template-columns: 1fr 120px auto;
-  gap: 8px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: #8a938c;
-}
+.ingredients-head,
 .ingredient-row {
   display: grid;
-  grid-template-columns: 1fr 120px auto;
+  grid-template-columns: 1fr 7rem 2rem;
   gap: 8px;
   align-items: center;
+}
+.ingredients-head {
+  font-size: 11px;
+  color: #8a938c;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .ingredient-name {
   text-transform: capitalize;
   font-size: 13px;
 }
-.icon {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: grid;
-  place-items: center;
-}
-.icon.danger {
-  color: #a83737;
-}
 .add-ingredient,
 .add-row button {
-  justify-self: start;
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 13px;
-  padding: 5px 10px;
 }
 .add-row {
-  margin-top: 12px;
+  margin-top: 8px;
 }
 </style>

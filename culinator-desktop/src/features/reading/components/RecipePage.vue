@@ -65,6 +65,35 @@ const cardFormat = computed(() => {
 });
 const hasSteps = computed(() => sections.value.some((section) => section.steps.length > 0));
 const allergens = computed(() => collectRecipeAllergens(props.model));
+const bakerBySymbol = computed(() => {
+  const map: Record<string, number> = {};
+  for (const formula of props.model.formulas ?? []) {
+    for (const item of formula.ingredients) {
+      if (item.percentage != null) map[item.symbol] = item.percentage;
+    }
+  }
+  return map;
+});
+const formulaMetrics = computed(() => {
+  const formula = props.model.formulas?.[0];
+  if (!formula) return null;
+  const flour = formula.ingredients
+    .filter((item) => item.isFlour)
+    .reduce((sum, item) => sum + (item.percentage ?? 0), 0);
+  if (!(flour > 0)) return null;
+  const water = formula.ingredients.reduce(
+    (sum, item) => sum + (item.percentage ?? 0) * (item.waterFraction || 0),
+    0,
+  );
+  const salt = formula.ingredients
+    .filter((item) => item.role === "salt")
+    .reduce((sum, item) => sum + (item.percentage ?? 0), 0);
+  return {
+    hydration: Math.round((water / flour) * 1000) / 10,
+    salt: salt > 0 ? Math.round((salt / flour) * 1000) / 10 : null,
+    pieces: formula.pieces ?? null,
+  };
+});
 const {
   activeTry,
   error: kitchenError,
@@ -200,6 +229,11 @@ watch(
       <h1 class="leaf-title">{{ model.title || "Untitled recipe" }}</h1>
       <p class="leaf-summary">{{ summary }}</p>
       <AllergenBadges v-if="allergens.length" :allergens="allergens" />
+      <p v-if="formulaMetrics" class="formula-chip">
+        <span>{{ formulaMetrics.hydration }}% hydration</span>
+        <span v-if="formulaMetrics.salt != null">{{ formulaMetrics.salt }}% salt</span>
+        <span v-if="formulaMetrics.pieces != null">{{ formulaMetrics.pieces }} pieces</span>
+      </p>
       <SubstitutionAssistant v-if="!kitchenMode" :resources="model.resources" />
     </header>
 
@@ -211,6 +245,7 @@ watch(
           :groups="ingredientGroups"
           :selectable="editable"
           :highlighted-symbol="highlightedSymbol"
+          :baker-by-symbol="bakerBySymbol"
           @select="emit('select-symbol', $event)"
         />
         <p v-else class="empty">
@@ -308,6 +343,20 @@ watch(
 </template>
 
 <style scoped>
+.formula-chip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 8px 0 0;
+  font-family: var(--sans);
+  font-size: calc(13px * var(--reading-scale, 1));
+  color: #7a5a16;
+}
+.formula-chip span {
+  background: #f7efd8;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
 .kitchen-leaf {
   padding-top: 22px;
   box-shadow:

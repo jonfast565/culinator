@@ -124,6 +124,10 @@ pub fn router(config: ServiceConfig) -> Router {
             post(routes::formulas::calculate),
         )
         .route(
+            "/api/v1/formulas/solve",
+            post(routes::formulas::solve),
+        )
+        .route(
             "/api/v1/formulas/percentages",
             post(routes::formulas::percentages),
         )

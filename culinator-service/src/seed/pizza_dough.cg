@@ -17,19 +17,65 @@ recipe pizza_dough {
         divided true;
         note "400 g in the dough, plus more for the work surface; rye or other flours may need more liquid";
     }
-    ingredient water measured by volume {
+    ingredient water measured by mass {
         name "lukewarm water";
-        quantity 200 ml;
+        quantity 200 g;
     }
     ingredient yeast measured by mass {
         name "dry yeast";
         quantity 7 g;
         note "1 package";
     }
-    ingredient olive_oil measured by volume { quantity 1 tbsp; }
-    ingredient salt measured by volume { quantity 1 tsp; }
-    ingredient sugar measured by volume {
+    ingredient olive_oil measured by mass {
+        name "olive oil";
+        quantity 14 g;
+        note "about 1 tbsp";
+    }
+    ingredient salt measured by mass {
+        quantity 6 g;
+        note "about 1 tsp";
+    }
+    ingredient sugar measured by mass {
+        quantity 1 g;
+        optional true;
         note "a teensy bit, to feed the yeast";
+    }
+
+    formula dough relative to flour {
+        target 628 g;
+        pieces 2 count;
+        piece_mass 314 g;
+
+        ingredient flour measured by mass {
+            percentage 100%;
+            reference true;
+            flour true;
+            stage final;
+        }
+        ingredient water measured by mass {
+            percentage 50%;
+            water_fraction 1;
+            stage final;
+        }
+        ingredient yeast measured by mass {
+            percentage 1.75%;
+            stage final;
+        }
+        ingredient olive_oil measured by mass {
+            percentage 3.5%;
+            role fat;
+            stage final;
+        }
+        ingredient salt measured by mass {
+            percentage 1.5%;
+            role salt;
+            stage final;
+        }
+        ingredient sugar measured by mass {
+            percentage 0.25%;
+            role sugar;
+            stage final;
+        }
     }
 
     container bowl { name "mixing bowl"; }

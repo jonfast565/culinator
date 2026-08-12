@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* global Event, HTMLElement, KeyboardEvent, navigator */
+/* global Event, HTMLElement, KeyboardEvent */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   BookOpen,
@@ -8,265 +8,31 @@ import {
   FilePlus2,
   Home,
   Import,
+  PanelTopClose,
   Save,
   Settings,
 } from "lucide-vue-next";
 import AppIcon from "./AppIcon.vue";
 import type { AppView } from "../useNavigation";
-import type { InspectorTabId } from "../../features/recipe-editor/components/InspectorPanel.vue";
-import type { IndexCardFormat } from "../../features/reading/indexCardFormat";
-import {
-  INDEX_CARD_PICKER_OPTIONS,
-  indexCardFormatLabel,
-  indexCardMenuAction,
-} from "../../features/reading/indexCardFormat";
-
-export type AppMenuAction =
-  | "home"
-  | "new-book"
-  | "new-recipe"
-  | "import-recipe"
-  | "import-file"
-  | "read"
-  | "edit-source"
-  | "build"
-  | "save"
-  | "delete"
-  | "measures"
-  | "ingredient-match"
-  | "toggle-units"
-  | "toggle-temperature"
-  | "toggle-mise"
-  | "toggle-numbers"
-  | "cycle-text"
-  | "toggle-book-layout"
-  | "print-recipe-cards"
-  | "print-book"
-  | "print-index-card"
-  | `set-index-card:${IndexCardFormat}`
-  | "cycle-recipe-header-type"
-  | "cycle-recipe-body-type"
-  | "cycle-recipe-annotation-type"
-  | "cycle-index-card-margin"
-  | "toggle-index-card-pager"
-  | "open-settings"
-  | "convert-units"
-  | `tool:${InspectorTabId}`;
-
-type MenuItem = {
-  label: string;
-  action: AppMenuAction;
-  hint?: string;
-  shortcut?: string;
-  disabled?: boolean;
-  divider?: boolean;
-};
-
-const mod =
-  typeof navigator !== "undefined" && navigator.platform.toLowerCase().includes("mac")
-    ? "⌘"
-    : "Ctrl+";
+import type { AppMenuAction, AppMenuItem, AppMenuSection } from "../appMenuModel";
+import { MENU_BAR_ACCELERATOR, formatAccelerator } from "../appMenuModel";
 
 const props = defineProps<{
+  /** Built by `buildAppMenus` — shared with the native menu inside Tauri. */
+  menus: AppMenuSection[];
   view: AppView;
-  hasRecipe: boolean;
   recipeTitle?: string;
   dirty?: boolean;
-  saving?: boolean;
-  unitSystem: "metric" | "us_customary";
-  temperatureScale: "celsius" | "fahrenheit";
-  misePlacement: "top-matter" | "colocated";
-  numberStyle: "fractions" | "decimals";
-  textSizeLabel: string;
-  bookLayout: "book" | "cards";
-  indexCardFormat: IndexCardFormat;
-  recipeHeaderTypeLabel: string;
-  recipeBodyTypeLabel: string;
-  recipeAnnotationTypeLabel: string;
-  indexCardMarginLabel: string;
-  showIndexCardPager: boolean;
-  onBookView: boolean;
-  onRecipeView: boolean;
 }>();
 
 const emit = defineEmits<{ action: [action: AppMenuAction] }>();
 const openMenu = ref<string | null>(null);
 
-const hasRecipe = computed(() => props.hasRecipe);
+const menus = computed(() => props.menus);
 const isEditing = computed(() => props.view === "editing" || props.view === "building");
+const hideMenuBarHint = computed(() => formatAccelerator(MENU_BAR_ACCELERATOR));
 
-const menus = computed<{ label: string; items: MenuItem[]; recipeOnly?: boolean }[]>(() => [
-  {
-    label: "File",
-    items: [
-      { label: "New recipe", action: "new-recipe", hint: "Create a blank recipe" },
-      { label: "New book", action: "new-book" },
-      { label: "Import recipe…", action: "import-recipe", divider: true },
-      { label: "Open recipe file…", action: "import-file" },
-      { label: "Recipe shelf", action: "home", divider: true },
-    ],
-  },
-  {
-    label: "Recipe",
-    recipeOnly: true,
-    items: [
-      { label: "Read recipe", action: "read", disabled: props.view === "reading" },
-      {
-        label: "Edit recipe",
-        action: "build",
-        hint: "Structured builder",
-        shortcut: `${mod}E`,
-      },
-      { label: "Edit source", action: "edit-source", hint: "Raw DSL", shortcut: `${mod}E` },
-      {
-        label: props.saving ? "Saving…" : "Save changes",
-        action: "save",
-        shortcut: `${mod}S`,
-        disabled: !props.dirty || props.saving,
-        divider: true,
-      },
-      { label: "Delete recipe…", action: "delete", divider: true },
-    ],
-  },
-  {
-    label: "View",
-    items: [
-      {
-        label: props.unitSystem === "metric" ? "Use US units" : "Use metric units",
-        action: "toggle-units",
-        disabled: !hasRecipe.value,
-      },
-      {
-        label:
-          props.temperatureScale === "celsius"
-            ? "Show Fahrenheit"
-            : "Show Celsius",
-        action: "toggle-temperature",
-        disabled: !hasRecipe.value,
-      },
-      {
-        label:
-          props.misePlacement === "colocated"
-            ? "Use one ingredient list"
-            : "Place mise beside steps",
-        action: "toggle-mise",
-        disabled: !hasRecipe.value,
-      },
-      {
-        label: props.numberStyle === "fractions" ? "Show decimal amounts" : "Show fractions",
-        action: "toggle-numbers",
-        disabled: !hasRecipe.value,
-      },
-      {
-        label: `Text size: ${props.textSizeLabel}`,
-        action: "cycle-text",
-        disabled: !hasRecipe.value,
-      },
-      {
-        label: props.bookLayout === "book" ? "Use recipe cards" : "Use page-flip book",
-        action: "toggle-book-layout",
-        disabled: !props.onBookView,
-      },
-      {
-        label: "Print recipe cards…",
-        action: "print-recipe-cards",
-        disabled: !props.onBookView || props.bookLayout !== "cards",
-        shortcut: props.bookLayout === "cards" ? `${mod}P` : undefined,
-      },
-      {
-        label: "Print book…",
-        action: "print-book",
-        disabled: !props.onBookView,
-        shortcut: props.bookLayout !== "cards" ? `${mod}P` : undefined,
-      },
-      ...INDEX_CARD_PICKER_OPTIONS.map((option, index) => ({
-        label: option.id === "full" ? "Recipe card: Full page" : `Recipe card: ${option.label}`,
-        action: indexCardMenuAction(option.id),
-        disabled: !props.onRecipeView,
-        divider: index === 0,
-      })),
-      {
-        label:
-          props.indexCardFormat === "full"
-            ? "Print recipe…"
-            : `Print ${indexCardFormatLabel(props.indexCardFormat)}…`,
-        action: "print-index-card",
-        disabled: !props.onRecipeView,
-      },
-      {
-        label: `Title type: ${props.recipeHeaderTypeLabel}`,
-        action: "cycle-recipe-header-type",
-        disabled: !props.onRecipeView,
-        divider: true,
-      },
-      {
-        label: `Body type: ${props.recipeBodyTypeLabel}`,
-        action: "cycle-recipe-body-type",
-        disabled: !props.onRecipeView,
-      },
-      {
-        label: `Notes type: ${props.recipeAnnotationTypeLabel}`,
-        action: "cycle-recipe-annotation-type",
-        disabled: !props.onRecipeView,
-      },
-      {
-        label: `Card margins: ${props.indexCardMarginLabel}`,
-        action: "cycle-index-card-margin",
-        disabled: !props.onRecipeView,
-      },
-      {
-        label: props.showIndexCardPager ? "Hide card numbers" : "Show card numbers",
-        action: "toggle-index-card-pager",
-        disabled: !props.onRecipeView,
-      },
-      { label: "Settings…", action: "open-settings", divider: true },
-      { label: "Convert recipe units…", action: "convert-units", disabled: !hasRecipe.value },
-      { label: "Measures & conversions", action: "measures", divider: true },
-    ],
-  },
-  {
-    label: "Preview",
-    recipeOnly: true,
-    items: [
-      { label: "Narrative", action: "tool:narrative" },
-      { label: "Recipe outline", action: "tool:outline" },
-      { label: "Ingredients", action: "tool:ingredients" },
-    ],
-  },
-  {
-    label: "Author",
-    recipeOnly: true,
-    items: [
-      { label: "Workflow graph", action: "tool:author" },
-      { label: "Jump to source issues", action: "edit-source", hint: "Open source + Issues" },
-    ],
-  },
-  {
-    label: "Plan",
-    recipeOnly: true,
-    items: [
-      { label: "Timeline", action: "tool:timeline" },
-      { label: "Formula editor", action: "tool:formula" },
-    ],
-  },
-  {
-    label: "Produce",
-    recipeOnly: true,
-    items: [
-      { label: "Cook mode", action: "tool:kitchen" },
-      { label: "Food safety", action: "tool:haccp" },
-      { label: "Nutrition", action: "tool:nutrition" },
-      { label: "Ingredient matcher", action: "ingredient-match" },
-    ],
-  },
-  {
-    label: "Share",
-    recipeOnly: true,
-    items: [{ label: "Export recipe", action: "tool:export" }],
-  },
-]);
-
-function choose(item: MenuItem): void {
+function choose(item: AppMenuItem): void {
   if (item.disabled) return;
   openMenu.value = null;
   emit("action", item.action);
@@ -308,7 +74,7 @@ onBeforeUnmount(() => {
       >
         <button
           class="menu-trigger"
-          :disabled="menu.recipeOnly && !hasRecipe"
+          :disabled="menu.disabled"
           :aria-expanded="openMenu === menu.label"
           aria-haspopup="menu"
           @click="toggle(menu.label)"
@@ -326,7 +92,7 @@ onBeforeUnmount(() => {
           >
             <span class="item-main">
               <span>{{ item.label }}</span>
-              <kbd v-if="item.shortcut">{{ item.shortcut }}</kbd>
+              <kbd v-if="item.accelerator">{{ formatAccelerator(item.accelerator) }}</kbd>
             </span>
             <small v-if="item.hint">{{ item.hint }}</small>
           </button>
@@ -355,6 +121,13 @@ onBeforeUnmount(() => {
       </button>
       <button class="quick-settings" title="Settings" @click="emit('action', 'open-settings')">
         <Settings :size="14" />
+      </button>
+      <button
+        class="quick-hide"
+        :title="`Hide menu bar (${hideMenuBarHint})`"
+        @click="emit('action', 'toggle-menu-bar')"
+      >
+        <PanelTopClose :size="14" />
       </button>
     </div>
   </header>
@@ -389,7 +162,8 @@ onBeforeUnmount(() => {
 .menu-trigger,
 .quick-new,
 .quick-import,
-.quick-settings {
+.quick-settings,
+.quick-hide {
   border: 0;
   background: transparent;
   color: inherit;
@@ -398,7 +172,8 @@ onBeforeUnmount(() => {
 .menu-root.open .menu-trigger,
 .quick-new:hover,
 .quick-import:hover,
-.quick-settings:hover {
+.quick-settings:hover,
+.quick-hide:hover {
   background: rgba(255, 255, 255, 0.09);
 }
 .menu-strip {
@@ -508,14 +283,16 @@ onBeforeUnmount(() => {
 }
 .quick-new,
 .quick-import,
-.quick-settings {
+.quick-settings,
+.quick-hide {
   height: 30px;
   padding: 0 9px;
   border-radius: 6px;
   font-size: 11px;
 }
 .quick-import,
-.quick-settings {
+.quick-settings,
+.quick-hide {
   width: 30px;
   padding: 0;
 }

@@ -5,8 +5,14 @@ defineProps<{
   parts: IngredientDisplayParts;
   selectable?: boolean;
   highlighted?: boolean;
+  bakerPercent?: number | null;
 }>();
 const emit = defineEmits<{ select: [symbol: string] }>();
+
+function formatBaker(value: number): string {
+  const rounded = Math.round(value * 10) / 10;
+  return `${rounded}%`;
+}
 </script>
 
 <template>
@@ -19,6 +25,9 @@ const emit = defineEmits<{ select: [symbol: string] }>();
     <span class="ingredient-qty">{{ parts.amount }}</span>
     <span class="ingredient-body">
       <span class="ingredient-name">{{ parts.description }}</span>
+      <span v-if="bakerPercent != null" class="baker-pct" title="Baker's percentage">{{
+        formatBaker(bakerPercent)
+      }}</span>
       <span v-if="parts.aside" class="ingredient-aside">{{ parts.aside }}</span>
     </span>
   </li>
@@ -48,32 +57,34 @@ const emit = defineEmits<{ select: [symbol: string] }>();
   box-shadow: inset 3px 0 0 #28643b;
 }
 .ingredient-row:last-child {
-  border-bottom: 0;
+  border-bottom: none;
 }
 .ingredient-qty {
   font-variant-numeric: tabular-nums;
   font-weight: 600;
-  font-size: 0.92em;
-  color: #28643b;
-  text-align: right;
-  line-height: 1.35;
-}
-.ingredient-qty:empty::before {
-  content: "\00a0";
+  color: #3d4a42;
 }
 .ingredient-body {
-  display: block;
-  min-width: 0;
-  line-height: 1.45;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
 }
 .ingredient-name {
-  color: #23302a;
+  color: #1f2923;
+}
+.baker-pct {
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+  color: #8a6a28;
+  background: #f7efd8;
+  padding: 0 0.35em;
+  border-radius: 4px;
 }
 .ingredient-aside {
+  width: 100%;
+  font-size: 0.9em;
   color: #6d7972;
-  font-size: 0.92em;
-}
-.ingredient-aside::before {
-  content: ", ";
+  font-style: italic;
 }
 </style>

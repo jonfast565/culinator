@@ -84,6 +84,13 @@ pub struct FormulaCalculationRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct FormulaSolveRequest {
+    pub formula: Formula,
+    pub constraint: culinator_core::FormulaConstraint,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PercentageRequest {
     pub formula: Formula,
     pub view: PercentageView,

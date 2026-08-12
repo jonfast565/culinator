@@ -11,6 +11,7 @@ import NutritionPanel from "../../nutrition/components/NutritionPanel.vue";
 import RecipeNarrative from "./RecipeNarrative.vue";
 import { ingredientPartsBySymbol } from "../narrative";
 import IngredientListRow from "../../reading/components/IngredientListRow.vue";
+import { looksLikeBreadRecipe } from "../../formulas/formulaSync";
 
 export type InspectorTabId =
   | "narrative"
@@ -52,7 +53,11 @@ const emit = defineEmits<{
   "open-ingredient-matcher": [symbol?: string];
 }>();
 
-const tabGroups = [
+const isBreadLike = computed(() =>
+  looksLikeBreadRecipe(props.model.resources, (props.model.formulas?.length ?? 0) > 0),
+);
+
+const tabGroups = computed(() => [
   {
     label: "Preview",
     tabs: [
@@ -69,7 +74,10 @@ const tabGroups = [
     label: "Planning",
     tabs: [
       { id: "timeline" as const, label: "Timeline" },
-      { id: "formula" as const, label: "Formulas" },
+      {
+        id: "formula" as const,
+        label: (props.model.formulas?.length ?? 0) > 0 ? "Baker's formula" : "Formulas",
+      },
     ],
   },
   {
@@ -84,10 +92,11 @@ const tabGroups = [
     label: "Output",
     tabs: [{ id: "export" as const, label: "Export" }],
   },
-];
+]);
 
 function defaultTab(): InspectorTabId {
   if (props.initialTab) return props.initialTab;
+  if ((props.model.formulas?.length ?? 0) > 0) return "formula";
   return (props.model.operations?.length ?? 0) > 0 ? "author" : "narrative";
 }
 
@@ -122,7 +131,7 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
           <button
             v-for="item in group.tabs"
             :key="item.id"
-            :class="{ active: tab === item.id }"
+            :class="{ active: tab === item.id, suggest: item.id === 'formula' && isBreadLike }"
             @click="tab = item.id"
           >
             {{ item.label }}
@@ -194,6 +203,9 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
       :recipe-id="recipeId"
       :recipe-title="model.title"
       :resources="model.resources"
+      :formulas="model.formulas"
+      :source="source"
+      @update:source="emit('update:source', $event)"
     />
     <HaccpPanel
       v-else-if="tab === 'haccp' && recipeId"
@@ -245,6 +257,10 @@ const operationSymbols = computed(() => operations.value.map((item) => item.symb
 .tab-group .tabs button {
   padding: 5px 9px;
   font-size: 12px;
+}
+.tab-group .tabs button.suggest:not(.active) {
+  box-shadow: inset 0 0 0 1px #c08b2c;
+  color: #7a5a16;
 }
 .state-tag {
   margin-left: 0.4rem;

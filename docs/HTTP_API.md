@@ -24,6 +24,7 @@ Authorization: Bearer <per-launch-token>
 - `GET|PUT|DELETE /api/v1/recipes/{id}`
 - `POST /api/v1/validation`
 - `POST /api/v1/formulas/calculate`
+- `POST /api/v1/formulas/solve`
 - `POST /api/v1/formulas/percentages`
 - `PUT /api/v1/formulas`
 - `GET /api/v1/recipes/{recipe_id}/formulas`

@@ -1,3 +1,10 @@
+/**
+ * Formula calculation helpers.
+ *
+ * Persistence lives in the recipe `.cg` source (`formula` blocks). `saveFormula`
+ * / `listRecipeFormulas` remain for CLI/catalog compatibility but the desktop
+ * calculator no longer uses them as the editor source of truth.
+ */
 import type {
   DoughTempRequest,
   DoughTempResponse,

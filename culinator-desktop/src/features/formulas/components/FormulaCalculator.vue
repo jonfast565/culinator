@@ -1,10 +1,21 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from "vue";
+import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Calculator, Plus, RotateCcw, Save, Trash2 } from "lucide-vue-next";
 import type { Formula, FormulaIngredient, FormulaResult } from "../../../domain/types";
-import type { UiResource } from "../../recipe-editor/model";
+import type { UiFormula, UiResource } from "../../recipe-editor/model";
 import * as api from "../../../services/api";
 import UnitConverter from "../../units/components/UnitConverter.vue";
+import {
+  applyFormulaToSource,
+  applyRounding,
+  formulaFromUi,
+  massForConcentration,
+  massForPanVolume,
+  massForReferenceFlour,
+  massForRoundPan,
+  massForServings,
+  parseMassGrams,
+} from "../formulaSync";
 import {
   chooseReference,
   percentagesFromWeights,
@@ -16,18 +27,32 @@ const props = defineProps<{
   recipeId: string;
   recipeTitle?: string;
   resources?: UiResource[];
+  formulas?: UiFormula[];
+  source?: string;
 }>();
 
-/**
- * The two directions a formula is read. Percentages mode scales a known ratio
- * up to a batch size; weights mode takes the weights you actually have and
- * tells you the ratio. Both used to be present but unlabelled — the batch field
- * drove one and two "Weights → …%" buttons drove the other.
- */
+const emit = defineEmits<{ "update:source": [value: string] }>();
+
 type Mode = "percent" | "weight";
 const mode = ref<Mode>("percent");
 
+type ScaleMode = "mass" | "flour" | "pieces" | "servings" | "pan" | "concentration";
+const scaleMode = ref<ScaleMode>("mass");
 const targetMass = ref(1000);
+const flourMass = ref(500);
+const pieceCount = ref(2);
+const pieceMassGrams = ref<number | null>(null);
+const servingCount = ref(4);
+const gramsPerServing = ref(200);
+const panDiameterCm = ref(30);
+const panDepthCm = ref(0.4);
+const panVolumeMl = ref<number | null>(null);
+const doughDensity = ref(1.1);
+const concentrationSolute = ref("salt");
+const concentrationPercent = ref(2);
+const roundIncrement = ref(1);
+const applyMins = ref(true);
+
 const result = ref<FormulaResult | null>(null);
 const error = ref("");
 const status = ref("");
@@ -36,8 +61,8 @@ const loading = ref(true);
 const formula = reactive<Formula>({
   id: crypto.randomUUID(),
   recipe_id: props.recipeId,
-  symbol: "main_formula",
-  name: "Main formula",
+  symbol: "dough",
+  name: "Dough",
   basis: "reference_percent",
   ingredients: [],
   properties: {},
@@ -56,27 +81,41 @@ const shareByIngredient = computed(() => {
   return map;
 });
 
+function resolvedTargetMass(): number | null {
+  if (scaleMode.value === "mass") return targetMass.value > 0 ? targetMass.value : null;
+  if (scaleMode.value === "flour") {
+    return massForReferenceFlour(flourMass.value, formula.ingredients);
+  }
+  if (scaleMode.value === "pieces") {
+    const per = pieceMassGrams.value;
+    if (per == null || !(pieceCount.value > 0)) return null;
+    return pieceCount.value * per;
+  }
+  if (scaleMode.value === "servings") {
+    return massForServings(servingCount.value, gramsPerServing.value);
+  }
+  if (scaleMode.value === "concentration") {
+    const solute = formula.ingredients.find((item) => item.symbol === concentrationSolute.value);
+    const grams = solute?.mass_grams;
+    if (grams == null) return null;
+    return massForConcentration(grams, concentrationPercent.value);
+  }
+  if (panVolumeMl.value != null && panVolumeMl.value > 0) {
+    return massForPanVolume(panVolumeMl.value, doughDensity.value);
+  }
+  return massForRoundPan(panDiameterCm.value, panDepthCm.value, doughDensity.value);
+}
+
 function grams(item: FormulaIngredient): number | null {
-  // A row with no percentage yet scales to a real 0 g in the result. Report it
-  // as unknown instead, so it reads as "still needs a weight" rather than a
-  // deliberate zero.
   if (item.percentage == null) return item.mass_grams ?? null;
   return massByIngredient.value.get(item.id) ?? item.mass_grams ?? null;
 }
-/** Band colour for the composition ribbon: flour and liquid are the two roles
- *  the ribbon distinguishes, everything else is neutral. */
 function bandOf(item: FormulaIngredient): "flour" | "liquid" | "other" {
   if (item.is_flour) return "flour";
   if (item.water_fraction > 0) return "liquid";
   return "other";
 }
 
-/**
- * The role a row is tagged with. `flour` and `liquid` drive hydration; `salt`,
- * `fat` and `sugar` drive their baker's-percent metrics (via the core's `role`
- * property); `solid` is the neutral default for everything else — the "no
- * solids" gap this control closes.
- */
 type Role = "solid" | "flour" | "liquid" | "salt" | "fat" | "sugar";
 const ROLE_OPTIONS: Role[] = ["solid", "flour", "liquid", "salt", "fat", "sugar"];
 
@@ -109,13 +148,6 @@ function decimal(value: number | null | undefined, places = 1): string {
   return value.toFixed(places).replace(/\.0+$/, "");
 }
 
-/**
- * A row the solver can actually place: its basis has the number it needs. Rows
- * that are still missing a weight (volume/count ingredients the recipe never
- * gave a gram figure for) have no percentage yet — including them would make
- * the whole solve fail with "missing a percentage", blanking the ribbon and
- * every metric. They stay visible in the list with a "needs a weight" hint.
- */
 function isSolvable(item: FormulaIngredient): boolean {
   if (item.basis === "absolute_mass") {
     return item.mass_grams != null && Number.isFinite(item.mass_grams);
@@ -130,27 +162,62 @@ async function calculate(): Promise<void> {
     error.value = "";
     return;
   }
+  let target: number;
+  if (mode.value === "percent") {
+    const mass = resolvedTargetMass();
+    if (mass == null || mass <= 0) {
+      result.value = null;
+      return;
+    }
+    target = mass;
+  } else {
+    target = ready.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0);
+    if (target <= 0) target = targetMass.value;
+  }
   try {
     error.value = "";
-    result.value = await api.calculateFormula({ ...formula, ingredients: ready }, targetMass.value);
+    result.value = await api.calculateFormula({ ...formula, ingredients: ready }, target);
+    if (roundIncrement.value > 0) {
+      result.value = applyRounding(result.value, roundIncrement.value);
+    }
+    if (applyMins.value) {
+      // Client-side floor using the same property the core reads.
+      result.value = {
+        ...result.value,
+        lines: result.value.lines.map((line) => {
+          const item = formula.ingredients.find((row) => row.id === line.ingredient_id);
+          const min =
+            typeof item?.properties?.min_mass === "number"
+              ? item.properties.min_mass
+              : typeof item?.properties?.min_mass_grams === "number"
+                ? item.properties.min_mass_grams
+                : 0;
+          return min > 0 && line.mass_grams > 0 && line.mass_grams < min
+            ? { ...line, mass_grams: min }
+            : line;
+        }),
+      };
+    }
+    if (
+      scaleMode.value === "pieces" &&
+      pieceCount.value > 0 &&
+      pieceMassGrams.value == null &&
+      result.value
+    ) {
+      pieceMassGrams.value = Math.round(result.value.total_mass_grams / pieceCount.value);
+    }
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause);
   }
 }
 
-/** Give the formula a reference row if it has none yet, so percentages have
- *  something to be stated against. Picks the heaviest flour, else the heaviest
- *  row — the same rule the seed uses. */
 function ensureReference(): void {
   if (formula.ingredients.some((item) => item.is_reference)) return;
-  const reference = chooseReference(formula.ingredients);
-  if (reference) reference.is_reference = true;
+  const referenceRow = chooseReference(formula.ingredients);
+  if (referenceRow) referenceRow.is_reference = true;
 }
 
-/** Weights mode: the weights are authoritative, so restate the ratio from them. */
 async function syncFromWeights(): Promise<void> {
-  // A seed that could not weigh anything leaves no reference; once the cook
-  // supplies weights there is finally one to choose.
   ensureReference();
   percentagesFromWeights(formula.ingredients);
   const total = formula.ingredients.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0);
@@ -168,12 +235,13 @@ async function setMode(next: Mode): Promise<void> {
   await changed();
 }
 
+async function setScaleMode(next: ScaleMode): Promise<void> {
+  scaleMode.value = next;
+  await changed();
+}
+
 async function makeReference(item: FormulaIngredient): Promise<void> {
   formula.ingredients.forEach((row) => (row.is_reference = row.id === item.id));
-  // Percentages are stated against the reference at 100%, so moving it restates
-  // them. Prefer the weights when every row has one; otherwise rescale the
-  // existing percentages so the new reference reads 100%. With neither to go on
-  // (a formula with no weights yet), simply define the reference as 100%.
   if (formula.ingredients.every((row) => row.mass_grams != null)) {
     percentagesFromWeights(formula.ingredients);
   } else if (item.percentage && item.percentage > 0) {
@@ -187,8 +255,6 @@ async function makeReference(item: FormulaIngredient): Promise<void> {
   await changed();
 }
 
-/** Apply a role to a row, clearing the flags of whatever it was before so the
- *  three drivers (flour flag, water fraction, `role` property) stay in sync. */
 async function setRole(item: FormulaIngredient, role: Role): Promise<void> {
   item.is_flour = role === "flour";
   item.water_fraction = role === "liquid" ? 1 : 0;
@@ -222,8 +288,6 @@ function add(): void {
 
 async function remove(index: number): Promise<void> {
   const [dropped] = formula.ingredients.splice(index, 1);
-  // Every percentage is stated against the reference, so losing it would blank
-  // the whole formula. Hand the role to the heaviest row still standing.
   if (dropped?.is_reference && formula.ingredients.length) {
     const heaviest = formula.ingredients.reduce((best, item) =>
       (grams(item) ?? 0) > (grams(best) ?? 0) ? item : best,
@@ -240,24 +304,66 @@ async function reseed(): Promise<void> {
     props.recipeTitle ?? "",
     props.resources ?? [],
   );
-  // Keep the saved formula's identity so reseeding updates it rather than
-  // orphaning the old row.
-  Object.assign(formula, { ...seeded, id: formula.id });
+  Object.assign(formula, {
+    ...seeded,
+    id: formula.id,
+    symbol: formula.symbol || "dough",
+  });
   mode.value = "percent";
   await calculate();
   status.value = `Filled in ${weighedCount(formula)} of ${formula.ingredients.length} weights from the recipe.`;
 }
 
-async function save(): Promise<void> {
+async function applyToRecipe(): Promise<void> {
+  if (!props.source) {
+    error.value = "No recipe source to update.";
+    return;
+  }
+  await calculate();
+  const mass = resolvedTargetMass() ?? result.value?.total_mass_grams;
+  if (mass) {
+    formula.properties = {
+      ...formula.properties,
+      target: `${Math.round(mass)} g`,
+    };
+  }
   try {
-    await api.saveFormula(formula);
-    status.value = "Saved.";
+    const next = applyFormulaToSource(props.source, { ...formula }, result.value, {
+      pieces: scaleMode.value === "pieces" ? pieceCount.value : null,
+      pieceMassGrams: scaleMode.value === "pieces" ? pieceMassGrams.value : null,
+    });
+    emit("update:source", next);
+    status.value = "Applied to recipe.";
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause);
   }
 }
 
-// --- Bread-specific helpers, kept out of the way until asked for -----------
+function loadFromUi(ui: UiFormula): void {
+  Object.assign(formula, formulaFromUi(ui, props.recipeId, props.resources));
+  fillMissingIngredientNames();
+  const target = parseMassGrams(ui.target);
+  if (target) targetMass.value = Math.round(target);
+  if (ui.pieces != null && ui.pieces > 0) {
+    scaleMode.value = "pieces";
+    pieceCount.value = ui.pieces;
+  }
+  const pieceMass = parseMassGrams(ui.pieceMass);
+  if (pieceMass) pieceMassGrams.value = pieceMass;
+  if (ui.doughDensity != null) doughDensity.value = ui.doughDensity;
+  if (ui.panDiameter) {
+    const match = ui.panDiameter.match(/([0-9]+(?:\.[0-9]+)?)/);
+    if (match) {
+      panDiameterCm.value = Number(match[1]);
+      scaleMode.value = "pan";
+    }
+  }
+  if (ui.panDepth) {
+    const match = ui.panDepth.match(/([0-9]+(?:\.[0-9]+)?)/);
+    if (match) panDepthCm.value = Number(match[1]);
+  }
+}
+
 const prefermentKind = ref("poolish");
 const prefermentFlourPct = ref(20);
 const prefermentHydration = ref(100);
@@ -294,10 +400,9 @@ async function computeWaterTemp(): Promise<void> {
 }
 
 onMounted(async () => {
-  const existing = await api.listRecipeFormulas(props.recipeId);
-  if (existing[0]) {
-    Object.assign(formula, existing[0]);
-    fillMissingIngredientNames();
+  const fromSource = props.formulas?.[0];
+  if (fromSource) {
+    loadFromUi(fromSource);
     await calculate();
   } else if ((props.resources ?? []).some((resource) => resource.kind === "ingredient")) {
     await reseed();
@@ -305,6 +410,15 @@ onMounted(async () => {
   }
   loading.value = false;
 });
+
+watch(
+  () => props.formulas?.[0]?.id,
+  async (id, previous) => {
+    if (!id || id === previous || !props.formulas?.[0]) return;
+    loadFromUi(props.formulas[0]);
+    await calculate();
+  },
+);
 </script>
 
 <template>
@@ -323,7 +437,14 @@ onMounted(async () => {
         >
           <RotateCcw :size="14" /> Reset
         </button>
-        <button class="primary" @click="save"><Save :size="15" /> Save</button>
+        <button
+          class="primary"
+          :disabled="!source"
+          title="Write formula and scaled amounts into the recipe"
+          @click="applyToRecipe"
+        >
+          <Save :size="15" /> Apply to recipe
+        </button>
       </div>
     </header>
 
@@ -362,13 +483,163 @@ onMounted(async () => {
         <button :class="{ on: mode === 'weight' }" @click="setMode('weight')">From weights</button>
       </div>
 
-      <label v-if="mode === 'percent'" class="batch">
-        Batch size
-        <span class="with-unit">
-          <input v-model.number="targetMass" type="number" min="1" step="10" @change="changed" />
-          <em>g</em>
-        </span>
-      </label>
+      <div v-if="mode === 'percent'" class="scale">
+        <div class="mode scale-mode">
+          <button :class="{ on: scaleMode === 'mass' }" @click="setScaleMode('mass')">Mass</button>
+          <button :class="{ on: scaleMode === 'flour' }" @click="setScaleMode('flour')">
+            Flour
+          </button>
+          <button :class="{ on: scaleMode === 'pieces' }" @click="setScaleMode('pieces')">
+            Pieces
+          </button>
+          <button :class="{ on: scaleMode === 'servings' }" @click="setScaleMode('servings')">
+            Servings
+          </button>
+          <button :class="{ on: scaleMode === 'pan' }" @click="setScaleMode('pan')">Pan</button>
+          <button
+            :class="{ on: scaleMode === 'concentration' }"
+            @click="setScaleMode('concentration')"
+          >
+            Conc.
+          </button>
+        </div>
+        <label v-if="scaleMode === 'mass'" class="batch">
+          Batch size
+          <span class="with-unit">
+            <input v-model.number="targetMass" type="number" min="1" step="10" @change="changed" />
+            <em>g</em>
+          </span>
+        </label>
+        <label v-else-if="scaleMode === 'flour'" class="batch">
+          Flour mass
+          <span class="with-unit">
+            <input v-model.number="flourMass" type="number" min="1" step="10" @change="changed" />
+            <em>g</em>
+          </span>
+        </label>
+        <div v-else-if="scaleMode === 'pieces'" class="batch-grid">
+          <label class="batch"
+            >Pieces
+            <input v-model.number="pieceCount" type="number" min="1" step="1" @change="changed" />
+          </label>
+          <label class="batch"
+            >Each
+            <span class="with-unit">
+              <input
+                v-model.number="pieceMassGrams"
+                type="number"
+                min="1"
+                step="1"
+                @change="changed"
+              />
+              <em>g</em>
+            </span>
+          </label>
+        </div>
+        <div v-else-if="scaleMode === 'servings'" class="batch-grid">
+          <label class="batch"
+            >Servings
+            <input v-model.number="servingCount" type="number" min="1" step="1" @change="changed" />
+          </label>
+          <label class="batch"
+            >Each
+            <span class="with-unit">
+              <input
+                v-model.number="gramsPerServing"
+                type="number"
+                min="1"
+                step="1"
+                @change="changed"
+              />
+              <em>g</em>
+            </span>
+          </label>
+        </div>
+        <div v-else-if="scaleMode === 'concentration'" class="batch-grid">
+          <label class="batch"
+            >Solute
+            <select v-model="concentrationSolute" @change="changed">
+              <option v-for="item in formula.ingredients" :key="item.id" :value="item.symbol">
+                {{ ingredientName(item) }}
+              </option>
+            </select>
+          </label>
+          <label class="batch"
+            >% of batch
+            <input
+              v-model.number="concentrationPercent"
+              type="number"
+              min="0.1"
+              max="99"
+              step="0.1"
+              @change="changed"
+            />
+          </label>
+        </div>
+        <div v-else class="batch-grid">
+          <label class="batch"
+            >Diameter
+            <span class="with-unit">
+              <input
+                v-model.number="panDiameterCm"
+                type="number"
+                min="1"
+                step="0.5"
+                @change="changed"
+              />
+              <em>cm</em>
+            </span>
+          </label>
+          <label class="batch"
+            >Thickness
+            <span class="with-unit">
+              <input
+                v-model.number="panDepthCm"
+                type="number"
+                min="0.1"
+                step="0.1"
+                @change="changed"
+              />
+              <em>cm</em>
+            </span>
+          </label>
+          <label class="batch"
+            >Or volume
+            <span class="with-unit">
+              <input
+                v-model.number="panVolumeMl"
+                type="number"
+                min="1"
+                step="10"
+                @change="changed"
+              />
+              <em>ml</em>
+            </span>
+          </label>
+        </div>
+        <p class="batch-readout">
+          Target <strong>{{ decimal(resolvedTargetMass()) }} g</strong>
+        </p>
+        <div class="batch-grid rounding-row">
+          <label class="batch"
+            >Round to
+            <span class="with-unit">
+              <input
+                v-model.number="roundIncrement"
+                type="number"
+                min="0"
+                step="0.1"
+                @change="changed"
+              />
+              <em>g</em>
+            </span>
+          </label>
+          <label class="batch mins-toggle">
+            <input v-model="applyMins" type="checkbox" @change="changed" />
+            Enforce minimums
+          </label>
+        </div>
+      </div>
       <p v-else class="batch-readout">
         Batch totals <strong>{{ decimal(result?.total_mass_grams) }} g</strong>
       </p>
@@ -498,6 +769,8 @@ onMounted(async () => {
             <option value="sponge">Sponge</option>
             <option value="soaker">Soaker</option>
             <option value="tangzhong">Tangzhong</option>
+            <option value="scald">Scald</option>
+            <option value="old_dough">Old dough</option>
           </select>
         </label>
         <label>Flour <input v-model.number="prefermentFlourPct" type="number" /></label>
@@ -605,6 +878,19 @@ onMounted(async () => {
   box-shadow: 0 1px 2px rgb(31 41 37 / 12%);
 }
 
+.scale {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.scale-mode {
+  margin-bottom: 0;
+}
+.batch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
 .batch {
   display: flex;
   align-items: center;

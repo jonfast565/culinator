@@ -21,12 +21,16 @@ import {
   RECIPE_TYPE_SCALE_LABELS,
   type RecipeTypeScale,
 } from "../../features/reading/recipeTypeScale";
+import { MENU_BAR_ACCELERATOR, formatAccelerator } from "../appMenuModel";
+import { isTauri } from "../../services/platform";
 
 defineProps<{ open: boolean }>();
 const emit = defineEmits<{ close: [] }>();
 
 const units = inject(UNIT_DISPLAY_KEY, null);
 const viewSettings = inject(VIEW_SETTINGS_KEY, null);
+const nativeMenuAvailable = isTauri();
+const menuBarHint = formatAccelerator(MENU_BAR_ACCELERATOR);
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") emit("close");
@@ -37,6 +41,10 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKeydown));
 
 function onPagerToggle(event: Event): void {
   viewSettings!.showIndexCardPager.value = (event.target as HTMLInputElement).checked;
+}
+
+function onMenuBarToggle(event: Event): void {
+  viewSettings!.setShowMenuBar((event.target as HTMLInputElement).checked);
 }
 
 function selectValue<T extends string>(
@@ -111,12 +119,35 @@ function selectValue<T extends string>(
                 "
               >
                 <option v-for="places in DECIMAL_PLACES_OPTIONS" :key="places" :value="places">
-                  {{ places === 0 ? "Whole numbers" : `${places} decimal place${places > 1 ? "s" : ""}` }}
+                  {{
+                    places === 0
+                      ? "Whole numbers"
+                      : `${places} decimal place${places > 1 ? "s" : ""}`
+                  }}
                 </option>
               </select>
             </label>
             <p class="field-hint">
               Applies to decimal amounts and to fraction fallbacks (converted metric weights, etc.).
+            </p>
+          </fieldset>
+
+          <fieldset>
+            <legend>Window</legend>
+            <label class="field checkbox">
+              <input
+                type="checkbox"
+                :checked="viewSettings.showMenuBar.value"
+                @change="onMenuBarToggle"
+              />
+              <span>Show the in-app menu bar</span>
+            </label>
+            <p class="field-hint">
+              {{
+                nativeMenuAvailable
+                  ? "The system menu bar carries the same commands."
+                  : `Toggle any time with ${menuBarHint}.`
+              }}
             </p>
           </fieldset>
 
@@ -178,11 +209,7 @@ function selectValue<T extends string>(
                 :value="viewSettings.indexCardMargin.value"
                 @change="selectValue<IndexCardMargin>($event, viewSettings.setIndexCardMargin)"
               >
-                <option
-                  v-for="(name, id) in INDEX_CARD_MARGIN_NAMES"
-                  :key="id"
-                  :value="id"
-                >
+                <option v-for="(name, id) in INDEX_CARD_MARGIN_NAMES" :key="id" :value="id">
                   {{ name }}
                 </option>
               </select>

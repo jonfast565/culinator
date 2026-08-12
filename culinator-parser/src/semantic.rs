@@ -968,8 +968,16 @@ impl Parser {
                         .push(TypeRef::named(title_case(&self.ident()?)));
                 }
                 let ip = self.block_properties()?;
-                let pct = ip.get("percentage").and_then(value_number);
-                let mass = ip.get("mass").and_then(quantity_grams);
+                // Builder historically wrote `baker 80%`; LANGUAGE.md uses
+                // `percentage`. Accept either so both surfaces feed the solver.
+                let pct = ip
+                    .get("percentage")
+                    .or_else(|| ip.get("baker"))
+                    .and_then(value_number);
+                let mass = ip
+                    .get("mass")
+                    .or_else(|| ip.get("quantity"))
+                    .and_then(quantity_grams);
                 let mode = match ip.get("basis") {
                     Some(Value::Symbol(x)) if x == "total" => FormulaBasis::PercentOfTotal,
                     Some(Value::Symbol(x)) if x == "absolute" => FormulaBasis::AbsoluteMass,

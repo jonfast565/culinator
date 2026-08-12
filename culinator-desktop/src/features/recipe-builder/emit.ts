@@ -352,7 +352,7 @@ export function emitFormula(draft: FormulaDraft, indent = "    "): string {
       : `ingredient ${ingredient.symbol}`;
     const fields: string[] = [];
     if (ingredient.stage) fields.push(emitStatement("stage", ingredient.stage));
-    if (ingredient.baker) fields.push(emitStatement("baker", ingredient.baker));
+    if (ingredient.baker) fields.push(emitStatement("percentage", ingredient.baker));
     body.push(
       fields.length
         ? `${inner}${head} {\n${fields.map((line) => `${inner}    ${line}`).join("\n")}\n${inner}}`

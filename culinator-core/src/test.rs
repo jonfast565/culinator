@@ -142,11 +142,16 @@ fn soaker_build_stage_omits_culture() {
 
 #[test]
 fn preferment_kind_parse_is_case_insensitive() {
+    assert!(PrefermentKind::parse("poolish").is_ok());
     assert_eq!(
-        PrefermentKind::parse("Tangzhong").expect("parse"),
-        PrefermentKind::Tangzhong
+        PrefermentKind::parse("old_dough").expect("parse"),
+        PrefermentKind::OldDough
     );
-    assert!(PrefermentKind::parse("old_dough").is_err());
+    assert_eq!(
+        PrefermentKind::parse("scald").expect("parse"),
+        PrefermentKind::Scald
+    );
+    assert!(PrefermentKind::parse("unknown_kind").is_err());
 }
 
 #[test]
@@ -196,6 +201,55 @@ fn solves_formula_with_preferment_stage_and_role_metrics() {
 fn desired_dough_temperature_without_preferment() {
     let water = desired_dough_temperature(78.0, 24.0, 70.0, 74.0, None);
     assert!((water - 66.0).abs() < 0.001);
+}
+
+#[test]
+fn solves_for_piece_count_using_piece_mass() {
+    let mut props = BTreeMap::new();
+    props.insert(
+        "piece_mass".into(),
+        Value::Quantity(Quantity {
+            value: 310.0,
+            unit: "g".into(),
+            dimension: Dimension::Mass,
+        }),
+    );
+    let formula = Formula {
+        id: Uuid::new_v4(),
+        recipe_id: None,
+        symbol: "dough".into(),
+        name: "Dough".into(),
+        basis: FormulaBasis::ReferencePercent,
+        ingredients: vec![
+            ingredient("flour", 100.0, true, true, 0.0),
+            ingredient("water", 50.0, false, false, 1.0),
+        ],
+        properties: props,
+    };
+    let result = formula.solve_for_pieces(2.0).expect("solves");
+    assert!((result.target_mass_grams - 620.0).abs() < 0.001);
+    // 100% flour + 50% water → flour is 2/3 of the batch.
+    assert!((result.reference_mass_grams - (620.0 * 100.0 / 150.0)).abs() < 0.1);
+    assert!((result.hydration_percent - 50.0).abs() < 0.1);
+}
+
+#[test]
+fn solves_for_round_pan_volume() {
+    let formula = Formula {
+        id: Uuid::new_v4(),
+        recipe_id: None,
+        symbol: "dough".into(),
+        name: "Dough".into(),
+        basis: FormulaBasis::ReferencePercent,
+        ingredients: vec![
+            ingredient("flour", 100.0, true, true, 0.0),
+            ingredient("water", 60.0, false, false, 1.0),
+        ],
+        properties: BTreeMap::new(),
+    };
+    // 30 cm pizza, 0.4 cm thick, density 1.1 → π·15²·0.4·1.1 ≈ 311 g
+    let result = formula.solve_for_round_pan(30.0, 0.4).expect("solves");
+    assert!((result.target_mass_grams - 311.0).abs() < 2.0);
 }
 
 #[test]

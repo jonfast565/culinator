@@ -369,7 +369,8 @@ describe("setDeclarationKeyword", () => {
     const next = setDeclarationKeyword(source, find(node, "flour"), "material");
 
     expect(next).toContain("material flour measured by mass {");
-    expect(next).not.toContain("ingredient flour");
+    // Formula blocks may still declare `ingredient flour`; only the recipe resource flips.
+    expect(next).toMatch(/^\s{4}material flour measured by mass \{/m);
     const model = parseUiModel(next);
     expect(model.diagnostics).toHaveLength(0);
     expect(model.resources.find((r) => r.symbol === "flour")?.kind).toBe("material");
@@ -398,8 +399,8 @@ describe("setMeasuredBy", () => {
     const source = seed("pizza_dough.cg");
     const { node } = recipe(source);
     const next = setMeasuredBy(source, find(node, "flour"), "");
-    expect(next).toContain("ingredient flour {");
-    expect(next).not.toContain("ingredient flour measured by");
+    expect(next).toMatch(/^\s{4}ingredient flour \{/m);
+    expect(next).not.toMatch(/^\s{4}ingredient flour measured by/m);
     expect(parseUiModel(next).diagnostics).toHaveLength(0);
   });
 });

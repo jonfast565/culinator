@@ -145,18 +145,20 @@ pub trait SensorStream { /* typed observations */ }
 
 ## 7. Formula and scaling enhancements
 
-**Status (2026-07):** Shipped preferment builders (poolish/biga/levain/sponge/soaker/tangzhong), extended bakery metrics (salt/fat/sugar/effective hydration), and desired-dough-temperature water calculation in core + formulas UI.
+**Status (2026-08):** Shipped preferment builders (poolish/biga/levain/sponge/soaker/tangzhong/**scald**/**old dough**), bakery metrics (salt/fat/sugar/effective hydration/PFF), DDT water calc, piece/pan/serving/concentration/flour-mass constraints, rounding + minimum practical masses, named reference groups with simultaneous bases, and formula inherit/compare. Desktop calculator applies constraints into the recipe `.cg` formula block.
 
-- Arbitrary reference groups beyond flour.
-- Multiple simultaneous bases.
-- Piece count, pan area, pan volume, concentration, molarity-like food ratios, and serving-relative formulas.
-- Preferments, levains, soakers, scalds, tangzhong, poolish, biga, and old-dough models.
-- Desired dough temperature and water-temperature calculations.
-- Salt, sugar, fat, enrichment, inoculation, prefermented flour, and effective hydration metrics.
-- Constraint solving when any supported variable is supplied.
-- Rounding policies based on available scale precision.
-- Minimum practical ingredient quantities and staged premixes.
-- Formula inheritance and version comparison.
+- [x] Arbitrary reference groups beyond flour (`reference_group` property).
+- [x] Multiple simultaneous bases (`simultaneous_bases_from_weights`).
+- [x] Piece count, pan area, pan volume, concentration, and serving-relative formulas.
+- [x] Preferments, levains, soakers, scalds, tangzhong, poolish, biga, and old-dough models.
+- [x] Desired dough temperature and water-temperature calculations.
+- [x] Salt, sugar, fat, enrichment, inoculation, prefermented flour, and effective hydration metrics.
+- [x] Constraint solving when any supported variable is supplied (`FormulaConstraint` / `formulas.solve`).
+- [x] Rounding policies based on available scale precision.
+- [x] Minimum practical ingredient quantities (`min_mass` / enforce minimums).
+- [x] Formula inheritance and version comparison (`inherit_from` / `compare_versions`).
+
+Still light / follow-ups: staged premixes as first-class DSL blocks; molarity-like ratios beyond % of total; richer enrichment metric beyond fat/sugar/salt.
 
 ## 8. Unit and physical-property system
 

@@ -7,11 +7,8 @@ import {
   cycleIndexCardMargin,
   isIndexCardMargin,
 } from "../indexCardMargin";
-import {
-  type RecipeTypeScale,
-  cycleRecipeTypeScale,
-  isRecipeTypeScale,
-} from "../recipeTypeScale";
+import { type RecipeTypeScale, cycleRecipeTypeScale, isRecipeTypeScale } from "../recipeTypeScale";
+import { isTauri } from "../../../services/platform";
 
 /**
  * How the reading page places ingredients and equipment.
@@ -91,6 +88,10 @@ export interface ViewSettingsContext {
   recipeAnnotationScale: Ref<RecipeTypeScale>;
   cycleRecipeAnnotationScale: () => void;
   setRecipeAnnotationScale: (scale: RecipeTypeScale) => void;
+  /** Show the in-app menu bar (off by default in Tauri, which has a system menu). */
+  showMenuBar: Ref<boolean>;
+  toggleMenuBar: () => void;
+  setShowMenuBar: (show: boolean) => void;
 }
 
 export type { RecipeTypeScale, IndexCardMargin };
@@ -109,6 +110,7 @@ const INDEX_CARD_PAGER_KEY = "culinator.showIndexCardPager";
 const HEADER_SCALE_KEY = "culinator.recipeHeaderScale";
 const BODY_SCALE_KEY = "culinator.recipeBodyScale";
 const ANNOTATION_SCALE_KEY = "culinator.recipeAnnotationScale";
+const MENU_BAR_KEY = "culinator.showMenuBar";
 
 function readStoredPlacement(): MisePlacement {
   try {
@@ -207,6 +209,22 @@ function readStoredShowIndexCardPager(): boolean {
     // ignore
   }
   return true;
+}
+
+/**
+ * The desktop shell puts the same commands in the system menu, so the in-app
+ * menu bar starts hidden there and stays visible in the browser, where it is
+ * the only menu the app has.
+ */
+function readStoredShowMenuBar(): boolean {
+  try {
+    const stored = window.localStorage.getItem(MENU_BAR_KEY);
+    if (stored === "false") return false;
+    if (stored === "true") return true;
+  } catch {
+    // ignore
+  }
+  return !isTauri();
 }
 
 function readStoredTypeScale(key: string): RecipeTypeScale {
@@ -363,6 +381,16 @@ export function useViewSettings(): ViewSettingsContext {
     if (isRecipeTypeScale(scale)) recipeAnnotationScale.value = scale;
   }
 
+  const showMenuBar = ref(readStoredShowMenuBar());
+  watch(showMenuBar, (value) => persist(MENU_BAR_KEY, String(value)));
+  function toggleMenuBar(): void {
+    showMenuBar.value = !showMenuBar.value;
+  }
+
+  function setShowMenuBar(show: boolean): void {
+    showMenuBar.value = show;
+  }
+
   return {
     misePlacement,
     toggleMisePlacement,
@@ -394,5 +422,8 @@ export function useViewSettings(): ViewSettingsContext {
     recipeAnnotationScale,
     cycleRecipeAnnotationScale,
     setRecipeAnnotationScale,
+    showMenuBar,
+    toggleMenuBar,
+    setShowMenuBar,
   };
 }

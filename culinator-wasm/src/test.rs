@@ -509,3 +509,13 @@ recipe demo { title "Demo";
         hybrid.sections[0].steps[0].text
     );
 }
+
+#[test]
+fn pizza_dough_projects_formulas() {
+    let source = include_str!("../../culinator-service/src/seed/pizza_dough.cg");
+    let model = parse_ui_model_native(source);
+    assert!(model.diagnostics.is_empty(), "{:?}", model.diagnostics);
+    assert!(!model.formulas.is_empty(), "expected formulas on pizza dough");
+    let json = serde_json::to_value(&model).unwrap();
+    assert!(json.get("formulas").is_some(), "json missing formulas: {}", json);
+}

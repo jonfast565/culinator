@@ -2,12 +2,11 @@
 import type { IngredientGroup } from "../../recipe-editor/narrative";
 import IngredientListRow from "./IngredientListRow.vue";
 
-// Items arrive already rendered by the shared narrative generator, so there is
-// nothing to format here.
 defineProps<{
   groups: IngredientGroup[];
   selectable?: boolean;
   highlightedSymbol?: string | null;
+  bakerBySymbol?: Record<string, number>;
 }>();
 const emit = defineEmits<{ select: [symbol: string] }>();
 </script>
@@ -23,6 +22,7 @@ const emit = defineEmits<{ select: [symbol: string] }>();
           :parts="item"
           :selectable="selectable"
           :highlighted="highlightedSymbol === item.symbol"
+          :baker-percent="item.symbol ? bakerBySymbol?.[item.symbol] : null"
           @select="emit('select', $event)"
         />
       </ul>

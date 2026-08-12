@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/* global PointerEvent, HTMLElement, KeyboardEvent, DOMRect, EventTarget, navigator */
+/* global PointerEvent, HTMLElement, KeyboardEvent, DOMRect, EventTarget */
 import { computed, nextTick, onBeforeUnmount, onMounted, provide, ref, watch } from "vue";
 import {
   Database,
@@ -11,6 +11,7 @@ import {
   FileCode2,
   Layers,
   Hash,
+  PanelTopOpen,
   Ruler,
   Save,
   Thermometer,
@@ -40,7 +41,15 @@ import {
   VIEW_SETTINGS_KEY,
   useViewSettings,
 } from "../features/reading/composables/useViewSettings";
-import AppMenuBar, { type AppMenuAction } from "./components/AppMenuBar.vue";
+import AppMenuBar from "./components/AppMenuBar.vue";
+import {
+  type AppMenuAction,
+  MENU_BAR_ACCELERATOR,
+  buildAppMenus,
+  formatAccelerator,
+} from "./appMenuModel";
+import { useNativeMenu } from "./useNativeMenu";
+import { isMacPlatform } from "../services/platform";
 import AppSettingsDialog from "./components/AppSettingsDialog.vue";
 import { printBook } from "../features/bookshelf/printBook";
 import { printRecipeCards } from "../features/bookshelf/printRecipeCards";
@@ -230,7 +239,15 @@ function onGlobalKeydown(event: KeyboardEvent): void {
     return;
   }
 
-  const mod = event.metaKey || event.ctrlKey;
+  // Inside the desktop shell these are the system menu's accelerators: the menu
+  // runs the command, so handling them here as well would run it twice.
+  const mod = (event.metaKey || event.ctrlKey) && !nativeMenu.active;
+
+  if (mod && event.shiftKey && event.key.toLowerCase() === "m") {
+    event.preventDefault();
+    viewSettings.toggleMenuBar();
+    return;
+  }
 
   if (mod && event.key.toLowerCase() === "s" && library.selectedRecipe.value) {
     event.preventDefault();
@@ -399,8 +416,7 @@ async function importFromFile(): Promise<void> {
 async function convertRecipeUnits(): Promise<void> {
   if (!library.selectedRecipe.value) return;
   const massVolume = unitDisplay.unitSystem.value === "metric" ? "metric" : "US customary";
-  const tempScale =
-    unitDisplay.temperatureScale.value === "celsius" ? "Celsius" : "Fahrenheit";
+  const tempScale = unitDisplay.temperatureScale.value === "celsius" ? "Celsius" : "Fahrenheit";
   if (
     !(await dialog.confirm(
       `Convert convertible ingredient quantities to ${massVolume} units and step temperatures to ${tempScale}? Count-based measures (cloves, sticks, etc.) will stay unchanged.`,
@@ -469,7 +485,7 @@ function jumpToFirstError(): void {
 }
 
 function modKey(): string {
-  return navigator.platform.toLowerCase().includes("mac") ? "⌘" : "Ctrl+";
+  return isMacPlatform() ? "⌘" : "Ctrl+";
 }
 function openTool(tool: InspectorTabId): void {
   if (!library.selectedRecipe.value) return;
@@ -587,6 +603,9 @@ async function handleMenuAction(action: AppMenuAction): Promise<void> {
     case "toggle-index-card-pager":
       viewSettings.toggleIndexCardPager();
       break;
+    case "toggle-menu-bar":
+      viewSettings.toggleMenuBar();
+      break;
     case "open-settings":
       settingsOpen.value = true;
       break;
@@ -617,35 +636,62 @@ const saveBlocked = computed(
     editor.dirty.value &&
     (editor.validation.value?.diagnostics.some((item) => item.severity === "error") ?? false),
 );
+
+const appMenus = computed(() =>
+  buildAppMenus({
+    view: nav.view.value,
+    hasRecipe: Boolean(activeRecipe.value),
+    dirty: editor.dirty.value,
+    saving: editor.saving.value,
+    unitSystem: unitDisplay.unitSystem.value,
+    temperatureScale: unitDisplay.temperatureScale.value,
+    misePlacement: viewSettings.misePlacement.value,
+    numberStyle: viewSettings.numberStyle.value,
+    textSizeLabel: textSizeLabel.value,
+    bookLayout: viewSettings.bookLayout.value,
+    indexCardFormat: viewSettings.indexCardFormat.value,
+    recipeHeaderTypeLabel: recipeHeaderTypeLabel.value,
+    recipeBodyTypeLabel: recipeBodyTypeLabel.value,
+    recipeAnnotationTypeLabel: recipeAnnotationTypeLabel.value,
+    indexCardMarginLabel: indexCardMarginLabel.value,
+    showIndexCardPager: viewSettings.showIndexCardPager.value,
+    showMenuBar: viewSettings.showMenuBar.value,
+    onBookView: nav.view.value === "book",
+    onRecipeView:
+      Boolean(library.selectedRecipe.value) &&
+      ["reading", "editing", "building"].includes(nav.view.value),
+  }),
+);
+
+// In the desktop shell the same menu is mirrored onto the system menu bar,
+// which is why the in-app bar can default to hidden there.
+const nativeMenu = useNativeMenu(appMenus, (action) => void handleMenuAction(action));
+const menuBarHint = computed(() => formatAccelerator(MENU_BAR_ACCELERATOR));
 </script>
 
 <template>
   <div class="app-root">
     <AppMenuBar
+      v-if="viewSettings.showMenuBar.value"
+      :menus="appMenus"
       :view="nav.view.value"
-      :has-recipe="Boolean(activeRecipe)"
       :recipe-title="activeRecipe ? liveRecipeTitle : undefined"
       :dirty="editor.dirty.value"
-      :saving="editor.saving.value"
-      :unit-system="unitDisplay.unitSystem.value"
-      :temperature-scale="unitDisplay.temperatureScale.value"
-      :mise-placement="viewSettings.misePlacement.value"
-      :number-style="viewSettings.numberStyle.value"
-      :text-size-label="textSizeLabel"
-      :book-layout="viewSettings.bookLayout.value"
-      :index-card-format="viewSettings.indexCardFormat.value"
-      :recipe-header-type-label="recipeHeaderTypeLabel"
-      :recipe-body-type-label="recipeBodyTypeLabel"
-      :recipe-annotation-type-label="recipeAnnotationTypeLabel"
-      :index-card-margin-label="indexCardMarginLabel"
-      :show-index-card-pager="viewSettings.showIndexCardPager.value"
-      :on-book-view="nav.view.value === 'book'"
-      :on-recipe-view="
-        Boolean(library.selectedRecipe.value) &&
-        ['reading', 'editing', 'building'].includes(nav.view.value)
-      "
       @action="handleMenuAction"
     />
+    <!--
+      With the bar hidden the browser has no other way back to it; the desktop
+      shell does — its system menu carries the same “Show menu bar” item.
+    -->
+    <button
+      v-else-if="!nativeMenu.active"
+      class="menu-bar-reveal"
+      :title="`Show menu bar (${menuBarHint})`"
+      aria-label="Show menu bar"
+      @click="viewSettings.toggleMenuBar()"
+    >
+      <PanelTopOpen :size="12" />
+    </button>
     <AppSettingsDialog :open="settingsOpen" @close="settingsOpen = false" />
     <Bookshelf
       v-if="nav.view.value === 'shelf'"
@@ -699,11 +745,7 @@ const saveBlocked = computed(
           /></small>
         </div>
         <div class="reading-bar-actions">
-          <IndexCardControls
-            v-if="!kitchenMode"
-            compact
-            :recipe-title="printRecipeDocumentTitle"
-          />
+          <IndexCardControls v-if="!kitchenMode" compact :recipe-title="printRecipeDocumentTitle" />
           <button
             v-if="!kitchenMode"
             class="ghost compact"
@@ -920,6 +962,7 @@ const saveBlocked = computed(
             @update:source="editor.source.value = $event"
             @edit-source="editSource"
             @focus-symbol="highlightedSymbol = $event"
+            @open-formula-tool="openTool('formula')"
           />
           <EditDrawer
             v-else
@@ -978,9 +1021,41 @@ const saveBlocked = computed(
   display: flex;
   flex-direction: column;
 }
-.app-root > :not(.app-menu-bar) {
+.app-root > :not(.app-menu-bar):not(.menu-bar-reveal) {
   flex: 1;
   min-height: 0;
+}
+/* A pull-tab at the top edge: the only way back to a hidden menu bar. */
+.menu-bar-reveal {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  width: 46px;
+  height: 15px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0 0 8px 8px;
+  background: #17251e;
+  color: #cfe0d3;
+  opacity: 0.4;
+  cursor: pointer;
+  transition:
+    opacity 0.12s ease,
+    height 0.12s ease;
+}
+.menu-bar-reveal:hover,
+.menu-bar-reveal:focus-visible {
+  opacity: 1;
+  height: 22px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-bar-reveal {
+    transition: none;
+  }
 }
 .workspace {
   flex: 1;

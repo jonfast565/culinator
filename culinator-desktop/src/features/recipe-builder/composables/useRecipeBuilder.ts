@@ -956,7 +956,7 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
           .map((child) => ({
             symbol: child.symbol ?? "",
             baker: (() => {
-              const baker = findStatement(child, "baker");
+              const baker = findStatement(child, "baker") ?? findStatement(child, "percentage");
               return baker ? rawValue(source.value, baker) : "";
             })(),
             stage: (() => {
@@ -984,10 +984,16 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
   }
 
   function setFormulaIngredientBaker(formula: string, ingredient: string, value: string): void {
-    const node = formulaNode(formula)?.children.find(
-      (child) => child.keyword === "ingredient" && child.symbol === ingredient,
-    );
-    if (node) source.value = setStatement(source.value, node, "baker", value.trim());
+    const find = () =>
+      formulaNode(formula)?.children.find(
+        (child) => child.keyword === "ingredient" && child.symbol === ingredient,
+      );
+    const node = find();
+    if (!node) return;
+    const legacy = node.children.find((child) => child.keyword === "baker");
+    if (legacy) source.value = deleteDeclaration(source.value, legacy);
+    const again = find();
+    if (again) source.value = setStatement(source.value, again, "percentage", value.trim());
   }
 
   function addFormula(): string | undefined {
@@ -1016,7 +1022,7 @@ export function useRecipeBuilder(source: Ref<string>, model: Ref<UiRecipeModel>)
     if (!node) return undefined;
     const symbol = symbolize("flour", declaredSymbols(outline.value), "ingredient");
     const indent = `${node.indent}    `;
-    const decl = `${indent}ingredient ${symbol} as Ingredient<BakersPercent> {\n${indent}    stage final;\n${indent}    baker 100%;\n${indent}}`;
+    const decl = `${indent}ingredient ${symbol} as Ingredient<BakersPercent> {\n${indent}    stage final;\n${indent}    percentage 100%;\n${indent}}`;
     source.value = insertDeclaration(source.value, node, decl, "ingredient");
     return symbol;
   }

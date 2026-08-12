@@ -8,7 +8,9 @@ use uuid::Uuid;
 
 use crate::{
     error::ApiError,
-    models::{FormulaCalculationRequest, FormulaRunRequest, PercentageRequest},
+    models::{
+        FormulaCalculationRequest, FormulaRunRequest, FormulaSolveRequest, PercentageRequest,
+    },
     state::ServiceState,
 };
 
@@ -20,6 +22,17 @@ pub async fn calculate(
         state
             .formulas()
             .calculate(&request.formula, request.target_mass_grams)?,
+    ))
+}
+
+pub async fn solve(
+    State(state): State<ServiceState>,
+    Json(request): Json<FormulaSolveRequest>,
+) -> Result<Json<FormulaResult>, ApiError> {
+    Ok(Json(
+        state
+            .formulas()
+            .solve(&request.formula, &request.constraint)?,
     ))
 }
 

@@ -38,6 +38,7 @@ const emit = defineEmits<{
   "update:source": [value: string];
   "edit-source": [];
   "focus-symbol": [symbol: string];
+  "open-formula-tool": [];
 }>();
 
 const sourceRef = computed({
@@ -372,6 +373,7 @@ defineExpose({ focusSymbol });
           @remove="removeFormula"
           @add-ingredient="addFormulaIngredient"
           @remove-ingredient="removeFormulaIngredient"
+          @open-tool="emit('open-formula-tool')"
         />
 
         <section v-if="showGraph" id="builder-workflow" class="panel builder-section workflow-dock">
