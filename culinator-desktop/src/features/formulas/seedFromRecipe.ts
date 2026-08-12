@@ -23,24 +23,31 @@ function matches(resource: UiResource, words: string[]): boolean {
 }
 
 /**
- * The grams a declared quantity is worth, or `null` when it cannot be known
- * without a density.
+ * The grams a declared quantity is worth, or `null` when it cannot be known.
  *
- * Volume and count quantities deliberately return `null` rather than guessing:
- * `culinator-core` only carries densities for four ingredients, and inventing
- * the rest here would put a second, worse unit table in the frontend.
- * Conversion itself goes through `convertUnits`, which is the Rust one.
+ * Mass units convert directly. Volume units use the ingredient density table
+ * in Rust (`IngredientDensity`) via `convertUnits` — the same path nutrition
+ * uses — so "200 ml" of lukewarm water becomes 200 g instead of a blank row.
+ * Count quantities stay `null`; inventing piece weights here would guess wrong.
  */
-export async function declaredGrams(quantity: string | undefined): Promise<number | null> {
+export async function declaredGrams(
+  quantity: string | undefined,
+  ingredientHint?: string,
+): Promise<number | null> {
   if (!quantity) return null;
   const parsed = parseQuantity(quantity);
-  if (!parsed || quantityDimension(parsed.unit) !== "mass") return null;
+  if (!parsed) return null;
+  const dimension = quantityDimension(parsed.unit);
+  if (dimension !== "mass" && dimension !== "volume") return null;
+  if (dimension === "volume" && !ingredientHint?.trim()) return null;
   try {
     const converted = await convertUnits({
       value: parsed.value,
       fromUnit: parsed.unit,
       toUnit: "g",
+      ...(dimension === "volume" ? { ingredient: ingredientHint } : {}),
     });
+    if (converted.dimension !== "mass") return null;
     return Number.isFinite(converted.value) ? converted.value : null;
   } catch {
     return null;
@@ -94,9 +101,9 @@ export function percentagesFromWeights(ingredients: FormulaIngredient[]): void {
 /**
  * Build a starting formula from the recipe the inspector is showing.
  *
- * Only mass-measured ingredients arrive with a weight; volume and count
- * ingredients become rows with an empty gram field so the cook can supply the
- * weight their own flour or oil actually has.
+ * Mass-measured ingredients arrive with a weight. Volume ingredients use the
+ * shared density table when the name is known (water, oil, milk, …); otherwise
+ * the gram field stays empty so the cook can supply the weight.
  */
 export async function seedFormulaFromRecipe(
   recipeId: string,
@@ -105,7 +112,10 @@ export async function seedFormulaFromRecipe(
 ): Promise<Formula> {
   const edible = resources.filter((resource) => resource.kind === "ingredient");
   const ingredients = await Promise.all(
-    edible.map(async (resource) => draft(resource, await declaredGrams(resource.quantity))),
+    edible.map(async (resource) => {
+      const hint = resource.name || resource.symbol;
+      return draft(resource, await declaredGrams(resource.quantity, hint));
+    }),
   );
   const reference = chooseReference(ingredients);
   if (reference) reference.is_reference = true;

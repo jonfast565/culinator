@@ -72,6 +72,12 @@ fn ingredient_density_registry_resolves_builtins_and_overrides() {
     assert_eq!(registry.density_g_per_ml("milk"), Some(1.03));
     assert_eq!(registry.density_g_per_ml("olive oil"), Some(0.91));
     assert_eq!(registry.density_g_per_ml("baking powder"), Some(0.9));
+    // Descriptive names resolve via trailing-token / suffix matching.
+    assert_eq!(registry.density_g_per_ml("lukewarm water"), Some(1.0));
+    assert_eq!(
+        registry.density_g_per_ml("extra virgin olive oil"),
+        Some(0.91)
+    );
     registry.set_override("flour", 0.55);
     assert_eq!(registry.density_g_per_ml("flour"), Some(0.55));
 }

@@ -6,8 +6,14 @@
 
 import type { Formula, FormulaIngredient, FormulaResult } from "../../domain/types";
 import type { UiFormula, UiFormulaIngredient, UiResource } from "../recipe-editor/model";
-import { emitFormula, type FormulaDraft } from "../recipe-builder/emit";
-import { deleteDeclaration, insertDeclaration, setStatement } from "../recipe-builder/edits";
+import { emitFormula, emitStatement, type FormulaDraft } from "../recipe-builder/emit";
+import {
+  applyPatches,
+  deleteDeclaration,
+  insertDeclaration,
+  setStatement,
+  type SourcePatch,
+} from "../recipe-builder/edits";
 import { parseOutline, recipeNode, type OutlineNode } from "../recipe-builder/outline";
 import { appendToRecipeBlock } from "../recipe-editor/sourcePatch";
 
@@ -121,66 +127,102 @@ function upsertFormulaBlock(
   options?: { pieces?: number | null; pieceMassGrams?: number | null },
 ): string {
   const draft = toDraft(formula);
-  if (options?.pieces != null && options.pieces > 0) {
-    // pieces / piece_mass are formula-level properties written after emit.
-  }
   const body = emitFormula(draft);
   const existing = formulaNode(source, formula.symbol);
   const recipe = recipeNode(parseOutline(source));
   let next: string;
   if (existing) {
-    next = `${source.slice(0, existing.range.start)}${body.trimStart()}${source.slice(existing.range.end)}`;
+    // Keep leading trivia (blank lines / indent before the block). Replacing
+    // `range` and trimStart'ing the body ate the separator and produced
+    // `}formula …` — an unclosed-delimiter parse failure after Apply.
+    next = `${source.slice(0, existing.codeRange.start)}${body.trimStart()}${source.slice(existing.range.end)}`;
   } else if (recipe) {
     next = insertDeclaration(source, recipe, body, "formula");
   } else {
     next = appendToRecipeBlock(source, body);
   }
 
-  // Re-resolve the node after the block rewrite so property patches land.
-  const node = formulaNode(next, formula.symbol);
-  if (!node) return next;
+  // Re-resolve after every splice — ranges are only valid for the snapshot
+  // they came from (see edits.ts).
   if (options?.pieces != null && options.pieces > 0) {
-    next = setStatement(next, node, "pieces", `${options.pieces} count`);
+    const node = formulaNode(next, formula.symbol);
+    if (node) next = setStatement(next, node, "pieces", `${options.pieces} count`);
   }
   if (options?.pieceMassGrams != null && options.pieceMassGrams > 0) {
-    const refreshed = formulaNode(next, formula.symbol);
-    if (refreshed) {
-      next = setStatement(next, refreshed, "piece_mass", `${Math.round(options.pieceMassGrams)} g`);
+    const node = formulaNode(next, formula.symbol);
+    if (node) {
+      next = setStatement(next, node, "piece_mass", `${Math.round(options.pieceMassGrams)} g`);
     }
   }
-  // Preferment / role flags that emitFormula doesn't cover.
   for (const item of formula.ingredients) {
-    const ingredient = formulaNode(next, formula.symbol)?.children.find(
-      (child) => child.keyword === "ingredient" && child.symbol === item.symbol,
-    );
-    if (!ingredient) continue;
-    if (item.is_reference) next = setStatement(next, ingredient, "reference", "true");
-    if (item.is_flour) next = setStatement(next, ingredient, "flour", "true");
+    if (item.is_reference) {
+      const ingredient = formulaIngredientNode(next, formula.symbol, item.symbol);
+      if (ingredient) next = setStatement(next, ingredient, "reference", "true");
+    }
+    if (item.is_flour) {
+      const ingredient = formulaIngredientNode(next, formula.symbol, item.symbol);
+      if (ingredient) next = setStatement(next, ingredient, "flour", "true");
+    }
     if (item.water_fraction > 0) {
-      next = setStatement(next, ingredient, "water_fraction", String(item.water_fraction));
+      const ingredient = formulaIngredientNode(next, formula.symbol, item.symbol);
+      if (ingredient) {
+        next = setStatement(next, ingredient, "water_fraction", String(item.water_fraction));
+      }
     }
     const role = item.properties?.role;
-    if (typeof role === "string") next = setStatement(next, ingredient, "role", role);
+    if (typeof role === "string") {
+      const ingredient = formulaIngredientNode(next, formula.symbol, item.symbol);
+      if (ingredient) next = setStatement(next, ingredient, "role", role);
+    }
   }
   return next;
+}
+
+function formulaIngredientNode(
+  source: string,
+  formulaSymbol: string,
+  ingredientSymbol: string,
+): OutlineNode | undefined {
+  return formulaNode(source, formulaSymbol)?.children.find(
+    (child) => child.keyword === "ingredient" && child.symbol === ingredientSymbol,
+  );
 }
 
 function patchIngredientQuantities(source: string, result: FormulaResult): string {
   const recipe = recipeNode(parseOutline(source));
   if (!recipe) return source;
-  let next = source;
+
+  // Patch every existing quantity in one end-first pass so earlier offsets
+  // stay valid when amounts change length (`7 g` → `11.1 g`).
+  const patches: SourcePatch[] = [];
+  const missing: { symbol: string; quantity: string }[] = [];
   for (const line of result.lines) {
     if (!Number.isFinite(line.mass_grams) || line.mass_grams <= 0) continue;
-    // Preferment stage rows are formula-only; they may not have a top-level ingredient.
     const resource = recipe.children.find(
       (child) => child.keyword === "ingredient" && child.symbol === line.symbol,
     );
     if (!resource) continue;
     const grams = Math.round(line.mass_grams * 10) / 10;
-    const quantity = Number.isInteger(grams) ? `${grams} g` : `${grams} g`;
-    next = setStatement(next, resource, "quantity", quantity);
-    // Keep divided step bindings in sync when they name the same amount.
-    // Best-effort: only rewrite `input <symbol> <qty>` that already exists.
+    const quantity = `${grams} g`;
+    const existing = resource.children.find((child) => child.keyword === "quantity");
+    if (existing) {
+      patches.push({
+        start: existing.codeRange.start,
+        end: existing.codeRange.end,
+        replacement: emitStatement("quantity", quantity),
+      });
+    } else {
+      missing.push({ symbol: line.symbol, quantity });
+    }
+  }
+
+  let next = applyPatches(source, patches);
+  for (const item of missing) {
+    const recipeNow = recipeNode(parseOutline(next));
+    const resource = recipeNow?.children.find(
+      (child) => child.keyword === "ingredient" && child.symbol === item.symbol,
+    );
+    if (resource) next = setStatement(next, resource, "quantity", item.quantity);
   }
   return next;
 }

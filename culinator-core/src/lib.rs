@@ -157,7 +157,7 @@ pub fn time_unit_seconds(unit: &str) -> Option<f64> {
     })
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "kind", content = "value")]
 pub enum Value {
     Text(String),
@@ -173,6 +173,217 @@ pub enum Value {
         min: Box<Value>,
         max: Box<Value>,
     },
+}
+
+/// Wire form that accepts both the tagged `Value` shape and plain JSON
+/// scalars. The desktop formula editor sends `properties: { role: "salt",
+/// sourceQuantity: "400 g" }`; without this, serde rejects those strings.
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum ValueWire {
+    Tagged(TaggedValue),
+    String(String),
+    Bool(bool),
+    Number(f64),
+    List(Vec<Value>),
+    Map(BTreeMap<Symbol, Value>),
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "kind", content = "value")]
+enum TaggedValue {
+    Text(String),
+    Number(f64),
+    Quantity(Quantity),
+    Boolean(bool),
+    Symbol(Symbol),
+    List(Vec<Value>),
+    Object(BTreeMap<Symbol, Value>),
+    Range {
+        min: Box<Value>,
+        max: Box<Value>,
+    },
+}
+
+impl From<TaggedValue> for Value {
+    fn from(value: TaggedValue) -> Self {
+        match value {
+            TaggedValue::Text(text) => Self::Text(text),
+            TaggedValue::Number(number) => Self::Number(number),
+            TaggedValue::Quantity(quantity) => Self::Quantity(quantity),
+            TaggedValue::Boolean(flag) => Self::Boolean(flag),
+            TaggedValue::Symbol(symbol) => Self::Symbol(symbol),
+            TaggedValue::List(items) => Self::List(items),
+            TaggedValue::Object(object) => Self::Object(object),
+            TaggedValue::Range { min, max } => Self::Range { min, max },
+        }
+    }
+}
+
+impl From<ValueWire> for Value {
+    fn from(value: ValueWire) -> Self {
+        match value {
+            ValueWire::Tagged(tagged) => tagged.into(),
+            ValueWire::String(text) => quantity_from_text(&text)
+                .map(Self::Quantity)
+                .unwrap_or(Self::Text(text)),
+            ValueWire::Bool(flag) => Self::Boolean(flag),
+            ValueWire::Number(number) => Self::Number(number),
+            ValueWire::List(items) => Self::List(items),
+            ValueWire::Map(map) => quantity_from_map(&map)
+                .map(Self::Quantity)
+                .unwrap_or(Self::Object(map)),
+        }
+    }
+}
+
+impl<'de> Deserialize<'de> for Value {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        ValueWire::deserialize(deserializer).map(Self::from)
+    }
+}
+
+/// Parse a free-standing quantity string such as `"400 g"` or `"1.5 cup"`.
+fn quantity_from_text(text: &str) -> Option<Quantity> {
+    let trimmed = text.trim();
+    let (number, rest) = trimmed.split_once(char::is_whitespace)?;
+    let value: f64 = number.parse().ok()?;
+    let unit = rest.trim();
+    if unit.is_empty() {
+        return None;
+    }
+    let dimension = Dimension::from_unit(unit);
+    if matches!(dimension, Dimension::Text | Dimension::Boolean) {
+        return None;
+    }
+    Some(Quantity {
+        value,
+        unit: unit.to_owned(),
+        dimension,
+    })
+}
+
+fn quantity_from_map(map: &BTreeMap<Symbol, Value>) -> Option<Quantity> {
+    let value = match map.get("value")? {
+        Value::Number(number) => *number,
+        _ => return None,
+    };
+    let unit = match map.get("unit")? {
+        Value::Text(text) | Value::Symbol(text) => text.clone(),
+        _ => return None,
+    };
+    let dimension = match map.get("dimension") {
+        Some(Value::Text(text) | Value::Symbol(text)) => dimension_from_name(text)?,
+        Some(Value::Number(_)) => return None,
+        None => Dimension::from_unit(&unit),
+        _ => Dimension::from_unit(&unit),
+    };
+    Some(Quantity {
+        value,
+        unit,
+        dimension,
+    })
+}
+
+fn dimension_from_name(name: &str) -> Option<Dimension> {
+    Some(match name.trim().to_ascii_lowercase().as_str() {
+        "mass" => Dimension::Mass,
+        "volume" => Dimension::Volume,
+        "count" => Dimension::Count,
+        "time" => Dimension::Time,
+        "temperature" => Dimension::Temperature,
+        "length" => Dimension::Length,
+        "area" => Dimension::Area,
+        "energy" => Dimension::Energy,
+        "ratio" => Dimension::Ratio,
+        "concentration" => Dimension::Concentration,
+        "boolean" => Dimension::Boolean,
+        "text" => Dimension::Text,
+        _ => return None,
+    })
+}
+
+#[cfg(test)]
+mod value_wire_test {
+    use super::*;
+
+    #[test]
+    fn plain_string_quantity_becomes_quantity() {
+        let value: Value = serde_json::from_str(r#""400 g""#).expect("parse");
+        assert_eq!(
+            value,
+            Value::Quantity(Quantity {
+                value: 400.0,
+                unit: "g".into(),
+                dimension: Dimension::Mass,
+            })
+        );
+    }
+
+    #[test]
+    fn plain_string_role_stays_text() {
+        let value: Value = serde_json::from_str(r#""salt""#).expect("parse");
+        assert_eq!(value, Value::Text("salt".into()));
+    }
+
+    #[test]
+    fn plain_number_and_bool() {
+        assert_eq!(
+            serde_json::from_str::<Value>("2").expect("number"),
+            Value::Number(2.0)
+        );
+        assert_eq!(
+            serde_json::from_str::<Value>("true").expect("bool"),
+            Value::Boolean(true)
+        );
+    }
+
+    #[test]
+    fn tagged_form_still_round_trips() {
+        let original = Value::Text("hello".into());
+        let json = serde_json::to_string(&original).expect("serialize");
+        let back: Value = serde_json::from_str(&json).expect("parse");
+        assert_eq!(back, original);
+    }
+
+    #[test]
+    fn formula_properties_from_desktop_shape() {
+        let json = r#"{
+            "id": "00000000-0000-0000-0000-000000000001",
+            "recipe_id": null,
+            "symbol": "dough",
+            "name": "Pizza Dough formula",
+            "basis": "reference_percent",
+            "ingredients": [{
+                "id": "00000000-0000-0000-0000-000000000002",
+                "symbol": "flour",
+                "name": "wheat flour",
+                "stage": "final",
+                "basis": "reference_percent",
+                "percentage": 100.0,
+                "mass_grams": 400.0,
+                "is_reference": true,
+                "is_flour": true,
+                "water_fraction": 0.0,
+                "scalable": true,
+                "properties": { "sourceQuantity": "400 g" }
+            }],
+            "properties": { "target": "628 g", "pieces": 2 }
+        }"#;
+        let formula: Formula = serde_json::from_str(json).expect("formula");
+        assert!(matches!(
+            formula.ingredients[0].properties.get("sourceQuantity"),
+            Some(Value::Quantity(q)) if (q.value - 400.0).abs() < f64::EPSILON
+        ));
+        assert!(matches!(
+            formula.properties.get("target"),
+            Some(Value::Quantity(q)) if (q.value - 628.0).abs() < f64::EPSILON
+        ));
+        assert_eq!(
+            formula.properties.get("pieces"),
+            Some(&Value::Number(2.0))
+        );
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -1187,6 +1398,7 @@ pub(crate) fn property_mass_grams(properties: &BTreeMap<Symbol, Value>, key: &st
     match properties.get(key)? {
         Value::Quantity(q) => q.as_grams(),
         Value::Number(n) => Some(*n),
+        Value::Text(text) => quantity_from_text(text).and_then(|q| q.as_grams()),
         _ => None,
     }
 }

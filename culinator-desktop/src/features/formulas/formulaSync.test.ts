@@ -101,6 +101,134 @@ recipe loaf {
     expect(roundTrip.ingredients[1].water_fraction).toBe(1);
   });
 
+  it("does not smash braces when scaled quantities change length", () => {
+    // Regression: patching `7 g` → `11.1 g` with stale ranges left
+    // `quantity 11.1 g; g;` and glued `}formula` onto the previous block.
+    const source = `culinator 0.3;
+recipe pizza {
+    title "Pizza";
+    ingredient flour measured by mass { quantity 400 g; }
+    ingredient yeast measured by mass { quantity 7 g; }
+    ingredient oil measured by mass { quantity 14 g; }
+    formula dough relative to flour {
+        target 421 g;
+        ingredient flour as Flour<BakersPercent> {
+            percentage 100%;
+            reference true;
+            flour true;
+        }
+        ingredient yeast as Ingredient<BakersPercent> {
+            percentage 1.75%;
+        }
+        ingredient oil as Ingredient<BakersPercent> {
+            percentage 3.5%;
+            role fat;
+        }
+    }
+}
+`;
+    const formula: Formula = {
+      id: "00000000-0000-0000-0000-000000000010",
+      recipe_id: "r1",
+      symbol: "dough",
+      name: "dough",
+      basis: "reference_percent",
+      ingredients: [
+        {
+          id: "f",
+          symbol: "flour",
+          name: "flour",
+          stage: "final",
+          basis: "reference_percent",
+          percentage: 100,
+          mass_grams: 636,
+          is_reference: true,
+          is_flour: true,
+          water_fraction: 0,
+          scalable: true,
+          properties: {},
+        },
+        {
+          id: "y",
+          symbol: "yeast",
+          name: "yeast",
+          stage: "final",
+          basis: "reference_percent",
+          percentage: 1.75,
+          mass_grams: 11.1,
+          is_reference: false,
+          is_flour: false,
+          water_fraction: 0,
+          scalable: true,
+          properties: {},
+        },
+        {
+          id: "o",
+          symbol: "oil",
+          name: "oil",
+          stage: "final",
+          basis: "reference_percent",
+          percentage: 3.5,
+          mass_grams: 22.3,
+          is_reference: false,
+          is_flour: false,
+          water_fraction: 0,
+          scalable: true,
+          properties: { role: "fat" },
+        },
+      ],
+      properties: { target: "669.4 g" },
+    };
+    const next = applyFormulaToSource(source, formula, {
+      target_mass_grams: 669.4,
+      reference_mass_grams: 636,
+      total_flour_grams: 636,
+      total_mass_grams: 669.4,
+      hydration_percent: 0,
+      prefermented_flour_percent: 0,
+      lines: [
+        {
+          ingredient_id: "f",
+          symbol: "flour",
+          name: "flour",
+          stage: "final",
+          percentage: 100,
+          mass_grams: 636,
+          is_reference: true,
+          is_flour: true,
+          total_percentage: 95,
+        },
+        {
+          ingredient_id: "y",
+          symbol: "yeast",
+          name: "yeast",
+          stage: "final",
+          percentage: 1.75,
+          mass_grams: 11.1,
+          is_reference: false,
+          is_flour: false,
+          total_percentage: 1.7,
+        },
+        {
+          ingredient_id: "o",
+          symbol: "oil",
+          name: "oil",
+          stage: "final",
+          percentage: 3.5,
+          mass_grams: 22.3,
+          is_reference: false,
+          is_flour: false,
+          total_percentage: 3.3,
+        },
+      ],
+    });
+    expect(next).toContain("quantity 11.1 g;");
+    expect(next).toContain("quantity 22.3 g;");
+    expect(next).not.toMatch(/quantity [^;]+; g;/);
+    expect(next).not.toContain("}formula");
+    expect(parseUiModel(next).diagnostics).toHaveLength(0);
+  });
+
   it("detects bread-like recipes", () => {
     expect(
       looksLikeBreadRecipe(

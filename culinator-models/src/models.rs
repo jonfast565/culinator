@@ -489,6 +489,10 @@ pub struct UnitConvertRequest {
     pub value: f64,
     pub from_unit: String,
     pub to_unit: String,
+    /// When converting volume ↔ mass, the ingredient name/symbol used to look
+    /// up density (g/ml). Ignored for same-dimension conversions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ingredient: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

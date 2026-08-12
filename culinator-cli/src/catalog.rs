@@ -449,6 +449,7 @@ pub fn convert_unit(
         value,
         from_unit: from,
         to_unit: to,
+        ingredient: None,
     })?;
     match output {
         OutputFormat::Human => {

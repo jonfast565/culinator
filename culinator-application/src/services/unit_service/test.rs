@@ -9,9 +9,26 @@ fn convert_returns_metric_mass_in_grams() {
             value: 1.0,
             from_unit: "kg".to_owned(),
             to_unit: "g".to_owned(),
+            ingredient: None,
         })
         .expect("convert");
     assert_eq!(response.value, 1000.0);
+    assert_eq!(response.unit, "g");
+    assert_eq!(response.dimension, "mass");
+}
+
+#[test]
+fn convert_volume_to_mass_uses_ingredient_density() {
+    let service = UnitService::new();
+    let response = service
+        .convert(&UnitConvertRequest {
+            value: 200.0,
+            from_unit: "ml".to_owned(),
+            to_unit: "g".to_owned(),
+            ingredient: Some("lukewarm water".into()),
+        })
+        .expect("convert water");
+    assert!((response.value - 200.0).abs() < 1e-9);
     assert_eq!(response.unit, "g");
     assert_eq!(response.dimension, "mass");
 }

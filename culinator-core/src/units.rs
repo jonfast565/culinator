@@ -345,10 +345,31 @@ impl IngredientDensity {
 
     pub fn density_g_per_ml(&self, ingredient: &str) -> Option<f64> {
         let key = normalize_ingredient_key(ingredient);
-        if let Some(density) = self.overrides.get(&key) {
+        if let Some(density) = self.lookup_exact(&key) {
+            return Some(density);
+        }
+        // "lukewarm water" / "extra virgin olive oil" — try shorter suffixes and
+        // trailing tokens so a descriptive name still hits the builtin table.
+        let tokens: Vec<&str> = key.split_whitespace().collect();
+        for start in 1..tokens.len() {
+            let slice = tokens[start..].join(" ");
+            if let Some(density) = self.lookup_exact(&slice) {
+                return Some(density);
+            }
+        }
+        for token in tokens.iter().rev() {
+            if let Some(density) = self.lookup_exact(token) {
+                return Some(density);
+            }
+        }
+        None
+    }
+
+    fn lookup_exact(&self, key: &str) -> Option<f64> {
+        if let Some(density) = self.overrides.get(key) {
             return Some(*density);
         }
-        builtin_density(&key)
+        builtin_density(key)
     }
 }
 
@@ -358,7 +379,7 @@ fn normalize_ingredient_key(name: &str) -> String {
 
 fn builtin_density(key: &str) -> Option<f64> {
     Some(match key {
-        "water" | "warm water" => 1.0,
+        "water" | "warm water" | "lukewarm water" | "cold water" | "ice water" | "ice" => 1.0,
         "flour"
         | "all purpose flour"
         | "all-purpose flour"

@@ -236,6 +236,8 @@ export interface UnitConvertRequest {
   value: number;
   fromUnit: string;
   toUnit: string;
+  /** Ingredient name/symbol for volume ↔ mass density lookup. */
+  ingredient?: string;
 }
 
 export interface UnitConvertResponse {

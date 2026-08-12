@@ -130,6 +130,26 @@ function sourceHint(item: FormulaIngredient): string | null {
   const declared = item.properties?.sourceQuantity;
   return typeof declared === "string" ? declared : null;
 }
+/** True when the row still needs a cook-supplied weight (volume/count seed). */
+function needsWeight(item: FormulaIngredient): boolean {
+  return item.mass_grams == null && sourceHint(item) != null;
+}
+/**
+ * Entering a weight for a volume-seeded row: store grams, derive the baker's
+ * percentage from the reference, then re-solve the batch.
+ */
+async function setMissingWeight(item: FormulaIngredient, raw: number | null): Promise<void> {
+  const grams = raw != null && Number.isFinite(raw) && raw >= 0 ? raw : null;
+  item.mass_grams = grams;
+  const referenceRow = reference.value;
+  const divisor = referenceRow?.mass_grams;
+  if (grams != null && divisor != null && divisor > 0) {
+    item.percentage = (grams / divisor) * 100;
+  } else if (grams == null) {
+    item.percentage = null;
+  }
+  await changed();
+}
 function ingredientName(item: FormulaIngredient): string {
   const savedName = item.name.trim();
   if (savedName) return savedName;
@@ -696,6 +716,25 @@ watch(
               />
               <em>g</em>
             </span>
+            <span v-else-if="needsWeight(item)" class="with-unit editable">
+              <input
+                :value="item.mass_grams ?? undefined"
+                type="number"
+                step="1"
+                min="0"
+                :aria-label="`${item.name || item.symbol} weight in grams`"
+                placeholder="g"
+                @change="
+                  setMissingWeight(
+                    item,
+                    Number.isFinite(Number(($event.target as HTMLInputElement).value))
+                      ? Number(($event.target as HTMLInputElement).value)
+                      : null,
+                  )
+                "
+              />
+              <em>g</em>
+            </span>
             <span v-else class="derived">{{ decimal(grams(item)) }} g</span>
 
             <select
@@ -708,7 +747,7 @@ watch(
               <option v-for="role in ROLE_OPTIONS" :key="role" :value="role">{{ role }}</option>
             </select>
           </div>
-          <p v-if="item.mass_grams == null && sourceHint(item)" class="row-hint">
+          <p v-if="needsWeight(item)" class="row-hint">
             Needs a weight — recipe says {{ sourceHint(item) }}
           </p>
         </li>
@@ -812,18 +851,26 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 14px;
+  min-width: 0;
 }
 .formula-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   gap: 10px;
+  min-width: 0;
+}
+.formula-head > div:first-child {
+  flex: 1;
+  min-width: 0;
 }
 .formula-head h3 {
   margin-bottom: 4px;
 }
 .formula-name {
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: 7px 9px;
   border-color: #cbd3cd;
   background: #fff;
@@ -908,7 +955,7 @@ watch(
   align-items: baseline;
   gap: 4px;
 }
-.with-unit input {
+.formula .with-unit input {
   width: 78px;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -939,28 +986,39 @@ watch(
   border: 1px solid #e0e4e0;
   border-radius: 8px;
   background: white;
+  min-width: 0;
+  overflow: hidden;
 }
 .row-main {
   display: flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
 }
-.ref-dot {
-  flex-shrink: 0;
+.formula input.ref-dot {
+  /* Beat global `.panel input { width: 100% }` — a full-width radio in a
+     flex row is what shoved the name/%/g fields off the right edge. */
+  flex: 0 0 13px;
   width: 13px;
+  max-width: 13px;
   height: 13px;
+  margin: 0;
+  padding: 0;
   accent-color: #8a5e10;
 }
-.row-name {
-  flex: 1;
+.formula input.row-name {
+  /* Same global width:100% rule; flex:1 + width:0 is the shrinkable slot. */
+  flex: 1 1 auto;
+  width: 0;
   min-width: 0;
+  max-width: 100%;
   padding: 6px 8px;
   border-color: #cbd3cd;
   background: #fff;
   font-size: 13px;
   color: #27342d;
 }
-.row-name::placeholder {
+.formula input.row-name::placeholder {
   color: #657169;
   opacity: 1;
 }
@@ -978,11 +1036,13 @@ watch(
 .row-values {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   margin-top: 6px;
   padding-left: 21px;
+  min-width: 0;
 }
-.row-values .with-unit input {
+.formula .row-values .with-unit input {
   width: 62px;
   padding: 3px 5px;
   font-size: 12px;
@@ -995,6 +1055,9 @@ watch(
 }
 .role-select {
   margin-left: auto;
+  flex: 0 0 auto;
+  width: auto;
+  max-width: 100%;
   padding: 2px 6px;
   border: 1px solid #dde1dd;
   border-radius: 999px;
