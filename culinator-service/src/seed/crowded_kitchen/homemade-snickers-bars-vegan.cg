@@ -1,0 +1,114 @@
+culinator 0.3;
+
+recipe ck_homemade_snickers_bars_vegan {
+    title "Homemade Snickers Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-snickers-bars-vegan/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 240 min;
+    description "These homemade vegan snickers bars are naturally gluten free, much lower in sugar than the real thing, and 100% delicious!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 1/2 cups raw, unsalted cashews (soaked in room temp water for 2-3 hours)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup agave nectar (can also use maple syrup)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/3 cup melted cacao butter or 1/2 cup coconut oil*";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 5 oz can coconut cream";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 1/2 tsp vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/4 tsp salt";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 5 oz cans coconut cream (only use solid cream layer on top)";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/3 cup coconut sugar";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "3 medjool dates, pitted, halved and soaked in room temp water for 10-15 minutes";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2 tbsp coconut oil";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "2 tbsp peanut butter";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 tbsp arrowroot starch or cornstarch";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 tsp vanilla extract";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/4 tsp cream of tartar";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1 1/2 cups salted peanuts";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "16-18 oz dark chocolate";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1 1/2 tsp coconut oil";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Soak cashews in room temperature water for 2 hours. If you forget, you can soak them in very hot water for 30 minutes. Drain cashews and set aside.";
+        }
+        operation step_2 does prepare {
+            note ", add to a small saucepan over medium heat and whisk until completely melted. If using coconut oil, melt in microwave or saucepan until liquified.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add cashews, agave, coconut cream, vanilla and salt to a blender. Blend until smooth and creamy. Slowly stream in melted cacao butter (or melted coconut oil). Pour into a parchment paper-lined 8x8 pan. Refrigerate for 1 hour.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Meanwhile, pit, halve and soak dates in room temperature water for 15 minutes to soften (makes them much easier to blend!). Drain water and add dates to a blender with remaining caramel ingredients except for the salted peanuts. Blend until smooth, then transfer to a small saucepan and simmer over medium heat for 5-7 minutes, whisking often to make sure it doesn't burn.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Once the caramel is thickened (it should be quite thick at this point, see photos for texture), remove from heat, stir in peanuts and let cool for 30-45 minutes.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Once cooled, gently spread the caramel over the nougat layer. If the caramel is too hot, it will soften the nougat and you won't have distinct layer. Freeze for 2-4 hours, until solid.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Melt chocolate and coconut oil in a microwave safe bowl in 30 second intervals, stirring well in between each interval, until fully melted. Let the chocolate cool for 10 minutes.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Slice bars in half one way, then rotate pan and slice into relatively thin slices (about 1-1 1/2\" wide). Dip each slice into melted chocolate using two forks to keep it steady. Let excess chocolate drip off, then transfer to parchment paper. Optional: top with more chopped peanuts. Return to freezer until chocolate hardens completely.";
+            after step_7;
+        }
+    }
+}

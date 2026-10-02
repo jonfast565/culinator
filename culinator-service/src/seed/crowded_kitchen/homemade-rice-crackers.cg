@@ -1,0 +1,62 @@
+culinator 0.3;
+
+recipe ck_homemade_rice_crackers {
+    title "Homemade Rice Crackers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-rice-crackers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 30 min;
+    description "If you've ever wondered what to do with hardened, leftover rice, the answer is simple: make these super simple rice crackers! All you need is leftover rice and a few other pantry staples to make these super thin, crispy, and delicious homemade rice crackers!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup leftover (cooked) white rice";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons water";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 tablespoon oil (we used avocado)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon rice wine vinegar (optional)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon kosher salt, plus more for sprinkling";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Sesame seeds, to taste, for sprinkling";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat your oven to 350˚F / 175˚C.";
+        }
+        operation step_2 does prepare {
+            note "To the bowl of a food processor, add the rice, water, oil, salt, and the rice wine vinegar (optional). Let it run for 30 seconds to a minute, then scrape down the sides, and keep processing until your cracker dough starts to form balls that start to swirl around the processor. You want it to feel like a dough, not a wet paste. If it feels too wet, add more dry rice, and if it feels too crumbly, add more water. It should not stick to your fingers when pressed together.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Transfer the dough to a silicone pastry mat. If you don't have one, you can also use a piece of parchment paper on top of a large cutting board. Place a piece of plastic wrap that's the same size as the baking mat on top of the dough ball.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Gently roll out the dough into a rectangle that nearly covers the surface of your baking mat. It should be pretty thin, somewhere between 1/8-1/16 of an inch.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Cut your crackers into circles using a cookie cutter. Ours is about 2\" in diameter. Gently peel the crackers off of the baking mat and move them to a parchment-lined baking sheet. Combine, re-roll, and cut any scraps you have left over.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Sprinkle kosher salt and sesame seeds over the crackers, and bake for 15-18 minutes, until the crackers are crisp and some of them begin to develop golden brown spots.";
+            after step_5;
+        }
+    }
+}

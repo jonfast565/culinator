@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_dark_chocolate_and_sea_salt_nut_bars {
+    title "Dark Chocolate and Sea Salt Nut Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/dark-chocolate-and-sea-salt-nut-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 75 min;
+    description "These homemade Dark Chocolate and Sea Salt Nut Bars are crunchy, perfectly salty, and delicious. They have fewer than 10 ingredients, and the recipe is super simple and easy to follow! If you love KIND bars, this is the recipe for you!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 1/2 cups unsalted nuts of choice (we use 3/4 cup cashews, 3/4 cup peanuts and 1 cup almonds)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup puffed rice";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup brown rice syrup";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 1/2 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon sea salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 cup dark chocolate chips";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 teaspoons coconut oil";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Optional: flaky salt for topping";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 325˚F / 160˚C.";
+        }
+        operation step_2 does prepare {
+            note "Spread the nuts into a single layer on a rimmed sheet pan and bake for 5-8 minutes, until fragrant and lightly browned.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Line an 8x8-inch pan with parchment paper and set aside.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a large mixing bowl, combine the nuts and puffed rice and toss to combine.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add the brown rice syrup to a microwave-safe bowl and microwave for 30 seconds. (This loosens it up so it's easier to work with.) Whisk in the vanilla extract and salt until combined, then pour over the nut mixture and stir until evenly coated.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Transfer the nut mixture to the prepared pan and press into an even layer.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 18-20 minutes. Remove from the oven and let cool for ~30 minutes, then transfer to a cutting board. Cut in half lengthwise, then cut each half into 5-6 thin bars. Let cool completely.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Add the chocolate chips and coconut oil to a microwave-safe bowl and microwave in 30 second intervals, stirring well between each interval, until fully melted. Dip the bottom of each bar into the melted chocolate, then transfer to a baking sheet lined with parchment paper.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Drizzle the top of each bar with melted chocolate, then top with flaky salt. Refrigerate until the chocolate is set, then enjoy!";
+            after step_8;
+        }
+    }
+}

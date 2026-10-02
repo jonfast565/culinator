@@ -1,0 +1,38 @@
+culinator 0.3;
+
+recipe ck_lemon_popsicles {
+    title "Lemon Popsicles";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/lemon-popsicles/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 485 min;
+    description "You only need 3 ingredients and 5 minutes of prep time to make these refreshing homemade Lemon Popsicles. They're beyond easy to make, delicious, and make for the perfect summer treat (best enjoyed poolside)!";
+
+    ingredient ingredient_1 measured by mass {
+        name "3 cups water";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3/4 cup freshly squeezed lemon juice";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/3 cup honey, agave or maple syrup";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Whisk ingredients together until well combined (or add everything to a blender and blend until combined).";
+        }
+        operation step_2 does prepare {
+            note "Pour the mixture into popsicle molds and freeze until completely set, about 8 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Remove from popsicle molds and store in an airtight container in between layers of parchment paper to prevent the popsicles from sticking together.";
+            after step_2;
+        }
+    }
+}

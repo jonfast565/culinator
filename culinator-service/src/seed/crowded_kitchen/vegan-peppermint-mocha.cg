@@ -1,0 +1,54 @@
+culinator 0.3;
+
+recipe ck_vegan_peppermint_mocha {
+    title "Vegan Peppermint Mocha";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-peppermint-mocha/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 10 min;
+    description "Cozy up with a warm mug of Vegan Peppermint Mocha this holiday season! This drink is perfect for the holidays, with balanced notes of chocolate, peppermint, and espresso.";
+
+    ingredient ingredient_1 measured by mass {
+        name "½ cup nondairy creamer or milk of choice (unsweetened)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 ½ tablespoons maple syrup";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 ½ tablespoons unsweetened cocoa powder";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "⅛ teaspoon peppermint extract";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Double shot of espresso (or 2 oz very strong coffee)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Optional: nondairy whipped cream & crushed candy canes for topping";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Brew espresso into a large mug.";
+        }
+        operation step_2 does prepare {
+            note "Add all ingredients (except the espresso) to a small saucepan over medium heat. Whisk well, until the cocoa powder is dissolved and the milk is hot (there's no need to boil it).";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Use a handheld milk frother to froth the peppermint mocha mixture.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Pour the peppermint mocha creamer into the brewed espresso. Optional: top with nondairy whipped cream and crushed candy canes.";
+            after step_3;
+        }
+    }
+}

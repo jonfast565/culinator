@@ -9,6 +9,7 @@ culinator-models = { path = "../culinator-models" }
 culinator-core = { path = "../culinator-core" }
 thiserror.workspace = true
 uuid.workspace = true
+serde.workspace = true
 
 [lints]
 workspace = true

@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe ck_sour_watermelon_rind_candy {
+    title "Sour Watermelon Rind Candy";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/sour-watermelon-rind-candy/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 415 min;
+    description "If you're a fan of sour gummy candies, then you're going to love these sour watermelon rind candies. They're made with watermelon rinds, which are normally just discarded, and they taste super similar to Sour Patch Kids Watermelon. This recipe is definitely on the trickier side, but the end result is so worth it!";
+
+    ingredient ingredient_1 measured by mass {
+        name "450g (about 4 cups) watermelon rind, peel off skin and cut into 1/4-inch thick slices";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "300g (1 1/2 cups) granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup water";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 tablespoon citric acid, plus more to taste";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Peel the outermost green peel off of your leftover watermelon rinds and cut them into 1/4-inch thick slices with a knife or a mandoline.";
+        }
+        operation step_2 does prepare {
+            note "Place the rinds in a shallow container and pour the sugar over the watermelon rind slices, then stir to coat. Cover and refrigerate for a minimum of 6 hours, or overnight.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "The watermelon will release a lot of water. Transfer the watermelon rind and all of the liquid into a medium-sized saucepan over medium heat.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add 1 cup of water to the saucepan. Bring the mixture to a boil, stirring occasionally. The water will boil off for about 15-20 minutes or so, and in the process the watermelon will become glassy and translucent.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "If you're using a candy thermometer (which we strongly suggest), you'll notice the temperature will start to climb into the 220˚F range. Keep cooking until the temperature reaches 235˚F - 240˚F, about 10-12 minutes, then move to a wider, shallower pan* (more surface area is better here) over low heat. We use a 12-inch skillet.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "The goal now is to dry out the sugar without burning it, so stir frequently and keep a close eye on the mixture. If you start to get a burnt sugar smell or golden brown color, remove from heat immediately, stir, and then return to low heat in a minute or two.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Keep stirring until the sugar starts to dry out and crystallize on the watermelon rind. Once you see the sugar has mostly crystallized, add 1 tablespoon of citric acid to the candied rind and stir to coat.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "At this point, there should not be any remaining liquid in the pan. Transfer the candy out onto a wire baking rack set atop a sheet pan, and use tongs to unfurl any pieces that have curled up during the cooking process.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Optional: Sprinkle on more citric acid, depending on how sour you like your candy. Keep stored in an airtight container at room temperature for up to a month, or longer in the refrigerator or freezer.";
+            after step_8;
+        }
+    }
+}

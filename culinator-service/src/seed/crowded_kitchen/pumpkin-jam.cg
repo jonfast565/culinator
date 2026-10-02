@@ -1,0 +1,50 @@
+culinator 0.3;
+
+recipe ck_pumpkin_jam {
+    title "Pumpkin Jam";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/pumpkin-jam/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 20 min;
+    description "Like pumpkin pie in a jar (but better), this easy homemade pumpkin jam is bound to be your new fall essential. It's creamy, delicious and packed with seasonal flavors. This pumpkin jam is perfect on toast, yogurt, muffins, waffles, oatmeal and so much more!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 15 ounce can pumpkin puree";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup packed brown sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/4 cup orange juice";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/4 cup freshly squeezed lemon juice";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 1/4 teaspoons pumpkin pie spice blend";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add all ingredients to a large pot over medium heat and whisk well until combined.";
+        }
+        operation step_2 does prepare {
+            note "Bring the mixture to a boil, then reduce heat to medium and simmer for 15 minutes. Whisk often while cooking, making sure to scrape down the sides of the pot as it cooks down.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Remove from heat and let cool at room temperature for 30 minutes before transferring to a sealed container to refrigerate for 4-6 hours or overnight.";
+            after step_2;
+        }
+    }
+}

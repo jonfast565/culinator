@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_bourbon_balls {
+    title "Bourbon Balls";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/bourbon-balls/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 160 min;
+    description "These homemade bourbon balls are an easy DIY gift! They're made with pecans, good quality bourbon, chocolate wafer cookies, cocoa powder and maple syrup, then dipped in dark chocolate and topped with a pecan. They're strong, but make for a delicious treat!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup finely chopped pecans (toasted)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup bourbon";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 cups finely chopped chocolate wafer cookies";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/4 cup unsweetened cocoa powder";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "3 tablespoons maple syrup";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "6 ounces dark chocolate";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "Pecan halves";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Prep the nuts:: Preheat the oven to 325˚F. Add the pecans to a sheet pan and toast them in the oven for 12-15 minutes, until lightly browned and fragrant. Transfer to a cutting board and chop finely.";
+        }
+        operation step_2 does prepare {
+            note "Add the chopped pecans to a bowl. Pour the bourbon over the nuts and stir, then let sit on the counter for 2-3 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Make the balls:: Strain the nuts, reserving the bourbon.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Whisk together the leftover bourbon, maple syrup and vanilla in a small bowl.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "In a large bowl, stir together the chopped wafer cookies, pecans, cocoa, and salt. Add in the bourbon mixture and stir until a paste forms. If the mixture is too dry, add another tablespoon of bourbon.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Use a heaping tablespoon to portion the balls and roll into a ball with your hands. Place on a parchment-lined baking sheet. Place in the freezer for 20 minutes while you melt the chocolate.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Melt the chocolate in the microwave in 30 second intervals, stirring between each interval, until fully melted. Using two forks, coat each ball in melted chocolate and let the excess chocolate drip off. Transfer to the parchment paper, then place a pecan on top. Optional: drizzle more melted chocolate on top.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Let the chocolate set, then enjoy!";
+            after step_7;
+        }
+    }
+}

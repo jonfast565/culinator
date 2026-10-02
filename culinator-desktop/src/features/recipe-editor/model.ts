@@ -1,4 +1,5 @@
 import { parseUiModelWasm } from "../../services/wasm/parser";
+import type { Formula } from "../../domain/types";
 
 export interface SourceRange {
   start: number;
@@ -127,6 +128,7 @@ export interface UiFormulaIngredient {
 }
 
 export interface UiFormula {
+  raw?: Formula;
   id: string;
   symbol: string;
   name: string;

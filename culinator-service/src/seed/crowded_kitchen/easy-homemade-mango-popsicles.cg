@@ -1,0 +1,38 @@
+culinator 0.3;
+
+recipe ck_easy_homemade_mango_popsicles {
+    title "Easy Homemade Mango Popsicles";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/easy-homemade-mango-popsicles/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 370 min;
+    description "With just 4 ingredients and about 5 minutes of total prep time, these easy homemade mango popsicles are the perfect summer treat. They're super simple, vibrant, and refreshing.";
+
+    ingredient ingredient_1 measured by mass {
+        name "3 cups frozen mango";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup coconut water";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/3 cup agave agave syrup";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/4 cup freshly squeezed lime juice";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add mango, coconut water, lime juice, and agave to a high speed blender and blend until smooth and creamy.";
+        }
+        operation step_2 does prepare {
+            note "Pour into popsicle molds (ours hold 2.5 fl oz each), and freeze for 6-8 hours, or overnight.";
+            after step_1;
+        }
+    }
+}

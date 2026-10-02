@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_homemade_marshmallow_fluff {
+    title "Homemade Marshmallow Fluff";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-marshmallow-fluff/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 25 min;
+    description "Our homemade marshmallow fluff is so easy to make with just a few basic ingredients (egg whites, sugar, cream of tartar and extracts for flavor), and it doesn't contain any corn syrup!";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 egg whites";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3/4 teaspoon cream of tartar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon vanilla bean paste";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon imitation vanilla flavor";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/8 teaspoon almond extract";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "Pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Fill a pot with about 1-2 inches of water and place a heat-safe bowl over the top, making sure that the bottom of the bowl is not touching the water. Bring the water to a simmer.";
+        }
+        operation step_2 does prepare {
+            note "Add in the egg whites, sugar and cream of tartar. Whisking constantly, heat the mixture to about 160˚F (70˚C), until the sugar is completely dissolved and the mixture is thick and foamy.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Remove from heat and transfer the egg whites to a larger mixing bowl. Add in the vanilla bean paste, imitation vanilla, almond extract and salt. Using an electric mixer (or a stand mixer fitted with the whisk attachment), beat on medium-high speed until stiff peaks form. This usually takes about 5-7 minutes.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Make sure it's completely cool before transferring to jar or container. Keep this stored in an airtight container in the refrigerator for up to one week.";
+            after step_3;
+        }
+    }
+}

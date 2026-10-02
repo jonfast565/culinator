@@ -98,6 +98,39 @@ export interface FormulaResult {
   lines: FormulaLineResult[];
 }
 
+export interface BatchChange {
+  path: string;
+  before: string;
+  after: string;
+}
+
+export interface BatchRequest {
+  sourceText: string;
+  formulaSymbol: string;
+  formula: Formula | null;
+  constraint:
+    | { kind: "target_mass"; grams: number }
+    | { kind: "reference_mass"; grams: number; group?: string | null }
+    | { kind: "servings"; count: number; grams_per_serving: number }
+    | { kind: "round_pan"; diameter_cm: number; depth_cm: number }
+    | { kind: "pan_volume"; millilitres: number }
+    | { kind: "concentration"; solute: string; percent_of_total: number };
+  roundingIncrementGrams?: number;
+  applyMinimums: boolean;
+  pieceCount?: number | null;
+}
+
+export interface BatchPreview {
+  sourceFingerprint: string;
+  proposedSource: string;
+  sourceDiff: string;
+  result: FormulaResult | null;
+  changes: BatchChange[];
+  warnings: string[];
+  blockers: string[];
+  outOfSync: string[];
+}
+
 export type PercentageView = "reference" | "total";
 export interface PercentageConversion {
   view: PercentageView;

@@ -1,0 +1,78 @@
+culinator 0.3;
+
+recipe ck_cheesy_broccoli_tots {
+    title "Cheesy Broccoli Tots";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/cheesy-broccoli-tots/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 40 min;
+    description "Who knew broccoli could be addictive? These easy homemade cheesy broccoli tots are the perfect snack for kids and adults alike, and they only take about 30 minutes to make.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 lb. broccoli, cut into florets";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 eggs, lightly beaten";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 cups finely shredded cheddar cheese (for best results, shred by hand instead of buying pre-shredded)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2/3 cup panko breadcrumbs";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/3 cup finely chopped yellow onion";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 1/2 tsp kosher salt*";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 tsp black pepper";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 tsp garlic powder";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 tsp onion powder";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 400˚F and lightly grease a sheet pan.";
+        }
+        operation step_2 does prepare {
+            note "Bring a medium pot of salted water to a boil. Prepare a bowl with ice and cold water and set aside.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Once boiling, add the broccoli and simmer for 3 minutes, then remove with a slotted spoon and transfer to the ice water to stop cooking. Drain well, then pat the broccoli dry with paper towel to remove as much excess moisture as possible. (If there is too much moisture, the batter will be too wet.)";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the broccoli to a food processor and pulse a few times, until the broccoli is finely chopped. If you don't have a food processor, you can use a knife to finely chop the broccoli.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add the broccoli, eggs, cheese, breadcrumbs, onion, salt, pepper, garlic and onion powder to a large bowl and mix thoroughly. It's easiest to mix with your hands to make sure all of the ingredients are well incorporated.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Use a 1 tablespoon measurement to portion the batter, then form into a tot shape. Place on prepared baking sheet. Bake for 10-12 minutes, until the bottoms are lightly browned, then flip each one over and bake for another 10-12 minutes, until golden brown on both sides.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Enjoy plain or with a dipping sauce of choice.";
+            after step_6;
+        }
+    }
+}

@@ -1,0 +1,142 @@
+culinator 0.3;
+
+recipe ck_homemade_fruit_snacks {
+    title "Homemade Fruit Snacks";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-fruit-snacks/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 590 min;
+    description "With fresh fruit and just 3 other ingredients, you can make homemade fruit snacks that are chewy, delicious, and packed with real fruit flavor. You can also use this recipe to make gummy worms or gummy bears!";
+
+    ingredient ingredient_1 measured by mass {
+        name "170-180g fresh fruit (~1 cup blended)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "170-180g strawberry (~1 cup blended)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "170-180g pineapple (~1 cup blended)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "170-180g watermelon (~1 cup blended)";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "170-180g black seedless grapes (~1 cup blended)";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "90g each kiwi and granny smith apple (peeled) (~1 cup blended – you may need to add some water to thin this out for blending)";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "2 envelopes (14g) gelatin";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "3 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "3 tablespoons honey or agave";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add fruit to blender and blend until completely smooth.";
+        }
+        operation step_2 does prepare {
+            note "In a small container, sprinkle gelatin evenly over lemon juice, then stir thoroughly until there are no dry grains visible. Let sit for 5 minutes.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While the gelatin blooms, combine fruit purée with honey or agave in a small saucepan over low heat, and stir until combined. You want to heat the purée enough to melt the gelatin (>~120˚F), but you don't want to bring it to a boil, which will denature the gelatin. NOTE: There's one major exception here. Pineapple (and some other fruits, including mango and kiwi) contains enzymes, including bromelain, that will essentially \"eat\" the gelatin and prevent the gummies from setting. To deactivate the enzyme, you must heat the pineapple purée to at least 176˚F for about 8 minutes.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add gelatin and lemon juice mixture to the fruit puree, and stir until it's completely dissolved. Remove pan from heat and let cool for about 5 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Give your silicon molds a light spray with avocado oil or cooking spray. Use a spoon or a dropper to fill up the fruit molds, then move to your refrigerator. Refrigerate for an hour and a half to let them set up.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove from the molds and place on a wire rack, and let sit for 8 hours or overnight. The gummies will shrink significantly and achieve a more intense flavor and a chewy, gummy texture.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Optional: If you are making these into sour gummy worms, toss the dried out gummies in a 4:1 mixture of sugar to citric acid before enjoying!";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Once the gummies have dried out overnight, move them to an airtight container and store in the refrigerator for up to 2 weeks.";
+            after step_7;
+        }
+    }
+}

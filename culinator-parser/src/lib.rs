@@ -8,8 +8,11 @@
 //! [`TextEdit`] values. Re-running semantic projection never rewrites trivia or
 //! unsupported declarations.
 
+mod batch;
 mod semantic;
 pub mod syntax;
+
+pub use batch::{BatchChange, BatchPreview, BatchRequest, apply_batch, plan_batch};
 
 pub use semantic::{Diagnostic, ParseError, ParseOutcome};
 pub use syntax::{

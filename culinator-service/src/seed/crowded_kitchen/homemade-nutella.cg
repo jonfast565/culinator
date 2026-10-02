@@ -1,0 +1,42 @@
+culinator 0.3;
+
+recipe ck_homemade_nutella {
+    title "Homemade Nutella";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-nutella/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 10 min;
+    description "This homemade Nutella is ready in 10 minutes and only requires 5 ingredients. It has half the sugar per serving when compared to store-bought Nutella and contains no added oil or dairy.";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 cups roasted hazelnuts (skins removed)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup unsweetened cocoa powder";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup superfine caster sugar*";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 1/2 teaspoons vanilla bean paste (or vanilla extract)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Salt, to taste";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the hazelnuts to a food processor and blend until smooth, about 3 minutes.";
+        }
+        operation step_2 does prepare {
+            note "Add cocoa powder, salt, and sugar to the nut butter and blend until evenly incorporated. Keep it stored in an airtight container in the refrigerator for up to a month.";
+            after step_1;
+        }
+    }
+}

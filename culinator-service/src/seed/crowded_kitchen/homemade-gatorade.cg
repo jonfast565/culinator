@@ -1,0 +1,118 @@
+culinator 0.3;
+
+recipe ck_homemade_gatorade {
+    title "Homemade Gatorade";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-gatorade/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 15 min;
+    description "On a sweaty summer day or after a hard workout, nothing beats this homemade gatorade. Each flavor is packed with fresh fruit juice for flavor, coconut water for electrolytes, and a touch of salt for more electrolyte-boosting refreshment.";
+
+    ingredient ingredient_1 measured by mass {
+        name "6 oz coconut water";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 oz unsweetened tart cherry juice";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 oz unsweetened pineapple juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 oz unsweetened cranberry juice";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 oz lemon juice";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 oz agave or honey";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "pinch of salt";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "10 oz coconut water";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 oz lemon juice";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2 oz lime juice";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 oz unsweetened orange juice";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 oz agave or honey";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "pinch of salt";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "8 oz unsweetened orange juice";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "6 oz coconut water";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "2 oz lemon juice";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1 oz agave or honey";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "Optional (for color): 0.5 oz unsweetened cranberry juice";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "pinch of salt";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "8 oz unsweetened blueberry juice";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "6 oz coconut water";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "2 oz lemon juice";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1 oz agave or honey";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Whisk together all ingredients for each flavor in a large measuring cup or medium sized mixing bowl. Using a vessel with a spout will make transferring to bottles much easier.";
+        }
+        operation step_2 does prepare {
+            note "Transfer to bottles (or jars), secure with a lid, let them chill in the fridge, and enjoy!";
+            after step_1;
+        }
+    }
+}

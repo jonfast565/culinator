@@ -1,0 +1,86 @@
+culinator 0.3;
+
+recipe ck_homemade_goldfish_crackers {
+    title "Homemade Goldfish Crackers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-goldfish-crackers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 75 min;
+    description "These homemade goldfish crackers are cheesy, crunchy, and amazingly addictive. They're also pretty simple and fun to make, so it's a fun activity to do with kids. You only need a few basic pantry ingredients, and you can cut them into any shape you'd like!";
+
+    ingredient ingredient_1 measured by mass {
+        name "8 oz sharp cheddar cheese, finely grated";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup all purpose flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon sugar";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 teaspoon baking powder";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 teaspoon paprika";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 teaspoon celery salt";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/2 teaspoon onion powder";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 tablespoons unsalted butter, chilled";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "4-5 tablespoons cold water";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "Goldfish cookie cutter (optional)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Finely shred your cheese with a cheese grater and add to a food processor. Process until cheese is very finely chopped. (This will ensure that the cheese becomes well incorporated in the dough.)";
+        }
+        operation step_2 does prepare {
+            note "Add in flour, salt, sugar, baking powder, paprika, celery salt, and onion powder and pulse until evenly incorporated.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add in butter and 4 tbsp cold water and pulse a few more times.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Move the dough to a work surface and knead until it forms a dough that sticks together. If it's still crumbly, add more water in small increments until it comes together. Divide dough in half and shape into two 1\" thick discs. Cover and refrigerate for 30 minutes to an hour.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Meanwhile, preheat oven to 350˚F and line two large baking sheets with parchment paper.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "On a floured work surface, roll out each dough disc into a roughly 9-10\" by 11\" rectangle. It should be about 1/8\" thick. Use your cookie cutter to cut the goldfish, and move to a parchment-lined baking sheet and sprinkle with salt to taste. You can re-roll any dough scraps.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 14-16 minutes, until bottoms are slightly browned. Let cool completely on the baking sheet before enjoying.";
+            after step_6;
+        }
+    }
+}

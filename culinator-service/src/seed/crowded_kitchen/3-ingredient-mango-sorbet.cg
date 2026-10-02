@@ -1,0 +1,38 @@
+culinator 0.3;
+
+recipe ck_3_ingredient_mango_sorbet {
+    title "3-Ingredient Mango Sorbet";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/3-ingredient-mango-sorbet/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 255 min;
+    description "Why buy store-bought mango sorbet when you can make your own at home with just 3 ingredients and way less sugar in just a few minutes? This is one of our most popular recipes of all time (it even made it into our debut cookbook!). It's SO easy to make and absolutely delicious! This recipe is also naturally dairy free and to make it extra fun, you can serve the sorbet in mango halves.";
+
+    ingredient ingredient_1 measured by mass {
+        name "5 cups frozen mango";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/4 cup freshly squeezed lime juice";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup agave or honey";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "If you want to serve these in mango halves, slice the mango around the pit on both sides and use a spoon to remove the fruit. It took about 4 mangos to get 5 cups of diced mango. Transfer the diced mango to a sheet pan lined with parchment paper and freeze until frozen solid (2-4 hours). Alternatively, you can skip this step and just use store-bought frozen mango.";
+        }
+        operation step_2 does prepare {
+            note "Add all ingredients to a food processor or blender and blend until completely smooth. This may take a minute or two since the mango is frozen. Stop to scrape down the sides in between blending to make sure everything is incorporated.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Enjoy right away for a soft serve style, or scoop into mango halves and return to the freezer until set (2-3 hours).";
+            after step_2;
+        }
+    }
+}

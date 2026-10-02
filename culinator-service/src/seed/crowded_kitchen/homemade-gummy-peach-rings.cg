@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe ck_homemade_gummy_peach_rings {
+    title "Homemade Gummy Peach Rings";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-gummy-peach-rings/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 590 min;
+    description "With fresh peaches and just 4 other ingredients, you can make homemade gummy peach rings that are chewy, delicious, and packed with real peach flavor. Gummy peach rings are one of our favorite snacks. They look and taste amazing, but are usually made with artificial flavors, colorings, and corn syrup. So why not make them at home? It's way easier than you think!";
+
+    ingredient ingredient_1 measured by mass {
+        name "180g fresh or frozen yellow peaches (about 2/3 cup blended)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 envelopes (~7g each, ~14g total) unflavored powdered gelatin";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 tablespoons freshly squeezed lemon juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Optional: 1 1/2 teaspoons tart cherry concentrate (or natural red food coloring)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Optional: 1/4 cup sugar + 1 tbsp (or less) citric acid for coating";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Blend the fruit. Add fruit to blender and blend until completely smooth. We also passed the fruit through a fine mesh strainer to remove some of the skin, but this is totally optional.";
+        }
+        operation step_2 does prepare {
+            note "Bloom the gelatin. In a small container, sprinkle gelatin evenly over lemon juice, then stir thoroughly until there are no dry grains visible. Let sit for 5 minutes.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Heat up the fruit purée. While the gelatin blooms, combine fruit purée with honey or agave in a small saucepan over low heat, and stir until combined. You want to heat the purée enough to melt the gelatin (>~120˚F), but you don't want to bring it to a boil, which will denature the gelatin.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Combine fruit purée with gelatin. Add gelatin and lemon juice mixture to the fruit puree, and stir until it's completely dissolved. Remove pan from heat and let cool for about 5 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Fill up your molds. Pour half of the mixture into one small mixing bowl, and half into another. Add tart cherry concentrate to one of the bowls and mix to create your two different colors. Give your silicone molds a light spray with avocado oil or cooking spray. Use two spoons or droppers simultaneously to fill up each ring, then move to your refrigerator. Refrigerate for an hour and a half to let them set up.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Air dry your gummies. Remove from the molds and place on a wire rack, and let sit for 8 hours or overnight. The gummies will shrink significantly and achieve a more intense flavor and a chewy, gummy texture.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Optional: Coat them in the sugar/citric acid mixture just before eating. NOTE: The citric acid/sugar mixture will eventually draw out moisture from the gummies, so they will start to melt/disintegrate. We suggest waiting to coat them until just before eating. You can keep the sugar/citric acid mixture in a little container and just coat a few when you want to eat them, versus coating them all at once and then storing (this will not work).";
+            after step_6;
+        }
+    }
+}

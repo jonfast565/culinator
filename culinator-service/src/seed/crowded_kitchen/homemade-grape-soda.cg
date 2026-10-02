@@ -1,0 +1,50 @@
+culinator 0.3;
+
+recipe ck_homemade_grape_soda {
+    title "Homemade Grape Soda";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-grape-soda/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 20 min;
+    description "You can make your own grape soda at home with just 5 ingredients and no expensive equipment. It has less sugar than store-bought, with no artificial sweeteners, colors, or additives!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups red grapes";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/4 cup blueberries";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 cup granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "Juice and zest of 1 lemon";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Sparkling water";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "To a small bowl, add the sugar and the zest of one lemon. Use your fingers to massage the zest into the sugar, until no wet clumps of zest remain.";
+        }
+        operation step_2 does prepare {
+            note "To a small saucepan over medium low heat, add the grapes, blueberries, lemon juice, and the lemon sugar. Cook for 15-20 minutes, mashing the fruit occasionally, until you're left with a wine-colored mash of grape skins and liquid.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Strain out the solids and move the syrup to the refrigerator to cool to room temperature.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Once the syrup is cooled, add 2-4 tablespoons of the syrup to an ice-filled glass, then top with sparkling water. Stir, and enjoy!";
+            after step_3;
+        }
+    }
+}

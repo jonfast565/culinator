@@ -13,7 +13,7 @@ import { parseOutlineWasm } from "../../services/wasm/parser";
  *
  * Projected from `culinator-parser`'s `Outline` via WebAssembly, so the byte
  * ranges come from the same grammar that reads the file. `culinator-wasm`'s
- * test suite pins these ranges against the UI model's for all 43 seeds, because
+ * test suite pins these ranges against the UI model's for every seed, because
  * the builder joins the two by position — if they drift, edits land on the
  * wrong declaration.
  */

@@ -1,0 +1,134 @@
+culinator 0.3;
+
+recipe ck_pumpkin_pie_pop_tarts {
+    title "Pumpkin Pie Pop Tarts";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/pumpkin-pie-pop-tarts/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 180 min;
+    description "We've made homemade Blueberry Pop Tarts, Brown Sugar Cinnamon Pop Tarts, and Strawberry Pop Tarts, but these homemade Pumpkin Pie Pop Tarts are a delicious seasonal spin for fall! These are made with our classic pop tart dough with a pinch of pumpkin pie spice added, plus a rich, smooth Homemade Pumpkin Butter filling, a simple icing and fall-colored sprinkles.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 1/2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup unsalted butter (chilled and cubed)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "4 teaspoons granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons pumpkin pie spice";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 cup very cold water";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 egg yolk (beaten (this is for the egg wash to seal the pop tarts))";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 15 oz can pure pumpkin purée";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "¼ cup granulated sugar";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "¼ cup light brown sugar (packed)";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "½ cup water";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "2 teaspoons pumpkin pie spice";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "½ teaspoon kosher salt";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "3/4 cup powdered sugar";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "~1 1/2 tablespoons milk";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "Fall-colored sprinkles of choice";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a food processor, combine the flour, butter, sugar, salt, and pumpkin pie spice and pulse a few times until the butter pieces are pea-sized. Stream in the cold water, pulsing as you go, until a crumbly dough forms.";
+        }
+        operation step_2 does prepare {
+            note "Transfer the dough to a lightly floured surface and gently knead it into a ball. Flatten the dough into a rectangle about 1\" thick, wrap in plastic wrap and refrigerate for 1-2 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "To make the pumpkin butter filling, add all ingredients to a medium-sized saucepan over medium heat and whisk or stir with a spatula until everything is well incorporated.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Bring the pumpkin butter to a gentle simmer, then reduce the heat to medium-low.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Let the mixture cook for about 30 minutes, stirring every 5 or so minutes, until the pumpkin butter reduces by about 25%. It should be thick, darker in color than when you started, smooth, and more like a paste than a purée. You should end up with almost exactly 2 cups of pumpkin butter.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Let the pumpkin butter cool completely while the dough chills.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Preheat the oven to 300˚F (150˚C) and line a sheet pan with parchment paper.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "On a well-floured surface, roll one half of the dough into a large rectangle about 1/8-inch thick, then trim it into a straight-edged rectangle that's 14x10 inches. Cut the rectangle in half lengthwise, then cut each half into 4 rectangles for 8 total rectangles, each roughly 5\" long and 3.5\" wide.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Repeat with the other half of the dough. In total, you will have 16 rectangles of the same size. Note: If at any point the dough starts getting too soft to work with, just pop it in the freezer for 10 minutes, then carry on.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Using a the flat end of a wooden skewer or a fork, dock several holes in the center of 8 of the rectangles (these will be the tops). Make sure the holes go all the way through the dough, otherwise the steam will cause the tops of your pop tarts to puff up.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "Into the centers of the other 8 rectangles, spoon about 2 tablespoons of the filling and spread into a thin layer, leaving a border around the edges.";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "Around the border of the filling, brush the beaten egg yolk, then place one of the docked rectangles on top, pressing down the edges to secure. Using the tines of a fork, crimp and seal the edges of each tart. Transfer to the sheet pan, then repeat with the remaining pop tarts.";
+            after step_11;
+        }
+        operation step_13 does prepare {
+            note "Bake the tarts for 30-35 minutes, until very lightly browned on the top and edges and golden brown on the bottom. Carefully transfer to a cooling rack to cool completely.";
+            after step_12;
+        }
+        operation step_14 does prepare {
+            note "To make the icing, whisk together the powdered sugar and milk. It should be thick, but still pourable. Test a small amount on one pop tart. If you can see the dough through the icing, it's probably a bit too thin, so add a touch more powdered sugar. Top with sprinkles and let the icing set before you enjoy!";
+            after step_13;
+        }
+    }
+}

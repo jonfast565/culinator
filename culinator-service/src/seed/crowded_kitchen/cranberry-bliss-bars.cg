@@ -1,0 +1,106 @@
+culinator 0.3;
+
+recipe ck_cranberry_bliss_bars {
+    title "Cranberry Bliss Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/cranberry-bliss-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 42 min;
+    description "These homemade Cranberry Bliss Bars are even more delicious than the Starbucks version! They have a chewy, thick blondie base studded with white chocolate chips and cranberries, and a tangy cream cheese frosting. The perfect holiday treat – and they're pretty easy to make!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup unsalted butter";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 1/2 cups brown sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 eggs";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tsp orange zest";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 1/2 tsp vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/4 tsp ground ginger";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 tsp baking powder";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/2 tsp salt";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 cups + 2 tbsp Bob's Red Mill All Purpose Flour";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 cup white chocolate chips";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "3/4 cup dried cranberries";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "8 oz cream cheese (softened to room temperature)";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 1/2-2 cups powdered sugar";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/4 tsp vanilla extract";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/2 cup dried cranberries (chopped)";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/2 cup melted white chocolate chips";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 350˚F and line a 9x13” baking dish with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Add butter to a small pot and melt over low heat. Whisk together brown sugar and melted butter in a large bowl.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add in the eggs, orange zest and vanilla and whisk until smooth.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a separate bowl, whisk together the ginger, baking powder, salt and flour. Add the dry mixture to the wet mixture, mixing just until combined, then stir in the white chocolate and cranberries.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Spread the dough into the prepared pan in an even layer and bake for 22-24 mins, until light golden brown around the edges. (Don’t over-bake! They should still be fairly pale on top.)";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Add the cream cheese to a mixing bowl and beat for 1 minute. Add in the powdered sugar and vanilla and beat until smooth. Add additional powdered sugar as desired for consistency – I like mine with 1 1/2 cups, but it will be a little thinner than the Starbucks version.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Spread the frosting on top of the cooled bars, then top with chopped cranberries and drizzle with white chocolate. Slice into triangles and enjoy! Store in the refrigerator.";
+            after step_6;
+        }
+    }
+}

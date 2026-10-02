@@ -1,0 +1,190 @@
+culinator 0.3;
+
+recipe ck_homemade_chicken_burrito_bowls {
+    title "Homemade Chicken Burrito Bowls";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-chicken-burrito-bowls/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 330 min;
+    description "These homemade chicken burrito bowls are easy to make at home and taste just as good as store-bought. Best of all, you can add however much you like of each component! This recipe is also perfect for meal prep, as each component keeps well in the refrigerator.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 lb boneless, skinless chicken thighs";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "~5 chipotles from a can of chipotles in adobo sauce + all of the sauce";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 garlic cloves";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon Mexican oregano, toasted";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 teaspoon cumin seeds, toasted";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 tablespoon honey";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 teaspoon ground black pepper";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "4 teaspoons kosher salt (less if using table salt or fine sea salt)";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 cups long grain white rice";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "3 1/2 cups water";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "2 bay leaves";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "2-3 tablespoons sunflower oil (or another neutral oil)";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 1/2 teaspoons kosher salt (less if using table salt or fine sea salt)";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "Juice of 2 limes";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/3 - 1/2 cup fresh cilantro, finely chopped";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "2 ripe avocados";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1 tablespoon freshly squeezed lime juice";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "2 tablespoons cilantro, finely chopped";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "1/4 cup red onion, finely diced";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "1/2 of a medium jalapeño, finely diced, including seeds";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "1/4 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "2 ears of fresh corn";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1/4 cup red onion, diced";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "1/2 roasted and peeled poblano pepper, diced";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "1 jalapeño, seeds removed, diced";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "2 tablespoons cilantro, chopped";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "1/2 tablespoon lemon juice";
+    }
+
+    ingredient ingredient_28 measured by mass {
+        name "1/2 tablespoon lime juice";
+    }
+
+    ingredient ingredient_29 measured by mass {
+        name "pinch of kosher salt";
+    }
+
+    ingredient ingredient_30 measured by mass {
+        name "1 tbsp oil";
+    }
+
+    ingredient ingredient_31 measured by mass {
+        name "1.5 cups green bell pepper, julienned";
+    }
+
+    ingredient ingredient_32 measured by mass {
+        name "1/2 cup red onion, sliced";
+    }
+
+    ingredient ingredient_33 measured by mass {
+        name "1 tablespoon Mexican oregano";
+    }
+
+    ingredient ingredient_34 measured by mass {
+        name "pinch of kosher salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note ". Add the Mexican oregano and cumin seeds to a small skillet over medium heat and toast for a few minutes, until fragrant and slightly browned.";
+        }
+        operation step_2 does prepare {
+            note "Add ~5 peppers from the chipotles in adobo can to a blender, then add in the rest of the liquid from the can. Add in the oregano and cumin, garlic, honey, salt and pepper. Blend until smooth then pour over chicken thighs and toss well to combine. Marinate for 4 hours or up to overnight.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add water, bay leaves and rinsed rice to a large pot. Bring to a boil, then reduce to a simmer and cover with a lid.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Set a timer for 10 minutes, then turn off the heat, keeping the pot covered, and let the rice steam for another 10 minutes. Fluff rice with a fork, then mix in oil, salt, cilantro, and lime juice.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note ". Mash the avocados with a fork and then stir in red onion, cilantro, lime juice, salt, and jalapeño.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "To prepare the poblano pepper, roast it over an open flame on your stovetop for several minutes, turning it occasionally with tongs, until the skin is blackened and blistered. Transfer to a cutting board and cover with a bowl. Let it steam for about 10 minutes, then peel the pepper (the skin should come right off) and remove and discard the seeds.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Cut the corn off of two ears of cooked corn (you can also use frozen), then combine corn, red onion, citrus juice, poblano and jalapeño, cilantro and salt in a bowl and toss until well combined.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "We would strongly recommend doing this on your grill, as the cooking process will release a lot of strong pepper smell into the air. Cook for 4-5 minutes per side over medium high heat, until thighs reach an internal temperature of 165˚F.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Start with a base of rice, add a scoop of black or pinto beans (we used canned and rinsed beans), a scoop of chicken, some corn salsa, a scoop of guacamole, a dollop of salsa, and some cheese. Enjoy!";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note ", heat 1 tbsp oil in a skillet. Add in the bell pepper, onion, salt and oregano and sauté for 10-15 minutes, stirring often, until browned.";
+            after step_9;
+        }
+    }
+}

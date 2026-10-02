@@ -1,0 +1,186 @@
+culinator 0.3;
+
+recipe ck_chicken_pesto_parm_bowl_sweetgreen_dupe {
+    title "Chicken Pesto Parm Bowl (Sweetgreen Dupe)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/chicken-pesto-parm-bowl-sweetgreen-dupe/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 90 min;
+    description "We love sweetgreen's Chicken Pesto Parm Bowl, but we made a few updates to make it even better at home! Our version combines crispy panko crusted chicken, spicy roasted broccoli, quinoa, cherry tomatoes, shaved parmesan, and two tasty vinaigrettes served over a bed of spinach. This is a great meal prep recipe that you won't get sick of!";
+
+    ingredient ingredient_1 measured by mass {
+        name "3/4 pound broccoli florets";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 tablespoon olive or sunflower oil";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 teaspoon red pepper flakes";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon umami seasoning (or salt to taste)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "3 boneless, skinless chicken breasts";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 cups panko breadcrumbs";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3/4 cup grated parmesan cheese";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2 whole eggs + 1 tablespoon of water";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1/2 cup all purpose flour";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/2 teaspoon dried parsley";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/2 teaspoon dried basil";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 teaspoon dried oregano";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/4 teaspoon black pepper";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "Oil for pan frying";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/2 cup fresh basil";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1/2 cup fresh flat leaf parsley";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "1/4 cup olive oil";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "1 tablespoon red wine vinegar";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "1/2 tablespoon dijon mustard";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "1 garlic clove";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1/4 cup sun dried tomatoes";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "1/3 cup of oil from a jar sun dried tomatoes (or regular olive oil)";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "1/4 cup red wine vinegar";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "1 clove garlic";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "1 tablespoon honey";
+    }
+
+    ingredient ingredient_28 measured by mass {
+        name "1 teaspoon Italian seasoning";
+    }
+
+    ingredient ingredient_29 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_30 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_31 measured by mass {
+        name "1 cup dry quinoa, cooked according to package directions";
+    }
+
+    ingredient ingredient_32 measured by mass {
+        name "4 cups baby spinach";
+    }
+
+    ingredient ingredient_33 measured by mass {
+        name "1 cup halved cherry tomatoes";
+    }
+
+    ingredient ingredient_34 measured by mass {
+        name "1/4 cup shaved parmesan";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat your oven to 350˚F / 175˚C. Cook quinoa according to package directions and set aside to cool.";
+        }
+        operation step_2 does prepare {
+            note "Toss broccoli florets in oil, red pepper flakes and umami seasoning or salt until well coated. Transfer to a large sheet pan and roast for 30-40 minutes, until fork tender and lightly charred.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Make the chicken: Add 1/4-inch of oil to a heavy-bottomed pan and turn the heat to medium low. Heat the oil to about 350˚F.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Use a meat tenderizer to pound the chicken breasts thinly, until they're about 1/4-inch thick. Season each chicken breast on both sides with salt and pepper to taste.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Place flour on a shallow plate. In another shallow bowl, combine eggs and water and whisk. In a third shallow bowl, whisk together the panko breadcrumbs, parmesan, salt, pepper, and dried herbs.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Using a pair of tongs, coat the cutlet with a thin dusting of flour on both sides. Next, coat both sides in egg, letting the excess run off, and then coat both sides in the bread crumb mixture, pressing the crumbs into the cutlet to make sure it's completely covered.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Once the oil is heated, pan fry the cutlets for 5-8 minutes per side, until golden brown and crispy. Keep the oil around 350˚F so they cook evenly. Remove the chicken from the pan and let cool before dicing into 1/2-inch cubes.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Make the vinaigrettes: Both vinaigrettes are made in a blender. Add all ingredients for the sun dried tomato vinaigrette to a blender and blend until smooth. Rinse your blender, then repeat for the pesto vinaigrette.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Assemble your bowls: Start with a base of spinach, then top with cooked quinoa, spicy broccoli, crispy chicken, shaved parmesan and both vinaigrettes. Enjoy!";
+            after step_8;
+        }
+    }
+}

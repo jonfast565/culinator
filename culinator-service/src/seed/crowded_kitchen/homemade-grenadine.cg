@@ -1,0 +1,42 @@
+culinator 0.3;
+
+recipe ck_homemade_grenadine {
+    title "Homemade Grenadine (Pomegranate Syrup)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-grenadine/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 15 min;
+    description "You only need 3 ingredients to make this Homemade Grenadine – perfect for cocktails, mocktails, desserts and more! Pomegranate syrup is so easy to make and you can keep it on hand in your refrigerator for up to a month.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 large pomegranates (or 1 cup no sugar added pomegranate juice)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 tablespoon lemon juice";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Start by juicing the pomegranates. Add all of the pomegranate arils to a vacuum sealed bag or just a regular zip lock, remove all of the air, and gently roll with a rolling pin until you've \"popped\" all of the arils without crushing the seeds inside. Try to get as much juice out of each aril as possible.";
+        }
+        operation step_2 does prepare {
+            note "Strain the pomegranate arils through a fine mesh sieve. Press down on the arils with the back of a spoon to remove as much juice as possible.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "You should get about 1 cup of pomegranate juice from 2 large pomegranates. Add to a pot with an equal quantity (1 cup) of sugar. Heat just until the sugar is dissolved (don't let it come to a boil). Remove from heat, then stir in the lemon juice.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Let cool completely before using or transferring to a bottle. Store in the refrigerator in a sealed container for up to one month.";
+            after step_3;
+        }
+    }
+}

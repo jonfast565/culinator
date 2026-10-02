@@ -25,6 +25,27 @@ use culinator_narrative::NumberStyle;
 use culinator_parser::parse_recipe_recovering;
 use wasm_bindgen::prelude::*;
 
+#[wasm_bindgen]
+pub fn batch_preview(request_json: &str) -> String {
+    match serde_json::from_str::<culinator_parser::BatchRequest>(request_json) {
+        Ok(request) => {
+            serde_json::to_string(&culinator_parser::plan_batch(&request)).unwrap_or_default()
+        }
+        Err(error) => format!("{{\"error\":\"Invalid batch request: {error}\"}}"),
+    }
+}
+
+#[wasm_bindgen]
+pub fn batch_apply(request_json: &str, fingerprint: &str) -> String {
+    match serde_json::from_str::<culinator_parser::BatchRequest>(request_json) {
+        Ok(request) => match culinator_parser::apply_batch(&request, fingerprint) {
+            Ok(preview) => serde_json::to_string(&preview).unwrap_or_default(),
+            Err(error) => format!("{{\"error\":\"{error}\"}}"),
+        },
+        Err(error) => format!("{{\"error\":\"Invalid batch request: {error}\"}}"),
+    }
+}
+
 /// Parse `source` into the editor's UI model, recovering from syntax errors.
 /// Returns a JSON string; parsing never fails, it degrades.
 #[wasm_bindgen]

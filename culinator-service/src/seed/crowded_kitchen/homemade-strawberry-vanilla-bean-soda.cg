@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_homemade_strawberry_vanilla_bean_soda {
+    title "Homemade Strawberry Vanilla Bean Soda";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-strawberry-vanilla-bean-soda/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 20 min;
+    description "We've made homemade orange soda and homemade Sprite (lemon lime soda), but I think this Strawberry Vanilla Bean Soda might be my favorite so far! Perfect for spring and summer, it's sweet, refreshing, fruit-forward and tastes like a cream soda, thanks to the addition of vanilla bean paste. It's easy to make with just 5 ingredients and you can keep the strawberry vanilla syrup stored in your fridge for weeks!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups diced strawberries";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "zest and juice of one lemon";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3/4 - 1 cup sugar, to taste";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 cup water";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 1/4 teaspoon vanilla bean paste";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Sparkling water/club soda for topping (Topo Chico works really well)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "To a small bowl, add the sugar and lemon zest and massage the zest into the sugar until the zest is evenly incorporated throughout the sugar.";
+        }
+        operation step_2 does prepare {
+            note "To a small saucepan, add the diced strawberries, zest and sugar mixture, lemon juice, and still water. Cook over medium low heat and simmer for 10-15 minutes until the strawberries have softened and broken down.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Strain the cooked syrup to remove the strawberry solids, using a spatula or spoon to extract as much liquid as possible.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Stir or whisk in the vanilla bean paste, and move the to refrigerator to cool.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Once cooled, add anywhere from 2-4 tablespoons of the syrup to an ice-filled glass, and top with sparkling water.";
+            after step_4;
+        }
+    }
+}

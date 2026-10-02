@@ -1,0 +1,106 @@
+culinator 0.3;
+
+recipe ck_homemade_oatmeal_cream_pies {
+    title "Homemade Oatmeal Cream Pies";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-oatmeal-cream-pies/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 45 min;
+    description "With two soft, chewy oatmeal cookies sandwich a sweet marshmallow buttercream filling, these are every bit as nostalgic as the original packaged version. Making oatmeal cream pies from scratch gives you that familiar flavor and texture with fresher ingredients, richer molasses flavor, and a soft-baked cookie that’s hard to beat! This recipe is part of our Better Than Store-Bought series, where we recreate homemade versions of your favorite store-bought snacks and treats.";
+
+    ingredient ingredient_1 measured by mass {
+        name "¾ cup unsalted butter (melted)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons molasses";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "½ cup granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "¾ cup light brown sugar";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 eggs";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 ½ cups quick cook oats";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon baking soda";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 teaspoon salt";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 cup butter (softened to room temperature)";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 1/2 cups powdered sugar";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1 1/2 cups marshmallow fluff* (store-bought or homemade)";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "Pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat the oven to 350˚F and line two baking sheets with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "In a large mixing bowl, whisk together the melted butter, molasses, granulated sugar and brown sugar. Add in the eggs and vanilla extract and whisk until smooth.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "In a separate medium bowl, whisk together the all purpose flour, oats, baking soda, salt and cinnamon.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the dry to the wet ingredients in two batches, stirring just until fully combined and no streaks of flour remain.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Using a size 50 cookie dough scoop (holds ~1 1/4-1 1/2 tablespoons of dough), scoop the dough onto the baking sheet, then use your hand to gently flatten the ball into a disc. Leave about 1 1/2 inches between each cookie.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Bake for 9-11 minutes, until the bottoms and edges are golden brown. Remove from the oven and let cool for a minute, then transfer to a wire cooling rack to cool completely before filling.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "To make the filling, add the butter to a mixing bowl and beat on medium-high speed for 2 minutes, until light and fluffy. Add the powdered sugar and continue mixing for 1 minute. Add the marshmallow fluff and salt and beat until well combined. It should be a fairly thick, stiff mixture. If it doesn't seem thick enough, add additional powdered sugar 2 tablespoons at a time.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Using a piping bag with a round tip, pipe about 1 tablespoon of filling onto the bottom of half of the cookies, then sandwich with another cookie. Enjoy!";
+            after step_7;
+        }
+    }
+}

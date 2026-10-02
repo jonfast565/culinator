@@ -1,0 +1,77 @@
+culinator 0.3;
+
+recipe ck_homemade_fudge_stripes {
+    title "Homemade Fudge Stripes";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-fudge-stripes/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    description "Homemade Fudge Stripes are the newest addition to our Better Than Store-Bought series, where we recreate your favorite store-bought snacks from scratch. Based on the Keebler classic, these are made with a buttery, shortbread cookie base and then dipped in/drizzled with semisweet chocolate. You only need 6 ingredients and the dough comes together quickly and easily!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup unsalted butter (softened to room temp)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3/4 cup powdered sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/4 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "7 ounces semisweet or dark chocolate";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a large mixing bowl, cream the butter and sugar just until well combined, about 1 minute. Add in the vanilla and mix just until combined.";
+        }
+        operation step_2 does prepare {
+            note "Add in the flour and salt and continue just until the dough comes together. It will be a soft and sticky dough. Transfer the dough to plastic wrap, flatten into a rectangle and refrigerate for about 1 hour.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Preheat the oven to 325˚F and line two baking sheets with parchment paper.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "On a floured surface, roll the dough about 1/4-inch thick (using a regular rolling pin). If you're using an embossed rolling pin, stop just before it's 1/4-inch thick, then roll the embossed rolling pin on your last pass over the dough.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Cut the cookies out using a 2-2 1/2 inch cookie cutter, then use a smaller circle (we use a 3/4-inch piping tip) to cut out the center. If the dough is very soft, we suggest placing it in the freezer for 5-10 minutes before transferring the cookies to your prepared baking sheets.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Re-roll the remaining dough and repeat.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Chill the cookies in the fridge for 15-30 minutes, then bake for 12-14 minutes until very lightly browned on the bottoms. If your oven tends to run hot (like ours), stack another sheet pan directly underneath the one you're baking on. This prevents the bottoms from burning, but also means the cookies may take a few extra minutes to bake. (Ours took ~16 minutes.)";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Let the cookies cool on the baking sheet for 5 minutes, then transfer to a cooling rack to cool completely. Save the parchment paper you baked the cookies on!";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Melt your chocolate in a double boiler or in 30 second intervals in the microwave, stirring between each interval, until fully melted. Transfer the melted chocolate to a piping bag.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Using the parchment paper you baked the cookies on, pipe chocolate into a circle (using the imprint from each cookie as a guide.) Place a cookie on top and move it around a bit so the entire bottom is coated. You'll need to try one or two to get a feel for how much chocolate to use. Drizzle more chocolate over the top of each cookie, then refrigerate until the chocolate is set. Enjoy!";
+            after step_9;
+        }
+    }
+}

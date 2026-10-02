@@ -15,7 +15,7 @@ recipe pizza_dough {
         name "wheat flour";
         quantity 400 g;
         divided true;
-        note "400 g in the dough, plus more for the work surface; rye or other flours may need more liquid";
+        note "Use the measured flour in the dough, plus more for the work surface; rye or other flours may need more liquid";
     }
     ingredient water measured by mass {
         name "lukewarm water";

@@ -80,6 +80,8 @@ Current event names:
 - `recipes.validate`
 - `formulas.calculate`
 - `formulas.solve`
+- `formulas.batchPreview` — accepts a `BatchRequest` (`sourceText`, `formulaSymbol`, optional full `formula`, `constraint`, rounding/minimum options) and returns the proposed source, changed fields, warnings, blockers, and a source fingerprint.
+- `formulas.batchApply` — accepts `{ batch: BatchRequest, sourceFingerprint }`; rejects stale or blocked previews and returns the same proposed source for the recipe editor to save.
 - `formulas.percentages`
 - `formulas.save`
 - `formulas.list`

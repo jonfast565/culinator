@@ -1,0 +1,94 @@
+culinator 0.3;
+
+recipe ck_homemade_cookie_crisp_cereal {
+    title "Homemade Cookie Crisp Cereal";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-cookie-crisp-cereal/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 18 min;
+    description "Our Homemade Cookie Crisp Cereal is crunchy, chocolatey, delicious, and WAY better than the original! It's made with maple syrup instead of regular sugar so it's not overly sweet like most cereals. Plus, it only takes 10 minutes in the oven! This recipe is part of our Better Than Store-Bought series, where we share homemade versions of your favorite store-bought snacks, meals and more.";
+
+    ingredient ingredient_1 measured by mass {
+        name "¾ cup all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "¾ cup oat flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "¼ cup cornstarch";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "½ teaspoon baking powder";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "½ teaspoon kosher salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "½ cup unsalted butter (melted and cooled)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "¾ cup maple syrup";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 egg";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "¼ cup mini chocolate chips (chopped)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat the oven to 350˚F / 175˚C.";
+        }
+        operation step_2 does prepare {
+            note "To a small bowl, add the all-purpose and oat flour, corn starch, baking powder, and salt. Whisk to combine until fully incorporated, and set aside.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "To a larger mixing bowl, add the melted butter, maple syrup, vanilla, and egg. Whisk to combine until fully incorporated.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the dry ingredients into the wet in two batches, fully combining between additions until no dry streaks remain in the batter.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Fold in the chopped chocolate chips.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Transfer the dough to a piping bag fitted with a 2A size piping tip. You can also use a plastic zip-top bag to pipe the cookies, and cut the tip a little smaller than 1/2 inch.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Pipe small circles about the size of a dime onto a parchment lined cookie sheet. The cookies don't spread much, so they can be close together.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Bake for 5-8 minutes, until they're golden on the bottom and around the edges.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Remove from the oven and let them cool on the pan. They'll crisp up more as they cool.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Enjoy by the handful, or in a bowl with milk!";
+            after step_9;
+        }
+    }
+}

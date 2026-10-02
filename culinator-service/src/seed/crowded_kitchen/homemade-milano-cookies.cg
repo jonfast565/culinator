@@ -1,0 +1,94 @@
+culinator 0.3;
+
+recipe ck_homemade_milano_cookies {
+    title "Homemade Milano Cookies";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-milano-cookies/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 40 min;
+    description "Homemade Milano Cookies are easier to make than you think, with two crisp butter cookies sandwiching a rich chocolate ganache. They're absolutely delicious and make for a fun baking project or DIY edible gift!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1/2 cup 113g/1 stick unsalted butter, softened to room temperature";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3/4 cup 85-90g powdered sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup 50g granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 large egg (room temperature)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 cup 120g all purpose flour";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 tablespoons 16g cornstarch";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Pinch of salt";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 ounces bittersweet or dark chocolate* (chopped into small pieces)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/4 cup 60ml heavy cream";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat the oven to 350˚F / 175˚C and line two baking sheets with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Add the butter, powdered sugar and granulated sugar to a mixing bowl and cream on medium speed until light and fluffy, about 1 minute.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add in the egg and vanilla and continue mixing until well incorporated, scraping down the sides as needed.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Whisk together the flour, cornstarch and salt in a medium bowl, then add to the wet mixture, mixing just until the batter comes together.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Transfer the cookie dough to a piping bag with a 1/2-inch round tip. For perfectly even sizing, you can use a ruler to draw lines on the parchment paper with a pencil that are 2 3/4 inches long. We did 4 rows of 4 cookies on a standard sheet pan, evenly spaced apart. Once you draw the lines, flip over the parchment.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Pipe the dough in a smooth, straight line (2 3/4 inches long). Wet the tip of your finger to gently press down on the dough to smooth out any sharp edges. Make sure they're spaced about 1 1/2 inches apart because they will spread in the oven.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 10-13 minutes, until the edges are golden brown. Remove from the oven and let the cookies cool on the baking sheet.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Heat the heavy cream in a saucepan until it's steaming hot, but not boiling. Pour it over the chopped chocolate in a heat-safe bowl and let it sit for 2-3 minutes. Whisk until the ganache is fully smooth and all of the chocolate is melted.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Using an electric hand mixer, beat the chocolate ganache on high speed for 2-3 minutes, until it becomes paler, more airy and slightly thicker.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Transfer the ganache to a piping bag or plastic bag and snip off a small corner. Pipe about 2 teaspoons of ganache in the center of the bottom of half of the cookies. Place another cookie on top and gently press down so the chocolate spreads to the edges. Let the chocolate set (you can speed this up in the refrigerator), then enjoy!";
+            after step_9;
+        }
+    }
+}

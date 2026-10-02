@@ -1,0 +1,114 @@
+culinator 0.3;
+
+recipe ck_homemade_blueberry_pop_tarts {
+    title "Homemade Blueberry Pop Tarts";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-blueberry-pop-tarts/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 140 min;
+    description "You can find this recipe featured in our brand new cookbook, Crowded Kitchen! Our homemade strawberry and brown sugar cinnamon pop tart recipes are some of the most popular on our website (for good reason!), so we knew we had to include these homemade blueberry pop tarts in our first cookbook! They're made with a flaky, easy 4-ingredient crust, a tart blueberry lemon filling and a beautiful, naturally colored icing. These are so much better than store-bought!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 1/2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup unsalted butter, chilled and cubed";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "4 teaspoons granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 cup very cold water";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 lb (450g) blueberries (fresh or frozen)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3 tablespoons honey";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 tablespoon lemon juice";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon lemon zest";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 large egg yolk, beaten";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 cup powdered sugar";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 teaspoon lemon juice";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "Sprinkles (optional)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a food processor, combine the flour, butter, sugar and salt and pulse a few times until the butter pieces are pea-sized. Stream in the cold water, pulsing as you go, until a crumbly dough forms.";
+        }
+        operation step_2 does prepare {
+            note "Transfer the dough to a lightly floured surface and gently knead it into a ball. Divide the dough in half and wrap each half in plastic wrap, flattening each one into a rectangle that's about 1 inch thick. Refrigerate for 1-2 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "To make the filling, add the blueberries, honey, lemon juice and lemon zest to a saucepan over medium heat. Gently smash the blueberries, then reduce the heat to medium-low and simmer for 20-25 minutes, stirring and mashing occasionally, until the mixture thickens. Remove from heat and cool completely.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a small bowl, reserve 2 tbsp of the filling for the glaze and set aside.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Preheat the oven to 300˚F (150˚C) and line a sheet pan with parchment paper.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "On a well-floured surface, roll one half of the dough into a large rectangle about 1/8-inch thick, then trim it into a straight-edged rectangle that's 14x10 inches. Cut the rectangle in half lengthwise, then cut each half into 4 rectangles for 8 total rectangles.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Repeat with the other half of the dough. In total, you will have 16 rectangles of the same size.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Using a fork, dock several holes in the center of 8 of the rectangles (these will be the tops). Into the centers of the other 8 rectangles, spoon about 1 1/2 tbsp of the filling and spread into a thin layer, leaving a border around the edges.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Around the border of the filling, brush the beaten egg yolk, then place one of the docked rectangles on top, pressing down the edges to secure. Using the tines of a fork, crimp and seal the edges of each tart. Transfer to the sheet pan, then repeat with the remaining pop tarts.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Bake the tarts for 30-35 minutes, until very lightly browned on the top and edges and golden brown on the bottom. Carefully transfer to a cooling rack to cool completely.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "To make the glaze, add the reserved 2 tbsp blueberry filling to a small bowl with 1 tbsp water and stir to combine, then strain it through a fine mesh sieve into another bowl, extracting as much blueberry juice as possible.";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "Add the powdered sugar and lemon juice to the blueberry juice and whisk until smooth. Spread as much of the glaze as you'd like over the cooled tarts and top with sprinkles.";
+            after step_11;
+        }
+    }
+}

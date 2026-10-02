@@ -27,6 +27,13 @@ fn jsonld_import_parses_as_valid_cg() {
     assert_eq!(recipe.resources.len(), 3);
     assert_eq!(recipe.operations.len(), 2);
     assert!(draft.source_text.contains("recipe easy_crepes"));
+    assert_eq!(recipe.operations[0].notes, vec!["Whisk eggs and milk."]);
+    assert_eq!(
+        recipe.operations[1].notes,
+        vec!["Add flour and rest 30 minutes."]
+    );
+    assert_eq!(recipe.operations[0].duration_min_seconds, None);
+    assert_eq!(recipe.operations[1].dependencies.len(), 1);
 }
 
 #[test]

@@ -25,6 +25,8 @@ Authorization: Bearer <per-launch-token>
 - `POST /api/v1/validation`
 - `POST /api/v1/formulas/calculate`
 - `POST /api/v1/formulas/solve`
+- `POST /api/v1/formulas/batch-preview` (same `BatchRequest` as WebSocket)
+- `POST /api/v1/formulas/batch-apply` (`{ batch, sourceFingerprint }`)
 - `POST /api/v1/formulas/percentages`
 - `PUT /api/v1/formulas`
 - `GET /api/v1/recipes/{recipe_id}/formulas`

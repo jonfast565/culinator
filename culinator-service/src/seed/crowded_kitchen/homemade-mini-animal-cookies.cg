@@ -1,0 +1,102 @@
+culinator 0.3;
+
+recipe ck_homemade_mini_animal_cookies {
+    title "Homemade Mini Animal Cookies";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-mini-animal-cookies/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 68 min;
+    description "These adorable pink and white frosted mini animal cookies are part of our recipe series: Better Than Store-Bought! They're made with just 11 ingredients and the pink frosting is naturally colored with strawberries. Even better, the dough is easy to make and they can be cut into any shape, but circus animals are extra cute! Kids and adults alike will love these.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 ¾ cups all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "½ teaspoon baking powder";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "¼ teaspoon kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "¼ cup unsalted butter, softened to room temperature";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "¼ cup light brown sugar or coconut sugar";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "¼ cup maple syrup or honey";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 large egg";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "Mini animal cookie cutters";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 cup powdered sugar";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "3-4 tablespoons milk (regular or nondairy)";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1-2 tablespoons finely ground & sifted freeze-dried strawberries*";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "Optional: Rainbow nonpareil sprinkles";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a medium bowl, whisk together the flour, baking powder, and salt.";
+        }
+        operation step_2 does prepare {
+            note "In a separate bowl, cream the butter and brown sugar until light and fluffy, about 2 minutes. Beat in the maple syrup, egg, and vanilla until smooth.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add the dry ingredients to the wet ingredients and mix just until a soft dough forms.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Flatten the dough into a disk, wrap in plastic wrap, and refrigerate for 30 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Preheat the oven to 350°F. Line two baking sheets with parchment paper.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Roll the dough out on a lightly floured surface to about 1/4 inch thick. Use small animal cookie cutters to cut out shapes and transfer to prepared baking sheets. Re-roll the leftover dough and continue cutting shapes until you're out of dough.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 6-8 minutes, until the cookies are just set and slightly golden on the edges. The bottoms should be golden brown. If they are underbaked, they will be too soft once you coat them in icing. Transfer to a wire rack to cool completely.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Whisk together the powdered sugar and milk. Divide between two bowls. Add the finely ground freeze-dried strawberries to one of the bowls and whisk until smooth. Add more milk as needed for consistency.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Using a fork, dip each cookie in the icing and let excess icing drip off before placing on parchment paper. Top with a few sprinkles, then let the cookies set until the icing is solid.";
+            after step_8;
+        }
+    }
+}

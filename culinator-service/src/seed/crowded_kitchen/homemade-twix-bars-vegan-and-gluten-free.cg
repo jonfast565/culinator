@@ -1,0 +1,106 @@
+culinator 0.3;
+
+recipe ck_homemade_twix_bars_vegan_and_gluten_free {
+    title "Homemade Twix Bars (Vegan and Gluten Free)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-twix-bars-vegan-and-gluten-free/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 150 min;
+    description "With Halloween right around the corner, we've had candy on our mind. These homemade vegan and gluten free \"Twix\" bars are insanely delicious, and the perfect allergy-friendly recipe alternative to a classic candy bar!";
+
+    ingredient ingredient_1 measured by mass {
+        name "3/4 cup coconut oil (softened at room temp, but not melted)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/3 cup cane sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 cup maple syrup";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tsp vanilla extract";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/4 tsp salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 1/4 cups gluten free all-purpose flour";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 cup coconut cream (the solid fat layer at the top of a can of full-fat coconut milk)";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 cup coconut sugar";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1/3 cup creamy peanut butter";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2 tsp vanilla extract";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 tsp sea salt";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "16-20 oz dark chocolate chips, melted";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 tbsp coconut oil";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "Flaky sea salt (optional)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Shortbread Layer: Preheat oven to 350 F.";
+        }
+        operation step_2 does prepare {
+            note "In a stand mixer, cream coconut oil, sugar, maple syrup, and vanilla at medium speed. (Alternatively, add to a large mixing bowl and use a hand mixer. Add in salt and flour in a few batches and continue mixing until dough comes together.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Line a 10x10 pan (or similar sized pan) with parchment paper and press dough evenly into pan. Pierce dough with a fork in several places, then bake for 16-18 minutes. Remove from oven and cool (don't remove from the pan!).";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Meanwhile, add all caramel ingredients to a small saucepan and whisk well. Bring to a boil, then reduce heat and let simmer for 10-15 minutes, stirring occasionally. When caramel is finished, set aside and let cool.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "When shortbread is finished, spoon caramel over the top in an even layer. Refrigerate for 30 minutes, and then transfer to the freezer for a minimum of 40 minutes.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove from freezer and transfer to a cutting board. Using a very sharp knife, slice into 1-inch rows. Then, slice into thirds to create evenly-sized bars. You should end up with 20-24.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Add chocolate chips and coconut oil to a large bowl and melt in microwave in 30 second intervals, stirring well between each interval.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Using two forks, dip bars in chocolate, then let drain to remove some excess chocolate. Set down on parchment paper. Optional: when the chocolate solidifies, feel free to drizzle with more chocolate and flaky salt.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "To speed things up, refrigerate the chocolate bars until solid. Alternatively, leave out at room temp until solid. Store in an airtight container in fridge, with parchment paper between each bar.";
+            after step_8;
+        }
+    }
+}

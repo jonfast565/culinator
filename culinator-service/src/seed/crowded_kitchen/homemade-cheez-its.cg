@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_homemade_cheez_its {
+    title "Homemade Cheez Its";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-cheez-its/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 25 min;
+    description "Cheesy, crispy, and salty, these homemade Cheez-Its taste just like the real thing. They're super easy to make with just 5 ingredients and a super simple process.";
+
+    ingredient ingredient_1 measured by mass {
+        name "8 ounces sharp cheddar cheese, shredded";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup all purpose flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 tsp salt, plus more for topping";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/4 cup unsalted butter, cubed";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 tablespoons whole milk (cold)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 325˚F and line 2 baking sheets with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Add the cheese, flour and salt to a food processor and pulse several times. Add in the butter and pulse a few more times, until the dough is crumbly.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add in the milk, then pulse several more times. The dough won’t come together in a ball, but it should come together when you press it between two fingers.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Transfer to a lightly floured surface. Roll into a large rectangle, rolling as thinly as possible. We go even thinner than 1/8-inch as they puff up quite a bit when baking.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Using a knife, pizza cutter or fluted pastry wheel, slice into 1-inch squares. Use the flat end of a skewer to poke a hole all the way through each cracker. Transfer to sheet pans and sprinkle with more salt.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Bake for 17-20 minutes, until deep golden brown on the bottom of each cracker. If they are too light, they won’t have much crisp. Let cool completely before enjoying!";
+            after step_5;
+        }
+    }
+}

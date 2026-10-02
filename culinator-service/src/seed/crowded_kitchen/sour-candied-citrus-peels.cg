@@ -1,0 +1,54 @@
+culinator 0.3;
+
+recipe ck_sour_candied_citrus_peels {
+    title "Sour Candied Citrus Peels";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/sour-candied-citrus-peels/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 90 min;
+    description "These Sour Candied Citrus Peels taste like sour patch kids, just without all the ingredients you can't pronounce! They're chewy, sweet, and a bit sour, and they're pretty easy to make.";
+
+    ingredient ingredient_1 measured by mass {
+        name "8-9 citrus fruits (we used a mix of orange, lemon, grapefruit, blood orange and lime)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 cups granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 1/4 cups water";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "For coating: 1/2 cup granulated sugar + 1 tbsp citric acid (or more to taste)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Wash citrus well. Cut off the top and bottom of each citrus. Score the peel vertically from top to bottom about 6-8 times, spacing the cuts apart equally. Remove the peels from the fruit, then use a paring knife to carefully remove as much of the white pith as possible.";
+        }
+        operation step_2 does prepare {
+            note "You can also use a vegetable peeler, but we have found that these often end up being a bit too thin and they will not be uniform in size.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Cut the peels into 1/4-inch strips. Add all of the peels to a saucepan and cover with water. Bring to a boil and boil for 3-4 minutes, then drain. Return the peels to the pot, cover with water and bring to a boil again. Drain immediately after boiling (this vastly reduces the bitterness of the peels).";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add sugar and water to the pot over medium-high and stir until sugar is dissolved. Bring to a simmer, then add in the citrus peels. Reduce heat to medium low and simmer for 50-60 minutes, stirring occasionally.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Use a slotted spoon to transfer the peels to a wire baking rack. Space them apart so they aren’t overlapping much and let dry for about 30 minutes. Let the simple syrup cool completely, then store in an airtight container in the fridge for use in cocktails, baking, etc.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Whisk together the sugar and citric acid. Taste and adjust citric acid as desired. Toss the peels until well coated and enjoy!";
+            after step_5;
+        }
+    }
+}

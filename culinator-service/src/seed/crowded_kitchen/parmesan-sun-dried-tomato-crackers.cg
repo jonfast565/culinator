@@ -1,0 +1,70 @@
+culinator 0.3;
+
+recipe ck_parmesan_sun_dried_tomato_crackers {
+    title "Parmesan Sun Dried Tomato Crackers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/parmesan-sun-dried-tomato-crackers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 22 min;
+    description "Our classic homemade Cheez-Its are consistently one of the most popular recipes on our website (so popular that they made it into our cookbook!). We decided to experiment with some new flavors, and landed on these Sun Dried Tomato and Parmesan crackers, which we call \"pizza cheez-its\" at our house! They're super crisp, cheesy, salty and surprisingly quick and easy to make.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 ½ cups all-purpose flour, spooned and leveled";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 teaspoon dried oregano";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/4 teaspoon red pepper flakes";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "8 tablespoons cubed unsalted butter, softened to room temperature";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 cup shredded parmesan cheese*";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 cup shredded white cheddar cheese*";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/3 cup finely chopped sun dried tomatoes, drained";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 tablespoons milk";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat your oven to 375˚F / 190˚C. To the bowl of a food processor, add the cheeses, kosher salt, oregano, red pepper flakes, flour, butter, and sun dried tomatoes. Pulse until the butter is broken down into lentil-sized pieces.";
+        }
+        operation step_2 does prepare {
+            note "Add in the milk and pulse until incorporated. The dough should stick together when pressed between your fingers. Then turn the dough out onto a lightly floured work surface and knead briefly until you can form a solid block of dough.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Lightly flour a work surface and roll out the dough on top of it until you achieve a roughly 20\"x15\" (50x40-cm) rectangle.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Using a knife or fluted pastry cutter, cut the sheet of dough into 3/4\" rectangles. Use a wood skewer or toothpick to dock a hole into the center of each cracker, then sprinkle with kosher salt.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Move to a parchment-lined sheet pan and bake at for about 12 minutes, until the bottoms of the crackers are golden brown. Move to a wire baking rack and let them cool completely before enjoying.";
+            after step_4;
+        }
+    }
+}

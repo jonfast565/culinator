@@ -1,0 +1,54 @@
+culinator 0.3;
+
+recipe ck_mounds_bar_dates {
+    title "Mounds Bar Dates";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/mounds-bar-dates/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 20 min;
+    description "These 3-ingredient Mounds Bar Dates are stuffed with coconut butter and dipped in dark chocolate for an easy, better-for-you snack or dessert! We love to make a batch at the beginning of the week and keep them in the fridge for a quick bite.";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 cups unsweetened shredded coconut";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "12 medjool dates, pitted";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "6 tablespoons coconut butter";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 oz semisweet or dark chocolate";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Optional: more shredded coconut for topping";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Homemade Coconut Butter:: Add the shredded coconut to a food processor (or a high speed blender* that has a tamper). Blend for about 3 minutes, scraping down the sides once or twice, until the coconut breaks down into a liquidy mixture with a consistency similar to almond butter. It may take longer depending on your food processor.";
+        }
+        operation step_2 does prepare {
+            note "You will end up with about 1 cup (8oz) total of coconut butter. Keep it stored in an airtight container at room temperature for 6 months. It will solidify at room temperature unless you live somewhere very warm. If you need to warm it up to a scoopable consistency, microwave for about 15 seconds.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Mounds Bar Dates:: Slice a lengthwise slit in each date and remove the pit. Fill each date with about 1/2 tablespoon (a heaping teaspoon) of coconut butter. If your coconut butter is very liquidy, refrigerate the dates for 10 minutes before dipping in chocolate.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Melt the chocolate in 30-second intervals in the microwave, stirring well between each interval, until fully melted.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Dip each date halfway in chocolate, then place on a sheet pan or plate lined with parchment paper. Optional: sprinkle the chocolate with a little more shredded coconut. Refrigerate for about 15 minutes, until the chocolate is set, then enjoy.";
+            after step_4;
+        }
+    }
+}

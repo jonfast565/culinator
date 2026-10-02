@@ -1,0 +1,50 @@
+culinator 0.3;
+
+recipe ck_homemade_strawberry_cold_foam {
+    title "Homemade Strawberry Cold Foam";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-strawberry-cold-foam/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 25 min;
+    description "Skip the expensive coffee shop and make this delicious Strawberry Cold Foam at home with fresh ingredients, no refined sugar, and no artificial colors or flavors. We start by making a 2-ingredient strawberry simple syrup, then froth it with milk and cream for the perfect foam. Keep a batch of syrup in your fridge so you can make the best iced matcha lattes, cold brews, or Italian sodas all summer long!";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 cups strawberries, chopped";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup honey";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 tablespoons water";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tablespoons milk";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1-2 tablespoons heavy cream";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 tablespoons of strawberry syrup";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "To make the syrup: In a small pot, combine all ingredients and heat over medium heat until bubbling. When boiling, reduce to a simmer and cook for 7-10 minutes, stirring occasionally, until the strawberries are soft. Remove from heat and let cool for 10 minutes. Strain through a fine mesh sieve into a jar or bottle. Store in the fridge until ready to use.";
+        }
+        operation step_2 does prepare {
+            note "To make the cold foam: In a tall jar or glass, combine the milk, heavy cream, and syrup. Use a milk frother to whip it to a fluffy light consistency. Adjust quantity of heavy cream to thicken if needed.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "To make the strawberry matcha: In a tall glass filled with ice, start with 1-2 tablespoons of the strawberry syrup, then add ~6 oz milk of choice + brewed matcha, and top with strawberry cold foam!";
+            after step_2;
+        }
+    }
+}

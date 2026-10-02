@@ -1,0 +1,50 @@
+culinator 0.3;
+
+recipe ck_cherry_magic_shell {
+    title "Cherry Magic Shell";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/cherry-magic-shell/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 5 min;
+    description "If you love getting a cherry dipped ice cream cone at Dairy Queen, this cherry magic shell recipe is for you! Made with just 3 ingredients, it has a prominent tart cherry flavor (so much better what you get at DQ) and it's super easy to make in just 5 minutes. Pour it over vanilla ice cream and watch it harden into a crunchy shell in just a few seconds!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1/2 cup good quality white chocolate chips*";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 tablespoons refined coconut oil";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 1/2 tablespoons tart cherry concentrate**";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "Optional: a few drops of red food coloring";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the white chocolate chips and coconut oil to a heat-safe bowl. Microwave for 30 seconds, then stir thoroughly. Return to the microwave for 20 seconds, then stir well. If the white chocolate still isn't completely melted, return to the microwave for another 20 seconds.";
+        }
+        operation step_2 does prepare {
+            note "Once the white chocolate is fully melted, whisk in the tart cherry concentrate and food coloring.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Troubleshooting: If your white chocolate starts to thicken, get grainy, or seizes up when you add in the tart cherry or food coloring, try melting an additional 1 tbsp of coconut oil and whisk it into the mixture. If that doesn't work, return the white chocolate to the microwave for short 10 second bursts, whisking well between each burst.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Let the mixture cool slightly before drizzling or pouring over very cold ice cream. Let it harden completely, then enjoy!";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "You can save leftovers in a jar or container and reheat slowly in the microwave (in 15-20 second bursts).";
+            after step_4;
+        }
+    }
+}

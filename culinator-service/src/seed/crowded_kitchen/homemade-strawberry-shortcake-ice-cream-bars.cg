@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe ck_homemade_strawberry_shortcake_ice_cream_bars {
+    title "Homemade Strawberry Shortcake Ice Cream Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-strawberry-shortcake-ice-cream-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 195 min;
+    description "With a base of creamy Greek yogurt and fresh strawberries and a strawberry cookie coating, these homemade Strawberry Shortcake Ice Cream Bars are a high-protein, better-for-you frozen treat! This recipe is so easy to make with just 7 ingredients and 15 minutes of hands on work.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups full fat plain Greek yogurt";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup heavy cream (or coconut cream)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3-5 tablespoons maple syrup (depending on sweetness preference)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 cup strawberries (roughly chopped)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "12 vanilla sandwich cookies (we use golden Oreos)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 cup freeze-dried strawberries";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the yogurt, heavy cream, vanilla and maple syrup to a blender and blend until smooth and well incorporated.";
+        }
+        operation step_2 does prepare {
+            note "If you want a vanilla/strawberry swirl, pour about half of the yogurt mixture into a jar or bowl and set aside. Add the strawberries to the remaining yogurt in the blender and blend again until smooth and fully incorporated. (If you don't care about a swirl, you can just blend the strawberries into the entire batch.)";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Fill the popsicle mold halfway with one color, then top with the other color, filling mostly to the top. Use a skewer or knife to gently swirl the two colors. Insert popsicle sticks and freeze until solid, about 3 hours.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Meanwhile, add the cookies and freeze-dried strawberries to a food processor and pulse until a fine crumb mixture forms. Transfer to a plate and set aside.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Once the popsicles are set, run each one under warm water to release from the mold. You want to heat them up enough so that the very outer layer of the popsicle melts a bit (this is essential for getting the crumb coating to stick).";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Immediately coat all sides in the cookie crumb coating, pressing lightly to adhere the crumbs. Return to the freezer for 15-30 minutes, then enjoy!";
+            after step_5;
+        }
+    }
+}

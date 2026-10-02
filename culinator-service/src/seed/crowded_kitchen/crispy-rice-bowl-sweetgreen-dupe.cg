@@ -1,0 +1,182 @@
+culinator 0.3;
+
+recipe ck_crispy_rice_bowl_sweetgreen_dupe {
+    title "Crispy Rice Bowl (Sweetgreen Dupe)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/crispy-rice-bowl-sweetgreen-dupe/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 90 min;
+    description "The Crispy Rice Bowl at sweetgreen is my personal favorite. It's made with arugula, wild rice, blackened chicken, fresh veggies, seasoned crispy rice, and a delicious spicy cashew dressing. This recipe is perfect for meal prep, and will save you money!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 pounds chicken breast or thighs";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons olive oil";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 tablespoon balsamic vinegar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 teaspoons kosher salt (use less if using table salt or fine sea salt)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons chili powder";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 teaspoon black pepper";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "½ heaping teaspoon cumin";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "½ teaspoon coriander";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "¼ teaspoon red pepper flakes";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 cup puffed rice cereal";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "2 tsp soy sauce";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 tbsp sesame oil (or another neutral oil)";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1/4 teaspoon garlic powder";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/4 teaspoon onion powder";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/4 teaspoon ground ginger";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "3/4 cup raw, unsalted cashews";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1/4 cup fresh cilantro";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "1 medium clove garlic";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "1 tablespoon fresh minced ginger";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "1 teaspoon kosher salt (use less if using table salt or fine sea salt)";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "1 teaspoon red pepper flakes (use less if you don't want it as spicy)";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "1 tablespoon sesame oil (we use toasted sesame oil)";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1 tablespoon rice wine vinegar";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "1 tablespoon maple syrup, honey or agave";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "1 tablespoon lime juice";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "~1/2 cup water (you may have to adjust depending on how long you soak the cashews)";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "2 cups dry wild rice blend";
+    }
+
+    ingredient ingredient_28 measured by mass {
+        name "Optional: 3 1/2 cups vegetable broth (can also use water)";
+    }
+
+    ingredient ingredient_29 measured by mass {
+        name "8 ounces arugula";
+    }
+
+    ingredient ingredient_30 measured by mass {
+        name "1 1/2 cups chopped cucumber";
+    }
+
+    ingredient ingredient_31 measured by mass {
+        name "1 1/2 cups grated or thinly sliced carrot";
+    }
+
+    ingredient ingredient_32 measured by mass {
+        name "1 1/2 cups thinly sliced cabbage";
+    }
+
+    ingredient ingredient_33 measured by mass {
+        name "3/4 cup toasted almonds, chopped";
+    }
+
+    ingredient ingredient_34 measured by mass {
+        name "Optional: cilantro and lime wedges for serving";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add cashews to a bowl and cover with hot water. Let soak for at least 30 minutes, or up to a few hours. If only soaking 30 minutes, change out the water halfway through with new hot water.";
+        }
+        operation step_2 does prepare {
+            note "In a mixing bowl, combine olive oil and balsamic vinegar, and add in all the spices. Whisk to combine, then toss in the chicken and use tongs to get them evenly coated. Cover with plastic wrap and move to the fridge to marinate for 30 minutes to 2 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add rice and water to a pot and cook according to package directions (every blend is a bit different).";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the puffed rice, soy sauce and oil to a bowl and toss to coat. Add in spices and toss again until well coated. Spread in an even layer in a pan over medium low heat. Toast, stirring often, for about 10 minutes, until browned and crispy. Be careful – they can burn easily!";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add almonds to a small pan over medium heat. Toast, stirring frequently for a few minutes, until fragrant and lightly browned. Remove from pan and chop finely.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Drain the cashews and add to a blender with all remaining ingredients. Blend until completely smooth and creamy. You may need more water depending on how long you soaked the cashews/how powerful your blender is.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "At this point, your chicken should have been in the fridge for at least 30 minutes. We'd recommend marinating for about 2-3 hours for maximum flavor, but you can take it out now and move it to the grill or a grill pan over medium-high heat. Make sure there's a high heat oil in your grill pan or that your grill grates are well lubricated. Cook until one side is blackened (about 6-8 minutes) then flip and cook for another 6-8 minutes. The chicken should reach an internal temperature of around 165˚F. Let it rest for a few minutes, then cut into roughly 1\" x 1\" pieces.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Start with a bed of arugula, then top with cooked wild rice, chicken, crispy rice, cucumber, carrots, cabbage, almonds and (optional) lime wedge and cilantro. Top with dressing if serving right away, or place in meal prep containers and store dressing separately. We also suggest storing crispy rice separately at room temperature so it doesn't get soggy.";
+            after step_7;
+        }
+    }
+}

@@ -436,6 +436,22 @@ async fn dispatch_inner(
             .await;
             serde_json::to_value(value).map_err(to_string)
         }
+        "formulas.batchPreview" => {
+            let request: culinator_parser::BatchRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            serde_json::to_value(state.service.formulas().preview_batch(&request))
+                .map_err(to_string)
+        }
+        "formulas.batchApply" => {
+            let request: crate::models::BatchApplyRequest =
+                serde_json::from_value(params).map_err(to_string)?;
+            let preview = state
+                .service
+                .formulas()
+                .apply_batch(&request.batch, &request.source_fingerprint)
+                .map_err(to_string)?;
+            serde_json::to_value(preview).map_err(to_string)
+        }
         "formulas.calculate" => {
             let formula: Formula =
                 serde_json::from_value(params.get("formula").cloned().ok_or("Missing formula")?)
@@ -465,7 +481,10 @@ async fn dispatch_inner(
             .map_err(to_string)?;
             let axum::Json(value) = routes::formulas::solve(
                 State(state.service.clone()),
-                axum::Json(crate::models::FormulaSolveRequest { formula, constraint }),
+                axum::Json(crate::models::FormulaSolveRequest {
+                    formula,
+                    constraint,
+                }),
             )
             .await
             .map_err(to_string)?;

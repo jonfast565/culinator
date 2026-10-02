@@ -1,0 +1,70 @@
+culinator 0.3;
+
+recipe ck_peach_soda {
+    title "Peach Soda";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/peach-soda/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 30 min;
+    description "We've made homemade Sprite, orange soda and even cherry limeade, but this homemade peach soda is our first foray into a dirty soda (soda plus a splash of cream) and it's absolutely delicious! It's easy to make, creamy, sweet (but not too sweet), made with real fruit and it basically tastes like liquefied peach ice cream.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups diced fresh peaches (skin on)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "Zest and juice from one large lemon";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3/4 cup granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 cup water";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 1/4 tsp vanilla bean paste";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Sparkling water (for topping)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "Optional: 1/2 of a peach";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Optional: 1 tablespoon heavy cream";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Make the syrup:: To a small bowl, add the sugar and lemon zest. Using your fingers, massage the sugar and zest together until fragrant and evenly incorporated.";
+        }
+        operation step_2 does prepare {
+            note "To a small saucepan over medium low heat, add the diced peaches, sugar and zest mixture, lemon juice, water and vanilla bean paste. Cook over medium low heat and simmer for 15-20 minutes, until the peaches have softened and begin to break down. You'll want to mash them a bit throughout the cooking process using a wooden spoon or similar utensil.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Strain the cooked syrup to remove the solids, using a spatula or spoon to extract as much liquid as possible. Save the leftover peaches! They're basically like a jam.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Move the syrup to the refrigerator to cool completely.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Make the soda:: To an ice-filled glass, add anywhere from 2-4 tablespoons of the peach syrup (depending on your preferred level of sweetness). Top with sparkling water and enjoy!";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "To make it a dirty soda, blend up 1/2 of a peach with about 1/4 cup of water, then strain to make peach juice. Add 2 tablespoons of peach syrup to an ice-filled glass, then top with 1/4-1/3 cup of peach juice, then top with sparkling water and about a tablespoon of heavy cream or coffee creamer. Stir and enjoy!";
+            after step_5;
+        }
+    }
+}

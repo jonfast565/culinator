@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_homemade_crisp_apple_soda {
+    title "Homemade Crisp Apple Soda";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-crisp-apple-soda/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 70 min;
+    description "We've made homemade Sprite, grape soda, even cherry lime soda, but this homemade crisp apple soda is absolutely perfect for fall! It's slightly sweet, tart, crisp, super refreshing, and packed with fresh apple flavor.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 honeycrisp apple (grated)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 granny smith apple (grated)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3/4 cup granulated sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "Juice of 1/2 lemon";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Sparkling water";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Grate your apples or dice them very finely, almost to a pulp. You can use a box grater or a ceramic ginger grater.";
+        }
+        operation step_2 does prepare {
+            note "To a medium-sized mixing bowl, add the grated apples, the juice of 1/2 a lemon, and the granulated sugar.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Let the mixture sit for 30 to 60 minutes, so the sugar can draw out the moisture from the apples.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Move the mixture to a saucepan and heat over medium low heat until the sugar has completely dissolved. Let cool in the saucepan for 20 or so minutes, then strain out the apple solids using a fine mesh sieve or cheesecloth.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Move to a storage container and keep refrigerated until ready to use.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "To make your soda, add anywhere from 2 tbsp to 1/4 cup of the syrup to an ice-filled glass, top with sparkling water, stir and enjoy!";
+            after step_5;
+        }
+    }
+}

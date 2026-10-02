@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_homemade_sprite {
+    title "Homemade Sprite";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-sprite/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 20 min;
+    description "You only need 4 ingredients to make your own homemade Sprite that's packed with fresh citrus flavor! It's super refreshing, bubbly, delicious and easy to make. When it's this easy to make your own soda with fresh ingredients, that trip to the store seems unnecessary!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 tablespoon lime zest";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 tablespoon lemon zest";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 cup freshly squeezed lime juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/2 cup freshly squeezed lemon juice";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 cup granulated sugar";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "Sparkling water";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Using a microplane, zest roughly 4 limes and 3 lemons, then juice them. Set the juice aside.";
+        }
+        operation step_2 does prepare {
+            note "To a medium-sized bowl, add the granulated sugar and lemon and lime zest. Use your fingers to massage the sugar into the zest, until there are no white streaks remaining in the sugar.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "To a small saucepan over medium-low heat, add the zest and sugar mixture and the juice. Heat to a gentle simmer, stirring occasionally until all of the sugar has dissolved, then turn off the heat and let the zest steep in the syrup for at least 20 minutes, ideally until fully cooled.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Once cooled, strain the syrup through a fine mesh sieve to remove the zest. Transfer the syrup to a mason jar or other storage container (we use this pump top bottle).";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "To make your Sprite, add anywhere from 2-4 tablespoons of syrup to an ice-filled glass and then top off with sparkling water. Stir gently and enjoy!";
+            after step_4;
+        }
+    }
+}

@@ -1,0 +1,74 @@
+culinator 0.3;
+
+recipe ck_vegan_butterfinger_bars {
+    title "Homemade Butterfinger Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-butterfinger-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 180 min;
+    description "These homemade vegan butterfingers are just like the candy you know and love – crispy, buttery, rich, and coated in chocolate. They're quick and easy to make and perfect as a kid and adult-friendly Halloween treat!";
+
+    ingredient ingredient_1 measured by mass {
+        name "3 cups crushed cornflakes";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 1/2 cup natural (unsweetened) crunchy peanut butter";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 cup agave, maple syrup or honey";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/3 cup granulated sugar, coconut sugar, or sugar alternative";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "12 oz dark or semisweet chocolate";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2-3 teaspoons coconut oil";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a large mixing bowl, whisk together peanut butter, agave, vanilla, sugar, and salt.";
+        }
+        operation step_2 does prepare {
+            note "Add crushed cornflakes to the peanut butter mixture and stir well until the cornflakes are evenly coated.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Line an 8x8-inch pan with parchment paper. Spread the cornflake and peanut butter mixture evenly into the pan and transfer to freezer for 4 hours (or overnight).";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Remove from pan after freezing and slice into 18 rectangular bars. Return to freezer immediately. For best results, wait 30-60 minutes before coating in chocolate.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Melt chocolate with coconut oil in a double boiler or in 30 second intervals in the microwave, stirring in between each interval, until fully melted.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Use two forks to coat each bar in melted chocolate. Coat well and let the excess chocolate drip off back into the bowl.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Transfer to a parchment paper-lined tray. Return to freezer for 30 minutes to let the chocolate firm up. Remove from freezer and enjoy!";
+            after step_6;
+        }
+    }
+}

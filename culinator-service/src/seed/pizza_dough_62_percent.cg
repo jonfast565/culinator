@@ -1,0 +1,130 @@
+culinator 0.3;
+
+recipe pizza_dough_62_percent {
+    title "62% Hydration Pizza Dough";
+    section "Breads & Baking";
+    description "Two pizza dough balls with 62% water relative to flour by weight.";
+    source "Culinator";
+    publisher "Culinator";
+    attribution "Original Culinator sample recipe.";
+    active_time 18 min;
+    total_time 3 h;
+
+    ingredient flour measured by mass {
+        name "bread flour";
+        quantity 500 g;
+        note "100% in baker's percentages";
+    }
+    ingredient water measured by mass {
+        name "lukewarm water";
+        quantity 310 g;
+        note "62% of the flour weight";
+    }
+    ingredient yeast measured by mass {
+        name "instant yeast";
+        quantity 2 g;
+    }
+    ingredient salt measured by mass {
+        name "fine salt";
+        quantity 12 g;
+    }
+    ingredient olive_oil measured by mass {
+        name "olive oil";
+        quantity 10 g;
+    }
+
+    formula dough relative to flour {
+        target 834 g;
+        pieces 2 count;
+        piece_mass 417 g;
+
+        ingredient flour measured by mass {
+            percentage 100%;
+            reference true;
+            flour true;
+            stage final;
+        }
+        ingredient water measured by mass {
+            percentage 62%;
+            water_fraction 1;
+            stage final;
+        }
+        ingredient yeast measured by mass {
+            percentage 0.4%;
+            stage final;
+        }
+        ingredient salt measured by mass {
+            percentage 2.4%;
+            role salt;
+            stage final;
+        }
+        ingredient olive_oil measured by mass {
+            percentage 2%;
+            role fat;
+            stage final;
+        }
+    }
+
+    container bowl { name "mixing bowl"; }
+    equipment work_surface { name "work surface"; }
+
+    process dough {
+        operation mix does mix {
+            input flour 500 g;
+            input [water, yeast, salt, olive_oil];
+            container bowl;
+            until texture "no dry flour remains";
+            duration 5 min;
+            labor active;
+            produces rough_dough;
+        }
+        operation hydrate does rest {
+            input [rough_dough];
+            after mix;
+            container bowl;
+            note "Cover the bowl while the flour hydrates.";
+            duration 15 min;
+            labor passive;
+            produces hydrated_dough;
+        }
+        operation knead does mix {
+            input [hydrated_dough];
+            after hydrate;
+            container bowl;
+            until texture "smooth and elastic";
+            duration 8 min;
+            labor active;
+            produces smooth_dough;
+        }
+        operation rise does rest {
+            input [smooth_dough];
+            after knead;
+            container bowl;
+            note "Let rise until roughly doubled in size.";
+            duration 2 h;
+            labor passive;
+            produces risen_dough;
+        }
+        operation divide does cut {
+            input [risen_dough];
+            after rise;
+            equipment work_surface;
+            note "Divide into the formula's specified number of pieces and shape into taut balls.";
+            duration 5 min;
+            labor active;
+            produces dough_balls;
+        }
+        operation relax does rest {
+            input [dough_balls];
+            after divide;
+            note "Keep covered until relaxed enough to stretch without tearing.";
+            duration 30 min;
+            labor passive;
+            produces ready_dough;
+        }
+    }
+
+    yield dough_balls measured by count {
+        amount 2 count;
+    }
+}

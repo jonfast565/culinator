@@ -50,10 +50,14 @@ was desugared from. Synthesized intermediates have no span — they have no
 source.
 
 **Seed recipes.** Sample recipes live only as Rust `.cg` files in
-`culinator-service/src/seed/*.cg` (loaded via `include_str!` in
-`culinator-service/src/state.rs`). Recipes are stored exclusively in the
-backend, which seeds these on startup — the desktop app has no embedded copies.
+`culinator-service/src/seed/*.cg`; the Crowded Kitchen collection is in
+`culinator-service/src/seed/crowded_kitchen/*.cg`. Both lists are loaded via
+`include_str!` in `culinator-service/src/state.rs` into separate books. Recipes
+are stored exclusively in the backend, which seeds these on startup — the
+desktop app has no embedded copies.
 When new syntax lands, migrate the seeds to use it (user preference).
+`seed_if_empty` runs only for an empty catalog: adding a seed makes it available
+to new catalogs but does not insert it into an existing user's Sample Recipes book.
 
 ## CLI and desktop use the same application runtime
 
@@ -162,9 +166,12 @@ webview loses ⌘C/⌘V.
 ## Formulas live in the recipe
 
 Baker's percentages are a `formula` block in the `.cg` source (not a side-table
-document). `FormulaCalculator` loads from `UiRecipeModel.formulas` (WASM
-projection), and **Apply to recipe** writes the block plus scaled `quantity`
-lines back via `features/formulas/formulaSync.ts`. `baker` is accepted as an
+document). `FormulaCalculator` loads the full Rust formula from
+`UiRecipeModel.formulas` (WASM projection). The shared Rust batch planner in
+`culinator-parser/src/batch.rs` previews source changes, scales recipe and
+per-step quantities, updates structured yields, and rejects stale or incomplete
+applies. Desktop, WS, and CLI use that same planner; existing formula blocks are
+patched by statement so custom properties and comments survive. `baker` is accepted as an
 alias of `percentage`. Scaling constraints (target mass, flour mass, pieces,
 servings, pan geometry, concentration) live in `culinator-core::FormulaConstraint`
 and `formulas.solve`. Named `reference_group`s, rounding, minimums, preferment

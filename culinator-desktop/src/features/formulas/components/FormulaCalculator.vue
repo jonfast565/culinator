@@ -1,13 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import { Calculator, Plus, RotateCcw, Save, Trash2 } from "lucide-vue-next";
-import type { Formula, FormulaIngredient, FormulaResult } from "../../../domain/types";
+import type {
+  BatchPreview,
+  BatchRequest,
+  Formula,
+  FormulaIngredient,
+  FormulaResult,
+} from "../../../domain/types";
 import type { UiFormula, UiResource } from "../../recipe-editor/model";
 import * as api from "../../../services/api";
 import UnitConverter from "../../units/components/UnitConverter.vue";
 import {
-  applyFormulaToSource,
-  applyRounding,
   formulaFromUi,
   massForConcentration,
   massForPanVolume,
@@ -54,6 +58,10 @@ const roundIncrement = ref(1);
 const applyMins = ref(true);
 
 const result = ref<FormulaResult | null>(null);
+const preview = ref<BatchPreview | null>(null);
+const previewRequest = ref<BatchRequest | null>(null);
+const previewBusy = ref(false);
+let previewSequence = 0;
 const error = ref("");
 const status = ref("");
 const loading = ref(true);
@@ -168,66 +176,15 @@ function decimal(value: number | null | undefined, places = 1): string {
   return value.toFixed(places).replace(/\.0+$/, "");
 }
 
-function isSolvable(item: FormulaIngredient): boolean {
-  if (item.basis === "absolute_mass") {
-    return item.mass_grams != null && Number.isFinite(item.mass_grams);
-  }
-  return item.percentage != null && Number.isFinite(item.percentage);
-}
-
 async function calculate(): Promise<void> {
-  const ready = formula.ingredients.filter(isSolvable);
-  if (!ready.length) {
-    result.value = null;
-    error.value = "";
-    return;
-  }
-  let target: number;
-  if (mode.value === "percent") {
-    const mass = resolvedTargetMass();
-    if (mass == null || mass <= 0) {
-      result.value = null;
-      return;
-    }
-    target = mass;
-  } else {
-    target = ready.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0);
-    if (target <= 0) target = targetMass.value;
-  }
-  try {
-    error.value = "";
-    result.value = await api.calculateFormula({ ...formula, ingredients: ready }, target);
-    if (roundIncrement.value > 0) {
-      result.value = applyRounding(result.value, roundIncrement.value);
-    }
-    if (applyMins.value) {
-      // Client-side floor using the same property the core reads.
-      result.value = {
-        ...result.value,
-        lines: result.value.lines.map((line) => {
-          const item = formula.ingredients.find((row) => row.id === line.ingredient_id);
-          const min =
-            typeof item?.properties?.min_mass === "number"
-              ? item.properties.min_mass
-              : typeof item?.properties?.min_mass_grams === "number"
-                ? item.properties.min_mass_grams
-                : 0;
-          return min > 0 && line.mass_grams > 0 && line.mass_grams < min
-            ? { ...line, mass_grams: min }
-            : line;
-        }),
-      };
-    }
-    if (
-      scaleMode.value === "pieces" &&
-      pieceCount.value > 0 &&
-      pieceMassGrams.value == null &&
-      result.value
-    ) {
-      pieceMassGrams.value = Math.round(result.value.total_mass_grams / pieceCount.value);
-    }
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : String(cause);
+  await refreshPreview();
+  if (
+    scaleMode.value === "pieces" &&
+    pieceCount.value > 0 &&
+    pieceMassGrams.value == null &&
+    result.value
+  ) {
+    pieceMassGrams.value = Math.round(result.value.total_mass_grams / pieceCount.value);
   }
 }
 
@@ -248,6 +205,80 @@ async function syncFromWeights(): Promise<void> {
 async function changed(): Promise<void> {
   status.value = "";
   await (mode.value === "weight" ? syncFromWeights() : calculate());
+}
+
+function currentBatchRequest(): BatchRequest | null {
+  if (!props.source) return null;
+  const usesDirectConstraint =
+    mode.value === "percent" &&
+    (scaleMode.value === "flour" ||
+      scaleMode.value === "servings" ||
+      scaleMode.value === "pan" ||
+      scaleMode.value === "concentration");
+  const mass =
+    mode.value === "weight"
+      ? formula.ingredients.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0)
+      : resolvedTargetMass();
+  if (!usesDirectConstraint && (mass == null || !Number.isFinite(mass) || mass <= 0)) return null;
+  const draft = JSON.parse(JSON.stringify(formula)) as Formula;
+  let constraint: BatchRequest["constraint"] = { kind: "target_mass", grams: mass ?? 0 };
+  if (mode.value === "percent") {
+    if (scaleMode.value === "flour")
+      constraint = { kind: "reference_mass", grams: flourMass.value };
+    if (scaleMode.value === "servings")
+      constraint = {
+        kind: "servings",
+        count: servingCount.value,
+        grams_per_serving: gramsPerServing.value,
+      };
+    if (scaleMode.value === "pan") {
+      draft.properties = { ...draft.properties, dough_density: doughDensity.value };
+      constraint =
+        panVolumeMl.value != null && panVolumeMl.value > 0
+          ? { kind: "pan_volume", millilitres: panVolumeMl.value }
+          : { kind: "round_pan", diameter_cm: panDiameterCm.value, depth_cm: panDepthCm.value };
+    }
+    if (scaleMode.value === "concentration")
+      constraint = {
+        kind: "concentration",
+        solute: concentrationSolute.value,
+        percent_of_total: concentrationPercent.value,
+      };
+  }
+  return {
+    sourceText: props.source,
+    formulaSymbol: formula.symbol,
+    formula: draft,
+    constraint,
+    roundingIncrementGrams: roundIncrement.value > 0 ? roundIncrement.value : undefined,
+    applyMinimums: applyMins.value,
+    pieceCount: scaleMode.value === "pieces" ? pieceCount.value : null,
+  };
+}
+
+async function refreshPreview(): Promise<void> {
+  const sequence = ++previewSequence;
+  const request = currentBatchRequest();
+  preview.value = null;
+  previewRequest.value = null;
+  result.value = null;
+  if (!request) {
+    previewBusy.value = false;
+    return;
+  }
+  previewBusy.value = true;
+  try {
+    const next = await api.previewFormulaBatch(request);
+    if (sequence !== previewSequence || props.source !== request.sourceText) return;
+    preview.value = next;
+    previewRequest.value = request;
+    if (next.result) result.value = next.result;
+  } catch (cause) {
+    if (sequence === previewSequence)
+      error.value = cause instanceof Error ? cause.message : String(cause);
+  } finally {
+    if (sequence === previewSequence) previewBusy.value = false;
+  }
 }
 
 async function setMode(next: Mode): Promise<void> {
@@ -304,6 +335,7 @@ function add(): void {
     scalable: true,
     properties: {},
   });
+  void changed();
 }
 
 async function remove(index: number): Promise<void> {
@@ -334,25 +366,52 @@ async function reseed(): Promise<void> {
   status.value = `Filled in ${weighedCount(formula)} of ${formula.ingredients.length} weights from the recipe.`;
 }
 
+async function deriveFromRecipe(): Promise<void> {
+  if (formula.ingredients.some((item) => item.basis !== "reference_percent")) {
+    error.value =
+      "Deriving weights is available for reference-percentage formulas; edit mixed-basis rows in the recipe builder.";
+    return;
+  }
+  const seeded = await seedFormulaFromRecipe(
+    props.recipeId,
+    props.recipeTitle ?? "",
+    props.resources ?? [],
+  );
+  const weights = new Map(seeded.ingredients.map((item) => [item.symbol, item.mass_grams]));
+  for (const item of formula.ingredients) {
+    if (weights.has(item.symbol)) item.mass_grams = weights.get(item.symbol) ?? null;
+  }
+  ensureReference();
+  percentagesFromWeights(formula.ingredients);
+  const mass = formula.ingredients.reduce((sum, item) => sum + (item.mass_grams ?? 0), 0);
+  if (mass > 0) targetMass.value = mass;
+  await changed();
+  status.value = "Percentages derived from current recipe weights. Preview before applying.";
+}
+
 async function applyToRecipe(): Promise<void> {
   if (!props.source) {
     error.value = "No recipe source to update.";
     return;
   }
-  await calculate();
-  const mass = resolvedTargetMass() ?? result.value?.total_mass_grams;
-  if (mass) {
-    formula.properties = {
-      ...formula.properties,
-      target: `${Math.round(mass)} g`,
-    };
+  if (
+    !preview.value ||
+    !previewRequest.value ||
+    preview.value.blockers.length ||
+    previewRequest.value.sourceText !== props.source
+  ) {
+    await refreshPreview();
+    return;
   }
+  const request = previewRequest.value;
+  const fingerprint = preview.value.sourceFingerprint;
   try {
-    const next = applyFormulaToSource(props.source, { ...formula }, result.value, {
-      pieces: scaleMode.value === "pieces" ? pieceCount.value : null,
-      pieceMassGrams: scaleMode.value === "pieces" ? pieceMassGrams.value : null,
-    });
-    emit("update:source", next);
+    const applied = await api.applyFormulaBatch(request, fingerprint);
+    if (props.source !== request.sourceText) {
+      await refreshPreview();
+      return;
+    }
+    emit("update:source", applied.proposedSource);
     status.value = "Applied to recipe.";
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : String(cause);
@@ -432,11 +491,18 @@ onMounted(async () => {
 });
 
 watch(
-  () => props.formulas?.[0]?.id,
-  async (id, previous) => {
-    if (!id || id === previous || !props.formulas?.[0]) return;
+  () => props.formulas?.[0]?.symbol,
+  async (symbol, previous) => {
+    if (!symbol || symbol === previous || !props.formulas?.[0]) return;
     loadFromUi(props.formulas[0]);
     await calculate();
+  },
+);
+
+watch(
+  () => props.source,
+  () => {
+    void refreshPreview();
   },
 );
 </script>
@@ -446,20 +512,27 @@ watch(
     <header class="formula-head">
       <div>
         <h3><Calculator :size="17" /> Formula</h3>
-        <input v-model="formula.name" class="formula-name" aria-label="Formula name" />
+        <input
+          v-model="formula.name"
+          class="formula-name"
+          aria-label="Formula name"
+          @change="changed"
+        />
       </div>
       <div class="head-actions">
         <button
           v-if="resources?.length"
           class="ghost"
-          title="Rebuild from the recipe's ingredients"
-          @click="reseed"
+          title="Derive percentages from the recipe's current weights"
+          @click="formulas?.length ? deriveFromRecipe() : reseed()"
         >
-          <RotateCcw :size="14" /> Reset
+          <RotateCcw :size="14" /> From recipe weights
         </button>
         <button
           class="primary"
-          :disabled="!source"
+          :disabled="
+            !preview || previewBusy || preview.blockers.length > 0 || !preview.changes.length
+          "
           title="Write formula and scaled amounts into the recipe"
           @click="applyToRecipe"
         >
@@ -687,6 +760,7 @@ watch(
               class="row-name"
               :aria-label="`Ingredient name: ${ingredientName(item)}`"
               :placeholder="ingredientName(item)"
+              @change="changed"
             />
             <button class="icon" :title="`Remove ${ingredientName(item)}`" @click="remove(index)">
               <Trash2 :size="14" />
@@ -792,6 +866,40 @@ watch(
         </div>
       </dl>
     </template>
+
+    <section v-if="source" class="batch-preview" aria-label="Batch preview">
+      <h4>Batch preview</h4>
+      <p v-if="previewBusy">Calculating changes…</p>
+      <template v-else-if="preview">
+        <p v-if="preview.outOfSync.length" class="error">
+          Recipe amounts differ from the saved formula:
+        </p>
+        <ul v-if="preview.outOfSync.length">
+          <li v-for="item in preview.outOfSync" :key="item">{{ item }}</li>
+        </ul>
+        <p v-if="preview.blockers.length" class="error">Resolve these before applying:</p>
+        <ul v-if="preview.blockers.length">
+          <li v-for="item in preview.blockers" :key="item">{{ item }}</li>
+        </ul>
+        <p v-if="!preview.changes.length && !preview.blockers.length">
+          The recipe already matches this batch.
+        </p>
+        <ul v-if="preview.changes.length" class="change-list">
+          <li v-for="(item, index) in preview.changes" :key="`${item.path}-${index}`">
+            <strong>{{ item.path }}</strong
+            >: {{ item.before || "—" }} → {{ item.after }}
+          </li>
+        </ul>
+        <details v-if="preview.sourceDiff" class="source-diff">
+          <summary>Source diff</summary>
+          <pre>{{ preview.sourceDiff }}</pre>
+        </details>
+        <p v-if="preview.warnings.length">Review these written amounts after applying:</p>
+        <ul v-if="preview.warnings.length">
+          <li v-for="item in preview.warnings" :key="item">{{ item }}</li>
+        </ul>
+      </template>
+    </section>
 
     <p v-if="status" class="status">{{ status }}</p>
     <p v-if="error" class="error">{{ error }}</p>
@@ -1141,6 +1249,40 @@ watch(
   margin: 0;
   font-size: 12px;
   color: #a93434;
+}
+.batch-preview {
+  padding: 12px;
+  border: 1px solid #d5dad6;
+  border-radius: 9px;
+  font-size: 12px;
+}
+.batch-preview h4 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.batch-preview p {
+  margin: 8px 0;
+}
+.batch-preview ul {
+  margin: 6px 0;
+  padding-left: 18px;
+}
+.batch-preview li {
+  margin: 4px 0;
+}
+.change-list {
+  max-height: 220px;
+  overflow: auto;
+}
+.source-diff summary {
+  cursor: pointer;
+}
+.source-diff pre {
+  max-height: 300px;
+  overflow: auto;
+  padding: 8px;
+  background: #f5f6f4;
+  font-size: 11px;
 }
 
 .extra {

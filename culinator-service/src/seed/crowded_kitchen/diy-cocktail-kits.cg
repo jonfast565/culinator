@@ -1,0 +1,90 @@
+culinator 0.3;
+
+recipe ck_diy_cocktail_kits {
+    title "DIY Cocktail Kits";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/diy-cocktail-kits/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 375 min;
+    description "These DIY Cocktail Infusion Kits are the perfect easy homemade holiday gift! They're also super affordable and easy to customize with different add-ins and liquors.";
+
+    ingredient ingredient_1 measured by mass {
+        name "5-6 navel or cara cara orange slices, sliced into 1/8-inch rounds";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 1-inch pieces crystallized (candied) ginger";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cinnamon stick";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2-3 whole cloves";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 cardamom pod (optional)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 star anise pod (optional)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "6 pineapple slices, cut into 1/8-inch rounds (or use store-bought dried pineapple)";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 small jalapeño, halved lengthwise (remove seeds for less spicy option)";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "4 lime slices, cut into 1/8-inch rounds";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 tablespoon sugar (we used turbinado) or 3 small sugar cubes";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/2 cup fresh cranberries, halved";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "4-5 slices blood orange, cut into 1/8-inch rounds";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "4-5 slices tangerine, cut into 1/8-inch rounds";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1 sprig dried rosemary";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1 tablespoon sugar (we used turbinado) or 3 small sugar cubes";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to the lowest temperature* – we did 170˚F (75˚C). Line 2-3 baking sheets with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Prepare all of the fruit. We recommend drying out extra than what's listed above so you have back ups in case anything burns. Make sure to slice everything to the same thickness (about 1/8-inch), otherwise they will not dry at an even rate. Place all of the fruit on the sheet pans, grouping it by type (some fruits will take longer than others).";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Place in the oven. The rosemary will take 1-2 hours, the limes and cranberries will take 3-4 hours, the oranges will take 4-6 hours, and the pineapples and jalapeño will take 6-8 hours**. The fruits are done when they are completely dry to the touch on both sides. They may still be slightly pliable when you remove from the oven, but will harden as they cool.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Assemble the jars! Simply add all ingredients to a glass mason jar, screw on the lid and add a label. Write on the label, instructing the user to fill the jar with the alcohol of their choice and infuse for 1-3 days before straining.";
+            after step_3;
+        }
+    }
+}

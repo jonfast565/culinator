@@ -1,0 +1,150 @@
+culinator 0.3;
+
+recipe ck_homemade_freeze_pops {
+    title "Homemade Freeze Pops";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-freeze-pops/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 15 min;
+    description "These homemade freeze pops will make you feel like a kid again, but they leave out artificial flavors, colors, and preservatives.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups frozen fruit, thawed for 30 minutes at room temperature or 30 seconds in the microwave";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 tablespoons freshly squeezed lemon or lime juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tablespoons honey or agave";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Mint leaves for color (for kiwi pineapple flavor)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 cups frozen strawberries";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 tablespoons honey";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2 cups frozen mango";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "2 tablespoons lime juice";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "2 tablespoons agave";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "2 cups frozen peach";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "2 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "2 tablespoons honey";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "1 cup frozen kiwi";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "1 cup frozen pineapple";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "2 tablespoons lime juice";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "2 tablespoons agave";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1/4 cup mint leaves";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "2 cups frozen blueberries";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "2 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "2 tablespoons honey";
+    }
+
+    ingredient ingredient_28 measured by mass {
+        name "1 cup frozen dragonfruit";
+    }
+
+    ingredient ingredient_29 measured by mass {
+        name "1 cup frozen raspberry";
+    }
+
+    ingredient ingredient_30 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_31 measured by mass {
+        name "2 tablespoons lime juice";
+    }
+
+    ingredient ingredient_32 measured by mass {
+        name "2 tablespoons agave";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Thaw frozen fruit for 3o minutes at room temperature or for 30 seconds in the microwave. Add to a blender with water, lemon or lime juice, and honey. Blend until smooth.";
+        }
+        operation step_2 does prepare {
+            note "Pour into popsicle sleeves, using a funnel so you don't make a mess. Move to the freezer and freeze until completely solid - about 8 hours or overnight.";
+            after step_1;
+        }
+    }
+}

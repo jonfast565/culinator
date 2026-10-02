@@ -1,0 +1,117 @@
+culinator 0.3;
+
+recipe ck_homemade_egg_mcmuffins {
+    title "Homemade Egg McMuffins";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-egg-mcmuffins/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 130 min;
+
+    ingredient ingredient_1 measured by mass {
+        name "1 1/4 cup milk";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "One package (2 1/4 teaspoons) instant yeast";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 cups bread flour";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "3 tablespoons butter, melted";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 egg, whisked";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Semolina (or cornmeal) for dusting";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "12-18 eggs (depending on how much egg you want in each sandwich – we use a little over one egg)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "Salt and pepper to taste";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "12 sausage patties or bacon slices, cooked according to package directions";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "12 slices cheese of choice (American, cheddar, pepper jack, etc)";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "Butter, optional";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "English Muffins:: Add the milk and sugar to a small saucepan over medium heat and heat to 115˚F, then stir in the yeast. Let sit for 5-7 minutes until the yeast activates (it should look foamy).";
+        }
+        operation step_2 does prepare {
+            note "Meanwhile, add the flour and salt to a stand mixer fitted with a paddle attachment and mix just until combined.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Once the yeast is activated, gently stir in the melted butter and egg. While the mixer is running on low speed, slowly pour in the milk mixture. Once it's all added, increase the speed to medium high and mix for 6-8 minutes. At first, the dough will look too wet, but eventually it should pull away from the sides of the mixer. Note that the dough will be (and should be!) quite sticky.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Lightly grease a large bowl and transfer the dough to the bowl. Cover with plastic wrap and let rise in a warm place for about 1 hour until doubled in size.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Prepare a sheet pan by lining it with parchment paper, then sprinkling with a thin layer or semolina or cornmeal.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Transfer the dough to a floured surface (a countertop is best as the dough is very sticky!), then use your hands to gently pat the dough into a 1-inch thick rectangle.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Use a 3-inch round cutter to cut the English muffins. You can reform the scraps – we usually end up with about 12 total. Place the English muffins on the prepared sheet pan, then cover and let rise in a warm place for another 30 minutes.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Heat a large skillet over very low heat. Once heated, sprinkle a thin layer of semolina or cornmeal. Place 3-4 English muffins in the skillet at a time. Cover with a lid and let cook for about 5 minutes, until golden brown, then flip each muffin, cover the pan again and cook for another 5 minutes.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Add more semolina to the pan for cooking each batch. Let the English muffins cool completely before slicing and toasting.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Assembly:: Cook bacon or sausage according to package directions.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "To make the eggs: whisk eggs in a bowl and season to taste with salt and pepper. If using egg rings, make sure to use a level skillet. Heat the skillet over medium heat and lightly grease. Place the rings in the skillet, then pour a thin layer of egg in and let it solidify before pouring in the rest. (This will prevent the egg from immediately leaking out.)";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "Cover with a lid and let the eggs cook until set around the edges and slightly jiggly in the center. Carefully remove the rind molds, then carefully flip and cook for another minute or so.";
+            after step_11;
+        }
+        operation step_13 does prepare {
+            note "Slice an English muffin in half, (optional: spread one or both sides with butter), then top with a slice of cheese, an egg patty and sausage or bacon.";
+            after step_12;
+        }
+    }
+}

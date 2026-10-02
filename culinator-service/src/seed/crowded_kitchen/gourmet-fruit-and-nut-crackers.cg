@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe ck_gourmet_fruit_and_nut_crackers {
+    title "Fruit and Nut Crackers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/gourmet-fruit-and-nut-crackers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 240 min;
+    description "These gourmet fruit and nut crackers are packed with dried fruit and nuts, but are still super crispy and crunchy. They're the perfect addition to any charcuterie board or for snacking!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1/2 cup all purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup whole wheat flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 teaspoon baking soda";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 tablespoon fresh rosemary, finely chopped (or 1 tsp dried)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 tablespoon fresh thyme, finely chopped (or 1 tsp dried)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/8 teaspoon nutmeg";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1/8 teaspoon black pepper";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "3/4 cup dried fruit, chopped (apricots, figs, dates, raisins, cherries, etc)";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "3/4 cup nuts or seeds, chopped (pecans, pumpkin seeds, pistachios, walnuts, almonds, sunflower seeds etc)";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 tablespoon orange or lemon zest";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 cup milk of choice (we used oat milk, but any kind works)";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/4 cup honey";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 350˚F and line two mini loaf pans (~5 1/2” x 3 1/4”) with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Add both flours, baking soda, salt, herbs, cinnamon, nutmeg, pepper, dried fruit, nuts and zest to a large mixing bowl. Stir until well combined. Stir in the milk and honey until well combined and no streaks of honey remain.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Divide between the 2 mini pans. Bake for ~25-28 minutes, or until a toothpick comes out mostly clean.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Let cool to room temperature, then wrap tightly in plastic wrap and freeze for at least 4 hours, or overnight. (You can also leave them frozen for up to 3 months, as long as they are tightly wrapped.)";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Preheat oven to 300˚F.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove from the freezer and use a serrated knife to slice into 1/8” thick slices. Place on a baking sheet lined with parchment paper.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 12 minutes, then flip each cracker over. Bake for another 12 minutes, then check for doneness. If they aren't quite done, flip again and cook for another 3-8 minutes. They should be golden brown and feel dry to the touch, but they may still look soft due to the fruit. Don’t worry - they will crisp up as they dry! See storage information below.";
+            after step_6;
+        }
+    }
+}

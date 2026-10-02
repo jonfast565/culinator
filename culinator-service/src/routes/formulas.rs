@@ -25,6 +25,23 @@ pub async fn calculate(
     ))
 }
 
+pub async fn batch_preview(
+    State(state): State<ServiceState>,
+    Json(request): Json<culinator_parser::BatchRequest>,
+) -> Json<culinator_parser::BatchPreview> {
+    Json(state.formulas().preview_batch(&request))
+}
+
+pub async fn batch_apply(
+    State(state): State<ServiceState>,
+    Json(request): Json<crate::models::BatchApplyRequest>,
+) -> Result<Json<culinator_parser::BatchPreview>, ApiError> {
+    Ok(Json(state.formulas().apply_batch(
+        &request.batch,
+        &request.source_fingerprint,
+    )?))
+}
+
 pub async fn solve(
     State(state): State<ServiceState>,
     Json(request): Json<FormulaSolveRequest>,

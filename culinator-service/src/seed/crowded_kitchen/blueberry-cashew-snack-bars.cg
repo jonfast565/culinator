@@ -1,0 +1,74 @@
+culinator 0.3;
+
+recipe ck_blueberry_cashew_snack_bars {
+    title "Blueberry Cashew Snack Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/blueberry-cashew-snack-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 40 min;
+    description "After so many of you loved our Dark Chocolate and Sea Salt Nut Bars, we knew we had to create this Blueberry Cashew version! Both recipes are copycat versions of KIND®️ Bars and they're super easy to make, with just 8 ingredients and a few basic steps. These are a great snack for kids and adults alike, and they last for a while, so they're great for meal prep.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup unsalted, unroasted almonds";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 1/2 cups unsalted, unroasted cashews";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "½ cup puffed rice cereal";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3/4 cup dried blueberries";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "¼ cup brown rice syrup";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 teaspoon lemon zest";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 ½ teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "½ teaspoon sea salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat the oven to 325˚F / 160˚C.";
+        }
+        operation step_2 does prepare {
+            note "Spread the nuts into a single layer on a rimmed sheet pan and bake for 5-8 minutes, until fragrant and lightly browned.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Grease and line an 8x8-inch pan with parchment paper and set aside.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a large mixing bowl, combine the nuts, puffed rice and dried blueberries and toss to combine.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add the brown rice syrup and lemon zest to a microwave-safe bowl and microwave for 30 seconds. (This loosens it up so it's easier to work with.) Whisk in the vanilla extract and salt until combined, then pour over the nut mixture and stir until evenly coated.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Transfer the nut mixture to the prepared pan and press into an even layer.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 18-20 minutes. Remove from the oven and let cool for ~30 minutes, then transfer to a cutting board. Cut in half lengthwise, then cut each half into 5-6 thin bars. Let cool completely before enjoying.";
+            after step_6;
+        }
+    }
+}

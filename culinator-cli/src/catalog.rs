@@ -215,7 +215,9 @@ pub fn render_recipe(
             &recipe,
             culinator_core::temperature_scale_for_system(match system {
                 culinator_models::UnitSystem::Metric => culinator_core::UnitSystem::Metric,
-                culinator_models::UnitSystem::UsCustomary => culinator_core::UnitSystem::UsCustomary,
+                culinator_models::UnitSystem::UsCustomary => {
+                    culinator_core::UnitSystem::UsCustomary
+                }
             }),
         );
     }
@@ -481,6 +483,46 @@ pub fn list_formulas(runtime: &Runtime, recipe: &str, output: OutputFormat) -> R
     output.values(&formulas, |formula| {
         format!("{}\t{}", formula.id, formula.name)
     })
+}
+
+fn batch_request(
+    runtime: &Runtime,
+    recipe: &str,
+    input: &Path,
+) -> Result<(Uuid, culinator_parser::BatchRequest)> {
+    let summary = runtime.recipe(recipe)?;
+    let document = runtime.state.recipes().get(summary.id)?;
+    let content = fs::read_to_string(input).with_context(|| format!("read {}", input.display()))?;
+    let mut request: culinator_parser::BatchRequest = serde_json::from_str(&content)
+        .with_context(|| format!("parse batch request {}", input.display()))?;
+    request.source_text = document.source_text;
+    Ok((summary.id, request))
+}
+
+pub fn batch_preview(
+    runtime: &Runtime,
+    recipe: &str,
+    input: &Path,
+    output: OutputFormat,
+) -> Result<()> {
+    let (_, request) = batch_request(runtime, recipe, input)?;
+    output.value(&runtime.state.formulas().preview_batch(&request))
+}
+
+pub fn batch_apply(
+    runtime: &Runtime,
+    recipe: &str,
+    input: &Path,
+    fingerprint: &str,
+    output: OutputFormat,
+) -> Result<()> {
+    let (id, request) = batch_request(runtime, recipe, input)?;
+    let preview = runtime
+        .state
+        .formulas()
+        .apply_batch(&request, fingerprint)?;
+    runtime.state.recipes().save(id, &preview.proposed_source)?;
+    output.value(&preview)
 }
 
 pub fn get_formula(runtime: &Runtime, id: Uuid, output: OutputFormat) -> Result<()> {

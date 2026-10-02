@@ -1,0 +1,46 @@
+culinator 0.3;
+
+recipe ck_watermelon_berry_popsicles {
+    title "Watermelon Berry Popsicles";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/watermelon-berry-popsicles/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 365 min;
+    description "These Watermelon Berry Popsicles hit the spot on a hot, sunny day! They're gluten free and vegan, super refreshing, and are made with just five simple ingredients.";
+
+    ingredient ingredient_1 measured by mass {
+        name "3 cups frozen or fresh watermelon, cubed";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup frozen or fresh raspberries";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup frozen or fresh cherries";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 tbsp lime juice";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 tbsp agave";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Blend watermelon, raspberries, cherries, lime and honey or agave until completely smooth.";
+        }
+        operation step_2 does prepare {
+            note "Pour into popsicle molds leaving a bit of room at the top (so they can expand) and freeze for at least 6 hours, preferably overnight.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Let soften for a few minutes or run under warm water for a few seconds before removing from popsicle molds.";
+            after step_2;
+        }
+    }
+}

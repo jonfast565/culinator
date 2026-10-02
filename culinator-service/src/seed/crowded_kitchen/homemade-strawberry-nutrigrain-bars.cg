@@ -1,0 +1,122 @@
+culinator 0.3;
+
+recipe ck_homemade_strawberry_nutrigrain_bars {
+    title "Homemade Strawberry Nutrigrain Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-strawberry-nutrigrain-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 70 min;
+    description "With a lightly spiced strawberry date filling and a delicious, soft, subtly sweet whole grain dough, these homemade Strawberry Nutrigrain Bars are SO much better than store-bought! These are low in added sugar, but still super satisfying, and great for on-the-go snacking.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "¾ cup whole wheat flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "⅓ cup + 1 tablespoon brown sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "¾ teaspoon baking powder";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "¼ teaspoon kosher salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "6 tablespoons unsalted butter, very cold and cubed";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2 eggs, whisked";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "6 ounces fresh strawberries";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "4 ounces pitted Medjool dates";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/4 cup spiced rum*";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 tablespoon honey";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "Zest and juice from half of a lemon";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/2 teaspoon ground cinnamon";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/8 teaspoon ground cloves";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/8 teaspoon ground nutmeg";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "Pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add both flours, brown sugar, baking powder and salt to a food processor and pulse to combine. Add in the cold cubed butter and pulse a few times until pieces are pea-sized and evenly incorporated.";
+        }
+        operation step_2 does prepare {
+            note "Add in the vanilla extract and about ¾ of the whisked egg mixture. Continue pulsing until the dough comes together. To test if it's ready, press the dough between your fingers – it should stick together without crumbling (but it shouldn't be too wet and sticky). If it's still too dry, add more egg in small increments until it reaches the right consistency.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Shape the dough into a rectangle, then wrap dough in plastic wrap and refrigerate for at least 30 minutes or up to 2 hours.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Preheat the oven to 350˚F.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add all of the filling ingredients to a small saucepan and stir. Bring to a simmer, then reduce the heat to low and let it cook uncovered for about 15 minutes, until the mixture is thickened, stirring every few minutes. The liquid should be entirely evaporated and it should no longer be bubbling. It should look like a thick paste.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove from heat and let cool slightly, then transfer to a food processor or blender and blend until mostly smooth. Transfer the mixture to a piping bag with a round tip.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "On a lightly floured surface, divide the dough into four equal pieces. Roll each piece of dough into a 3\"-4\" long cylinder, then roll into a 9\" long x 4\" wide rectangle, using a bench scraper to help square up the sides.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Pipe two strips of filling side by side down the middle of the dough (lengthwise), leaving a small margin on each end of the cookie so it doesn't ooze out when baking.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Fold each side of the dough over the filling, then pinch the seam and ends closed with your fingers. Flip the log over and roll very gently with a rolling pin to flatten the cookie out and flatten the seam.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Carefully transfer the logs seam side down to a baking sheet with parchment paper. Bake at 350˚F for 18-22 minutes, until the bottom is lightly browned. Let cool completely and then slice each log into 4 cookies.";
+            after step_9;
+        }
+    }
+}

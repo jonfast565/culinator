@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_vegan_almond_joy_bars {
+    title "Vegan Almond Joy Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-almond-joy-bars/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 35 min;
+    description "These mini homemade almond joy bars are the upgraded version of the candy you loved as a kid. Vegan, gluten free and filled with a creamy almond-coconut filling and dark chocolate shell, you won't be sharing these with the kids!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cup almonds, plus about ¼ cup whole almonds for topping";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "¼ cup maple syrup";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "¼ cup coconut oil";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 tsp vanilla extract";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "½ tsp kosher salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 cup unsweetened coconut flakes";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2½ cups dark chocolate chips* (vegan)";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Flaky salt, optional";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Line an 8x8 inch baking dish with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "In a food processor, blend the almonds into a fine flour. This may take a few minutes.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Melt the coconut oil in the microwave and add it to the food processor, along with the maple syrup, vanilla and salt. Pulse to combine thoroughly.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the coconut flakes to the food processor and combine until a soft dough forms.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Transfer the dough to the prepared baking dish. Press down to form the dough to the dish. You want a smooth top, so you may choose to roll it flat with a clean glass or press with a dry measuring cup. Freeze for 10 minutes, until firm.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove the dish from the freezer and slice the dough into bars, about 1 inch long and a half inch wide. Spread the bars out on a baking sheet and return to the freezer for 10 more minutes.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Just before the 10 minutes is up, add the dark chocolate to a microwave-safe bowl. Microwave until melted, stirring every 30 seconds.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Remove the bars from the freezer. Dip each bar into the melted chocolate and immediately top with a whole almond and sprinkle each bar with flaky salt, if using. The chocolate hardens quickly, so it’s easiest to do this with a helper to place the almonds on top after you dip. This will get messy, but it’s worth it!";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Return the chocolate-covered bars to the baking sheet in the freezer and freeze until fully set, another 10 minutes. Store in an airtight container in the fridge or freezer for up to 2 weeks.";
+            after step_8;
+        }
+    }
+}

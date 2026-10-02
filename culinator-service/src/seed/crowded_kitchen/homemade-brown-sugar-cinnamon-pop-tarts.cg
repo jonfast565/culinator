@@ -1,0 +1,122 @@
+culinator 0.3;
+
+recipe ck_homemade_brown_sugar_cinnamon_pop_tarts {
+    title "Homemade Brown Sugar Cinnamon Pop Tarts";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-brown-sugar-cinnamon-pop-tarts/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 180 min;
+    description "These homemade brown sugar cinnamon pop tarts are SO much better than store-bought! With a flaky, buttery crust, a delicious brown sugar cinnamon filling and a glaze that sets up perfectly, you'll never want to buy them from the store again.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 ½ cups all-purpose flour*";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "4 teaspoons sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 cup unsalted butter (2 sticks), chilled and cubed";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "½ cup cold water";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "3/4 cup brown sugar";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 1/2 teaspoons cinnamon";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 1/2 tablespoon all purpose flour";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 1/2 tablespoons melted butter";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 egg yolk for sealing";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "4 tablespoons butter";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1/2 cup brown sugar";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "2 tablespoons milk";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/2 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/2-2/3 cup powdered sugar";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1/2 teaspoon cinnamon";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a food processor, pulse together flour, salt, sugar, and butter a few times, until the butter pieces are about the size of peas. Stream in the water, pulsing as you go.";
+        }
+        operation step_2 does prepare {
+            note "Move the dough to a bowl or lightly floured surface and gently knead into a ball – be careful not to overwork the dough. Divide the dough in half, then wrap each half in plastic wrap and shape into a rectangle that's about ½\" thick. Place the dough in the refrigerator to chill for 1-2 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While the dough chills, mix together the brown sugar, cinnamon, flour, vanilla and melted butter until well combined and set aside.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Preheat oven to 300˚F and line a sheet pan with parchment paper.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Roll each half of the dough into a roughly 14 x 14\" square on a floured surface. You should just barely be able to see the lines of your silpat or work surface through your dough, which should be about ⅛\" thick. Make sure your surface is well floured, and sprinkle some flour on the dough before rolling.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Cut the dough into roughly 3.5 x 4.75\" rectangles. You'll need to two for each pop tart. Combine your scrap dough and roll out again to minimize waste.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Spoon a little over a tablespoon of filling into each pop tart, then spread into a thin layer, leaving about ⅓\" around the border. Beat an egg yolk and brush around the border of the filling. Dock the tops of your pop tarts with a skewer or a fork, then place over the bottom, and press down and then crimp the edges with a fork. Use a bench scraper to trim off any messy edges to get a perfect rectangle.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Bake for 25-30 minutes. They should be very lightly browned when you take them out, and the bottoms browned slightly. Let cool slightly before topping with glaze.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "To make the glaze, add the butter, brown sugar and milk to a small saucepan over medium heat. Bring to a gentle simmer for 1-2 minutes, whisking until the brown sugar is dissolved. Remove from heat an immediately whisk in the vanilla, powdered sugar and cinnamon.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Immediately spread the glaze onto the pop tarts. It will harden up quickly. If you need to, put it back over medium-low heat to loosen it up again before spreading.";
+            after step_9;
+        }
+    }
+}

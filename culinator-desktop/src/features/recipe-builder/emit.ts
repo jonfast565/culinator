@@ -8,7 +8,7 @@
  * mirror — printing is a capability the workspace did not previously have — so
  * this file is exposed to exactly the drift that killed the old TypeScript
  * parser (see `recipe-editor/model.ts`). The tripwire is the golden round-trip
- * test in `emit.test.ts`: it re-emits every declaration of all 43 seed recipes
+ * test in `emit.test.ts`: it re-emits every declaration of every seed recipe
  * and requires byte-identical output, so a grammar change that alters seed
  * syntax fails immediately.
  *

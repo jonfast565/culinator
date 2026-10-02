@@ -1,0 +1,74 @@
+culinator 0.3;
+
+recipe ck_homemade_fruit_on_the_bottom_yogurt {
+    title "Homemade Fruit on the Bottom Yogurt";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-fruit-on-the-bottom-yogurt/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 615 min;
+    description "Fruit on the bottom yogurt is one of our favorite breakfasts: tangy yogurt swirled with fresh fruit is a great way to start your day. So why not make it at home? This Homemade Fruit on the Bottom yogurt is easier than you think, and tastier and cheaper than store-bought.";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 cups whole or 2% milk";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "4 tablespoons plain, unflavored yogurt with live cultures*";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup pure maple syrup or another sweetener of choice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1-2 teaspoons vanilla bean paste (optional)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 cup fresh fruit";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 tablespoon lemon juice (juice of 1/2 lemon)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2-1 tablespoon maple syrup";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "You'll need to heat your milk to 180-185˚F (~83˚C) to kill off any bacteria that might compete with your starter cultures. Let your milk cool down before proceeding to step 2.";
+        }
+        operation step_2 does prepare {
+            note "Add the starter yogurt to a large heat-safe container or bowl. Add in about 1/2 cup of the cooled milk and whisk until smooth, then add in the remaining milk and whisk well.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "There are a few ways to do this: we have a countertop oven that has a \"warming\" feature, which we can set to exactly 110˚F. We covered the yogurt and let it sit in the warmed oven. Alternatively, you can put your mixture in a sealed, airtight container and place it in a crockpot filled with water and set it to \"warm\". You can also place it in the oven with the oven light on, which can heat your oven to around the correct temperature. This is the least reliable method and you might get mixed results with this method.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Let cool, slightly, then place it into the fridge to cool off and thicken up even more.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Your yogurt will be pretty thick out of the fridge, but keep in mind it will thin out once you add in the maple syrup. If you prefer a thicker or even a greek-style yogurt, you can place the yogurt in a cheese cloth, tie a rubber band around the cloth, and let it sit in a colander to drain. You can squeeze it every once in a while to speed up the process. We did not strain our yogurt and we liked the texture.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note ". Taste and adjust as desired.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "while the yogurt is chilling. Combine 1 cup of fresh fruit of choice, 1 tablespoon of lemon juice, and ~1 tablespoon of maple syrup in a saucepan over medium heat. Once the fruit starts to bubble and soften, mash gently with a masher or a wooden spoon. Continue cooking over medium-low heat, stirring often, until the mixture is jammy (about 10 minutes total). Remove from heat and let cool completely.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note ". Spoon about 1.5-2 tablespoons of the fruit mixture in to the bottom of a jar (these are the ones we use), then pour yogurt over the top. Seal, store in the refrigerator and enjoy within two weeks!";
+            after step_7;
+        }
+    }
+}

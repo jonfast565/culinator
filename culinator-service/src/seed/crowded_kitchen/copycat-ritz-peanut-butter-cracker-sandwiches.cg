@@ -1,0 +1,86 @@
+culinator 0.3;
+
+recipe ck_copycat_ritz_peanut_butter_cracker_sandwiches {
+    title "Copycat Ritz Peanut Butter Cracker Sandwiches";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/copycat-ritz-peanut-butter-cracker-sandwiches/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 85 min;
+    description "With two crisp and buttery crackers sandwich crackers and a peanut butter filling, these copycat Ritz peanut butter cracker sandwiches look like the real thing and taste amazing.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 1/2 cups bread flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 1/2 teaspoons baking powder";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "6 tablespoons cold unsalted butter, cubed";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 cup cold water";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 egg, beaten + 1 tablespoon water";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "a few pinches of kosher salt for topping";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "3/4 cup unsweetened natural peanut butter";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "4-5 tablespoons powdered sugar (optional)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add bread flour, chilled butter, baking powder, sugar, and salt to a food processor and pulse a few times, until the butter pieces are about the size of peas. If you don't have a food processor, you can gently work the dough together with your hands or use a pastry cutter.";
+        }
+        operation step_2 does prepare {
+            note "Add in the water and pulse a few more times to incorporate.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Move the dough to a baking mat or another clean surface and press it together until it forms a ball. Divide into two pieces and flatten each into a 1/2 inch thick rectangle, wrap with plastic wrap, and chill them in the fridge for at least an hour.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Meanwhile, preheat your oven to 350˚F.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note ". Roll your chilled dough into a circle about 9-10 inches in diameter. It should be about 1/8\" thick. Aim for slightly thicker rather than thin if you're not sure, as they will burn if they are too thin. Cut into rounds with your fluted pastry ring and carefully transfer to a parchment-lined baking sheet. The crackers don't really expand, so you can space them closely together. Repeat with your other dough half.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Using a skewer, poke some holes into your crackers. Regular Ritz crackers have 7 holes, and the sandwich crackers have 9. For authenticity's sake, we went with 9, but you can do 2-4, since this is pretty time consuming. Beat an egg with 1 tablespoon of water, then brush lightly onto each cracker. Sprinkle crackers with a bit more kosher salt.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Move crackers to the oven and bake for around 15 minutes, or until outer edges of the crackers are golden brown.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Let the crackers cool to room temperature. Mix together peanut butter and powdered sugar and pipe or smear onto a cracker, then top with another to create your peanut butter sandwich.";
+            after step_7;
+        }
+    }
+}

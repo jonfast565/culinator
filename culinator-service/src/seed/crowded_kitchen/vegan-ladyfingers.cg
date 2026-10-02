@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_vegan_ladyfingers {
+    title "Vegan Ladyfingers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-ladyfingers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 45 min;
+    description "These vegan ladyfingers are a delicious and versatile recipe that can be used in a variety of desserts, from tiramisu to trifles and more. They're slightly chewy, crisp, and airy and hold up well when soaked in liquid. They're 100% egg-free and dairy-free, but taste just as good as the classic recipe!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup powdered sugar, plus 1 tablespoon for dusting";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons baking powder";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/2 teaspoon baking soda";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2/3 cup aquafaba (liquid from a can of chickpeas)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/4 teaspoon cream of tartar";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/2 cup caster sugar (superfine sugar)*";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 375˚F / 175˚C and line 2 baking sheets with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "In a medium-sized mixing bowl, stir together the flour, 1 cup of powdered sugar, baking powder, baking soda, and salt.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Using a stand or handheld mixer, beat the aquafaba on medium speed until it becomes foamy, which should take about one minute. Add the cream of tartar and beat on high speed for 3 minutes.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Scrape down the sides of the bowl and add the caster sugar to the aquafaba 1 tablespoon at time, beating for 30 seconds in between each addition. It's important to do this slowly so the aquafaba doesn't collapse and the sugar gets fully incorporated.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Beat until stiff peaks form, about 5 minutes. Scrape down the sides with a spatula, then add the vanilla extract and beat for an additional 30 seconds.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Gently fold the dry ingredients into the aquafaba until they're just barely combined. Don't over mix. The batter will be very thick and the aquafaba will deflate significantly – that's normal. (See blog post for photos of how the batter should look.)";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Transfer the mixture to a piping bag with a 1/2-inch diameter piping tip or a ziplock bag with a corner snipped off. Pipe the batter onto the parchment paper lined baking sheets into 3-inch strips, leaving about 1-inch between each ladyfinger, since they will flatten out and spread as they bake.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Dust the ladyfingers with powdered sugar. Bake for 12-14 minutes, until edges are golden brown. Let cool for 10-15 minutes, then transfer to a cooling rack to cool completely before using.";
+            after step_7;
+        }
+    }
+}

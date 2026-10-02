@@ -1,8 +1,11 @@
 import init, {
+  batch_apply,
+  batch_preview,
   narrative,
   parse_outline,
   parse_ui_model,
 } from "../../generated/wasm/culinator_wasm.js";
+import type { BatchPreview, BatchRequest } from "../../domain/types";
 
 /**
  * Loader for the Rust parser compiled to WebAssembly.
@@ -34,6 +37,20 @@ export function initParser(moduleOrPath?: BufferSource): Promise<void> {
 
 export function isParserReady(): boolean {
   return ready;
+}
+
+export function batchPreviewWasm(request: BatchRequest): BatchPreview {
+  if (!ready) throw new Error("culinator parser wasm used before initParser() resolved");
+  const value = JSON.parse(batch_preview(JSON.stringify(request)));
+  if (value.error) throw new Error(value.error);
+  return value as BatchPreview;
+}
+
+export function batchApplyWasm(request: BatchRequest, fingerprint: string): BatchPreview {
+  if (!ready) throw new Error("culinator parser wasm used before initParser() resolved");
+  const value = JSON.parse(batch_apply(JSON.stringify(request), fingerprint));
+  if (value.error) throw new Error(value.error);
+  return value as BatchPreview;
 }
 
 /**
@@ -93,7 +110,5 @@ export function narrativeWasm(
   if (!ready) {
     throw new Error("culinator parser wasm used before initParser() resolved");
   }
-  return JSON.parse(
-    narrative(source, unitSystem, temperatureScale, numberStyle, decimalPlaces),
-  );
+  return JSON.parse(narrative(source, unitSystem, temperatureScale, numberStyle, decimalPlaces));
 }

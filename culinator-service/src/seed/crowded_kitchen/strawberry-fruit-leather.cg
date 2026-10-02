@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe ck_strawberry_fruit_leather {
+    title "Strawberry Fruit Leather";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/strawberry-fruit-leather/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 320 min;
+    description "This homemade strawberry fruit leather looks just like the childhood snack you remember, and it's super easy to make with just 5 all-natural ingredients.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 lb fresh strawberries, hulled (~460g)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 medium-sized honeycrisp apple, peeled and diced (160g or 1 1/2 cups diced)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup honey (84g)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 tablespoons lemon juice (~1 large lemon or 43g)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Optional: 1/2 tsp blue spirulina (or a handful of blueberries or blackberries*)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat your oven to its lowest temperature (ours was 170˚F).";
+        }
+        operation step_2 does prepare {
+            note "Add strawberries, apples, honey, and lemon juice to a blender and blend until completely smooth. You shouldn't see any seeds.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Optional: soak a piece of parchment paper in water for a minute or two, dry it with a kitchen towel, and place it onto a rimmed 13x18\" baking sheet. Wetting the parchment paper will help the fruit leather stick better. You can also use a silpat, but you won't get that classic peel-away paper characteristic.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Pour about 90% of your strawberry mixture into the sheet pan, and spread it out from the center towards the sides, so the sides are slightly thicker than the middle. Since the fruit leather dries from the outside in, the outsides will cook faster than the middle. If you leave too much pooled in the center, it will still be wet by the time the edges start to get crispy.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add the spirulina to the remaining strawberry mixture and blend or whisk together. You can also use a handful of blueberries or blackberries to color this mixture. We tested it several times with fruit, and it always split slightly in the sections where the two colors meet, which is why we opted for spirulina. It still tastes good, but won't look as nice.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "To create those tie-dye swirls, swirl your blue strawberry mixture on top of your red. Use a chopstick or knife to first make lines outward from the middle, then swirl in a circular pattern.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Transfer to oven and use a dish towel or oven mitt the prop open the oven door slightly. Bake for 5-6 hours until the leather feels a bit spongy but doesn't give way when you touch it. If there are any wetter spots, it's not done yet.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Use scissors to cut into strips, roll and enjoy! You can store for up to a month at room temperature, or up to 3 months in the freezer.";
+            after step_7;
+        }
+    }
+}

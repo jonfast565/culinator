@@ -1,0 +1,86 @@
+culinator 0.3;
+
+recipe ck_rosemary_and_thyme_grissini_crunchy_italian_breadsticks {
+    title "Rosemary and Thyme Grissini (Crunchy Italian Breadsticks)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/rosemary-and-thyme-grissini-crunchy-italian-breadsticks/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 115 min;
+    description "These Grissini (Italian breadsticks) are crunchy, salty, and savory. They're the perfect addition to charcuterie boards and a great companion for almost any dinner!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 teaspoon active dry yeast";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 teaspoon sugar or honey";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3/4 cup warm (95˚F / 35˚ C water)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 1/4 cups bread flour*";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 tablespoon olive oil";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 1/2 teaspoons finely chopped fresh chopped thyme";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 1/2 teaspoons finely chopped fresh chopped rosemary";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "Semolina (for dusting (optional))";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Combine the honey and warm water in a small mixing bowl or measuring cup, then sprinkle the yeast over the top. Wait about 10 minutes, until yeast forms a foamy head.";
+        }
+        operation step_2 does prepare {
+            note "To a large mixing bowl, add the flour, salt, thyme, and rosemary and whisk to combine. Add in the yeast mixture and olive oil.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Using a silicone spatula, mix the dough until a shaggy dough forms.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Turn the dough out onto a silicone baking sheet or a lightly floured work surface, and knead the dough until it's smooth and elastic, about 8 minutes. Cover the dough with plastic wrap and let it rest for about 30 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Take the plastic wrap off the dough and use your hands to pat the dough ball into a rectangle that's roughly 8x12-inches (20x30cm). Drizzle a little olive oil on the dough if it's sticking to your hands or the work surface. Cover again with plastic wrap, then let the dough proof for one hour.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Preheat your oven to 400˚F / 205˚C. Prepare a large rimmed baking sheet with a piece of parchment paper and sprinkle some semolina onto the parchment.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Use a ruler or measuring tape to mark 1/2-inch increments along the long (12in) side of your dough rectangle. Using a pizza wheel, pastry cutter, bench scraper, or knife, cut rectangle into strips that are 8 inches long and 1/2 inch wide. Be sure to separate each strip from the rest of the dough right after cutting it, or they may end up sticking together.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Use your hands to gently stretch and twist the dough strips into breadsticks, then place them down on top of the semolina-dusted parchment paper. They should be about 12-14 inches long after stretching. They don't expand or spread much, so you can leave about 1/4\" - 1/2\" of room between each breadstick. Sprinkle some more semolina on top of the breadsticks.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Bake for 10 minutes, then remove from oven and turn the breadsticks over, and bake for an additional 5 minutes. Breadsticks should be slightly browned and crisp.";
+            after step_8;
+        }
+    }
+}

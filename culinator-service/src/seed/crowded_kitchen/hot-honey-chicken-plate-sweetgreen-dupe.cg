@@ -1,0 +1,178 @@
+culinator 0.3;
+
+recipe ck_hot_honey_chicken_plate_sweetgreen_dupe {
+    title "Hot Honey Chicken Plate (Sweetgreen Dupe)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/hot-honey-chicken-plate-sweetgreen-dupe/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 90 min;
+    description "The hot honey chicken plate at Sweetgreen is delicious, with blackened chicken, roasted sweet potatoes, quinoa, a carrot and cabbage slaw and crispy onions on top. But since Sweetgreen is pretty expensive, we decided to make our own at home! This recipe is perfect for meal prep, and will save you money!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 pounds chicken breast or thighs";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons olive oil";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 tablespoon balsamic vinegar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons chili powder";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 teaspoon black pepper";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 heaping teaspoon cumin";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/2 teaspoon coriander";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1/4 teaspoon red pepper flakes";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 pound sweet potatoes";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 tablespoon olive oil";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1/2 teaspoon onion powder";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/2 teaspoon garlic powder";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/2 teaspoon chili powder";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/2 teaspoon nutritional yeast";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1/4 cup olive oil";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "1/4 cup dijon mustard";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "2 tablespoons honey";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "2 tablespoons apple cider vinegar";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "1 teaspoon red pepper flakes";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "4 cups cabbage";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "1 1/2 cups shredded carrot";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "1/4 cup mayonnaise";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "1 tablespoon dijon mustard";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "1 tablespoon honey";
+    }
+
+    ingredient ingredient_28 measured by mass {
+        name "2 tablespoons apple cider vinegar";
+    }
+
+    ingredient ingredient_29 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_30 measured by mass {
+        name "1 teaspoon dried parsley";
+    }
+
+    ingredient ingredient_31 measured by mass {
+        name "1/4 teaspoon black pepper";
+    }
+
+    ingredient ingredient_32 measured by mass {
+        name "Juice of 1/2 lime";
+    }
+
+    ingredient ingredient_33 measured by mass {
+        name "1 1/2 cups quinoa, rinsed";
+    }
+
+    ingredient ingredient_34 measured by mass {
+        name "3 cups vegetable or chicken broth/stock";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a mixing bowl, combine olive oil and balsamic vinegar, and add in all the spices. Whisk to combine, then toss in the chicken and use tongs to get them evenly coated. Cover with plastic wrap and move to the fridge to marinate for 30 minutes to 2 hours.";
+        }
+        operation step_2 does prepare {
+            note "Wash your sweet potatoes, then cut them into roughly 1\" rounds and quarter each round. In a mixing bowl, toss with olive oil and spices until evenly coated, then move to a sheet pan and place in a preheated 400˚F oven for roughly 25-30 minutes, tossing them halfway through.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While your sweet potatoes are cooking, add quinoa to a pot and add broth or water, then cook according to package directions.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Slice cabbage thinly. Grate carrots or use pre-shredded carrots, and combine cabbage, carrots, and the rest of the slaw ingredients in a mixing bowl.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "At this point, your chicken should have been in the fridge for at least 30 minutes. We'd recommend marinating for about 2-3 hours for maximum flavor, but you can take it out now and move it to the grill or a grill pan over medium-high heat. Make sure there's a high heat oil in your grill pan or that your grill grates are well lubricated. Cook until one side is blackened (about 6-8 minutes) then flip and cook for another 6-8 minutes. The chicken should reach an internal temperature of around 165˚F. Let it rest for a few minutes, then cut into roughly 1\" x 1\" pieces.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "In a mixing bowl, combine all of the dressing ingredients and whisk vigorously to combine.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Add a cup of quinoa to a plate, add a few pieces of chicken and sweet potato, a half cup of slaw, pour over as much dressing as you like, and top with crispy shallots.";
+            after step_6;
+        }
+    }
+}

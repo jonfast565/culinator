@@ -1,0 +1,118 @@
+culinator 0.3;
+
+recipe ck_homemade_fig_newtons {
+    title "Homemade Fig Newtons";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-fig-newtons/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 70 min;
+    description "These homemade fig newtons are soft, chewy, and absolutely delicious. With subtle notes of fall flavors, they're the perfect way to kick off the season.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3/4 cup whole wheat flour";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/3 cup + 1 tablespoon brown sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "6 tablespoons cold butter, cubed";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 eggs, whisked";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3/4 teaspoon baking powder";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1/4 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "8 oz dried mission figs";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/3 cup water";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/4 cup bourbon or other dark alcohol";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 - 3/4 tablespoon maple syrup";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "zest and juice of half a lemon";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/2 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1/8 teaspoon cloves";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1/8 teaspoon nutmeg";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add both flours, brown sugar, salt, and baking powder to a food processor and pulse to combine. Add in cubed butter and pulse a few times until pieces are small and evenly incorporated.";
+        }
+        operation step_2 does prepare {
+            note "Add in vanilla extract and about 3/4 of the whisked egg mixture. Continue pulsing until the dough comes together. To test if it's ready, press the dough between your fingers – it should stick together without crumbling (but it shouldn't be wet and sticky). If it's still too dry, add more egg in small increments until it reaches the right consistency.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Use your hands to shape the dough into a rectangle, then wrap dough up in plastic wrap and refrigerate for at least 30 minutes or up to 2 hours.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add all of the filling ingredients to a small saucepan and stir. Bring to a boil, then lower to a simmer and cover with a lid. Check every few minutes, mashing lightly with a spoon. Cook until liquid has completely been absorbed into the dried figs. Let the fig mixture cool, then transfer to a food processor or blender and blend until smooth.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "to 350˚F / 175˚ C.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "On a lightly floured surface, divide dough into four equal pieces. If the dough feels too sticky, work in a little more flour with your hands. Roll dough into a 3\"-4\" long cylinder, then roll into a 9\" long x 4\" wide rectangle, using a bench scraper to help square up the sides.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note ". Scoop filling into a piping bag or a plastic sandwich bag with a corner cut off. Pipe two strips of filling side by side down the middle of the dough (lengthwise), leaving a small margin on each end of the cookie so it doesn't ooze out when baking.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Fold each side of the dough over the filling, then pinch the seam and ends closed with your fingers. Flip it over and roll very gently with a rolling pin to flatten the cookie out and flatten the seam.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note ". Carefully transfer the logs seam side down to a nonstick baking sheet. (If using nonstick, make sure to use parchment paper.) Bake for 18-22 minutes, until the bottom is lightly browned. Let cool completely and then slice each log into ~5 cookies (about 1.5 inches long each).";
+            after step_8;
+        }
+    }
+}

@@ -1,0 +1,54 @@
+culinator 0.3;
+
+recipe ck_vegan_peppermint_bark {
+    title "Vegan Peppermint Bark";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-peppermint-bark/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 75 min;
+    description "This homemade Vegan Peppermint Bark is the perfect holiday treat! This recipe couldn't be any easier to make. You just need 4 ingredients and a few minutes of prep time. We love to keep a batch on hand in the fridge or freezer all holiday season long!";
+
+    ingredient ingredient_1 measured by mass {
+        name "16 ounces vegan white chocolate";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "12 ounces dark or semisweet vegan chocolate";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 teaspoon peppermint extract, divided";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "½ cup crushed candy canes (~3 ounces)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Line a quarter sheet pan with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Melt dark chocolate in a double boiler or a microwave. To melt in the microwave, heat in 30 second intervals, stirring well in between each interval (probably will take 3-4 cycles). Once melted, immediately stir in ¼ teaspoon of peppermint extract.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Once the chocolate is melted, spread into an even layer on the sheet pan (make sure to use parchment paper or the chocolate will stick). Place the tray in the refrigerator for 10-15 minutes, until just set. It's okay if it's still not completely set. If you let it set for too long, the white chocolate layer may separate when you break up the bark later on.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Repeat the melting process with the white chocolate, then stir in remaining peppermint extract. Once the semisweet chocolate layer is mostly set, spread the white chocolate over the top in an even layer.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Immediately sprinkle crushed candy canes evenly over the top of the white chocolate. (Don't wait or else the white chocolate will set and the candy canes won't stick.)";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Place the bark in the refrigerator for 1 hour (or more) to fully set. Break into pieces with a knife or your hands. Store in a sealed container in the refrigerator.";
+            after step_5;
+        }
+    }
+}

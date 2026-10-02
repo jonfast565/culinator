@@ -1,0 +1,130 @@
+culinator 0.3;
+
+recipe ck_homemade_granola_bars_4_flavor_variations {
+    title "Granola Bars";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-granola-bars-4-flavor-variations/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 110 min;
+    description "These homemade granola bars are so much better than store-bought! They're sweetened with dates instead of regular sugar, but still have a satisfying chewy texture. We made four flavors: Peanut Butter Chocolate Chip, Cranberry Almond, Blueberry Cashew and Apple Cinnamon. It's so easy to customize these and they can be made vegan, gluten free and nut free!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 ¼ cups old fashioned whole rolled oats";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "¾ cup chopped, unsalted peanuts";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "8 oz pitted and halved Medjool dates (about 16 dates, depending on size)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 tablespoons honey";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "½ cup + 2 tablespoons natural peanut butter (no sugar added)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 ½ teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3/4 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "½ teaspoon Diamond Crystal kosher salt";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1/2 cup mini chocolate chips";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "Omit chocolate chips and add in 3/4 cup chopped dried blueberries";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "Substitute chopped peanuts with chopped cashews (unsalted)";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "Substitute peanut butter with cashew butter";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "Optional: add 1 tsp lemon zest";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "Omit chocolate chips and add in 3/4 cup chopped dried cranberries";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "Substitute chopped peanuts with chopped almonds (unsalted)";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "Substitute peanut butter with almond butter";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "Optional: add 1 tsp orange zest and sub 1/2 tsp vanilla extract with 1/2 tsp almond extract";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "Omit chocolate chips and add in 3/4 cup chopped dried apples";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "Substitute chopped peanuts with sunflower or pumpkin seeds";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "Substitute peanut butter with 3/4 cup sunflower butter";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the dates to a bowl, cover with very hot water and soak for 5-10 minutes to soften. Reserve a few tablespoons of the water, then drain the dates.";
+        }
+        operation step_2 does prepare {
+            note "Place the dates in a food processor with 1 tablespoon of the reserved water. Pulse several times until it forms a mostly smooth paste. Add in another tablespoon of water if needed. Measure out 3/4 cup of date paste, and reserve any leftovers in the refrigerator.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Make the Granola Bars:: Line a 9x9 baking pan with parchment paper.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a large bowl, stir together 3/4 cup of date paste, honey, nut/seed butter, vanilla extract, cinnamon, and salt. If you are adding zest, other extracts, or spices, add them at this time.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Add the oats, dried fruit, chopped nuts, and any other mix-ins, and stir thoroughly to combine (this may take a few minutes, as it will be a thick mixture).";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Transfer the mixture to the prepared pan and press firmly into the pan, using your fingers or the flat bottom of a sturdy measuring cup. Freeze for 1 hour (or up to overnight) – this makes cutting the bars much easier. You can cut them right away, but they may fall apart slightly. You can reshape any loose pieces with your hands.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Preheat the oven to 325˚F and line a baking sheet with parchment paper.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Remove the bars from the freezer. Transfer the granola bars to a cutting board (on top of the parchment paper). Slice in half lengthwise, then cut each half into 6 evenly-sized bars for 12 bars total. The bars may crumble slightly when cut, so just press any loose pieces back into the bars.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Transfer to the baking sheet and bake for 20-22 minutes, until they are light golden brown on the bottom. Remove from the oven and let cool completely.";
+            after step_8;
+        }
+    }
+}

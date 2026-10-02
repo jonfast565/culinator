@@ -1,0 +1,66 @@
+culinator 0.3;
+
+recipe ck_honey_roasted_cashews {
+    title "Honey Roasted Cashews";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/honey-roasted-cashews/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 25 min;
+    description "These honey roasted cashews are the perfect snack food: a little sweet, a little salty, and definitely addicting. They're great for an afternoon pick-me-up, on a charcuterie board, or even as a gift.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 heaping cups raw cashews (10-12 ounces)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/4 cup honey";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 tablespoons olive oil";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3 tablespoons granulated sugar";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 300˚F / 150˚C and line a sheet pan with parchment paper.";
+        }
+        operation step_2 does prepare {
+            note "Add cashews to a medium-sized bowl. In a smaller bowl, whisk together the honey, olive oil, salt, vanilla, and cinnamon.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Pour honey mixture over the cashews and stir until cashews are completely coated, making sure to scrape down the sides of the bowl.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Spread the cashews in a single layer onto parchment-lined baking sheet and bake for 20 minutes. Stir the cashews every 5 minutes and turn the tray after 10 minutes to ensure even cooking. Cook until golden brown - depending on your oven, this may take slightly longer than 20 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Remove cashews from the oven and let cool for 5 minutes. Add sugar to a medium-sized bowl, then pour in the cashews, stirring them to coat in sugar.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Spread the cashews back out on parchment paper and let them cool completely for 45 minutes until hardened.";
+            after step_5;
+        }
+    }
+}

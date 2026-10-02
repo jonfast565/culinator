@@ -1,0 +1,134 @@
+culinator 0.3;
+
+recipe ck_homemade_oreos {
+    title "Homemade Oreos";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-oreos/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 72 min;
+    description "We've made pop tarts, cheez-its, and even choco tacos, but the number one most requested for our Better Than Store-Bought series is finally here: Homemade Oreos! Just like the authentic version you know and love, these are made with two crisp, chocolatey cookies and a rich, vanilla-flavored cream center. The recipe is fairly easy to make and it's absolutely worth the effort! They really do taste better than store-bought (and yes, we did a taste comparison!).";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup all-purpose flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 tablespoons dutch-process cocoa powder";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 tablespoons black cocoa powder";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "⅓ cup corn starch";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "⅓ cup granulated sugar";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "½ teaspoon baking soda";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "¼ teaspoon salt";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "8 tablespoons (1 stick) unsalted butter, cut into smaller pieces and softened to room temperature";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1-2 tablespoons honey";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "6 tablespoons unsalted butter, softened to room temperature";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 ½ cups powdered sugar";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "2 teaspoons corn starch";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "Pinch of salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Cookies:: Add all the flour, both types of cocoa powder, corn starch, sugar, baking soda and salt to a food processor and pulse a few times to combine.";
+        }
+        operation step_2 does prepare {
+            note "Add in the softened butter, vanilla, and one tablespoon of honey and continue pulsing until a dough forms. If the dough is too dry (it should stick together when pinched between two fingers), add another ½-1 tablespoon of honey, until the dough comes together.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Transfer the dough to plastic wrap, and press it into a rectangle. Chill in the refrigerator for 30-60 minutes before rolling it out.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Preheat the oven to 350˚F/175˚C.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Roll the dough out between two pieces of parchment paper to prevent sticking. Roll to about ⅛ inch thick. OPTIONAL: use an lightly oiled embossed rolling pin to create a textured design on top. Firmly press the rolling pin down, but go slowly so you don't make the dough too thin.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Cut with 1.75-2-inch diameter circle cookie cutters, and transfer the cookies to a parchment paper-lined baking sheet. Re-roll the scraps to make as many cookies as possible.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 10-12 minutes, until the cookie edges feel dry to the touch.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Let the cookies cool on the pan for a few minutes before moving to a cooling rack. The cookies will crisp up as they cool. Assemble when cookies are cooled to room temperature.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Cream:: In a large bowl, whip the butter and vanilla with a hand mixer until light and fluffy (1-2 minutes).";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "In a medium bowl, combine powdered sugar, cornstarch, and salt.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "Add dry ingredients to the butter mixture in batches, fully combining between additions.";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "Place cream in the fridge for at least 30 minutes to set.";
+            after step_11;
+        }
+        operation step_13 does prepare {
+            note "Assemble:: Scoop 1 teaspoon of cream filling and roll it into a ball.";
+            after step_12;
+        }
+        operation step_14 does prepare {
+            note "Sandwich the cream between two cookies. Press them together gently so that the cookies don't crack. You don't have to roll the cream filling into a ball (you can spread it), but it will look much neater this way!";
+            after step_13;
+        }
+        operation step_15 does prepare {
+            note "Keep these homemade oreos stored in the refrigerator for up to a week. We don't recommend keeping these stored at room temp, as the cream will soften and the cookies won't be as crisp.";
+            after step_14;
+        }
+    }
+}

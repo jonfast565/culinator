@@ -84,6 +84,13 @@ pub struct FormulaCalculationRequest {
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct BatchApplyRequest {
+    pub batch: culinator_parser::BatchRequest,
+    pub source_fingerprint: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct FormulaSolveRequest {
     pub formula: Formula,
     pub constraint: culinator_core::FormulaConstraint,

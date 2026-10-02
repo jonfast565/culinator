@@ -339,6 +339,17 @@ impl From<CliLocale> for Locale {
 
 #[derive(Subcommand)]
 enum FormulaCommand {
+    /// Preview a batch from a BatchRequest JSON file against a catalog recipe.
+    BatchPreview {
+        recipe: String,
+        request: PathBuf,
+    },
+    /// Apply a reviewed batch when its source fingerprint still matches.
+    BatchApply {
+        recipe: String,
+        request: PathBuf,
+        source_fingerprint: String,
+    },
     List {
         recipe: String,
     },
@@ -661,6 +672,14 @@ fn run(cli: Cli) -> Result<()> {
         Command::Formula { command } => {
             let runtime = Runtime::open(&cli.database)?;
             match command {
+                FormulaCommand::BatchPreview { recipe, request } => {
+                    catalog::batch_preview(&runtime, &recipe, &request, output)
+                }
+                FormulaCommand::BatchApply {
+                    recipe,
+                    request,
+                    source_fingerprint,
+                } => catalog::batch_apply(&runtime, &recipe, &request, &source_fingerprint, output),
                 FormulaCommand::List { recipe } => {
                     catalog::list_formulas(&runtime, &recipe, output)
                 }

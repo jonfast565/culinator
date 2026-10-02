@@ -1,0 +1,38 @@
+culinator 0.3;
+
+recipe ck_lime_simple_syrup {
+    title "Lime Simple Syrup";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/lime-simple-syrup/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 10 min;
+    description "This Lime Simple Syrup is perfect for adding a dose of tart citrus flavor to cocktails, mocktails, salad dressings, and more. Best of all, it only takes 3 ingredients and about 5 minutes of work.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup granulated sugar";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 cup freshly squeezed lime juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 lime slices";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add sugar, water, and lime juice to a small saucepan over medium high heat. Bring to a boil, and let simmer for 2-3 minutes, until the sugar is fully dissolved.";
+        }
+        operation step_2 does prepare {
+            note "Remove from heat and add in 2 lime slices. Let the mixture sit for at least 10 minutes (or up to 30 minutes), then remove the lime slices.";
+            after step_1;
+        }
+    }
+}

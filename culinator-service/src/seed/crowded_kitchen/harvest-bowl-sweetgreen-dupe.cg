@@ -1,0 +1,150 @@
+culinator 0.3;
+
+recipe ck_harvest_bowl_sweetgreen_dupe {
+    title "Harvest Bowl (Sweetgreen Dupe)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/harvest-bowl-sweetgreen-dupe/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 50 min;
+    description "The Harvest Bowl is one of sweetgreen's most popular bowls, and it's actually really easy (and much less expensive) to make it at home! Roasted chicken, sweet potatoes, wild rice, apples, goat cheese, and almonds are layered over a bed of curly kale and covered with a tangy balsamic vinaigrette. It's filling, delicious, and perfect for any season.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 pounds chicken breasts, tenders, or thighs";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 tablespoons sunflower oil or other neutral oil";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 1/2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/2 teaspoon onion powder";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 teaspoon garlic powder";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 teaspoon chili powder";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 teaspoon nutritional yeast";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 1/2 pounds sweet potatoes";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 1/2 tablespoon sunflower oil or other neutral oil";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/2 teaspoon onion powder";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/2 teaspoon garlic powder";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1/2 teaspoon chili powder";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1/3 teaspoon nutritional yeast";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "1 cup wild rice (uncooked)";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "1 3/4 cups vegetable or chicken broth";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1 tablespoon olive oil";
+    }
+
+    ingredient ingredient_18 measured by mass {
+        name "1/2 cup olive oil";
+    }
+
+    ingredient ingredient_19 measured by mass {
+        name "3 tablespoons balsamic vinegar";
+    }
+
+    ingredient ingredient_20 measured by mass {
+        name "2 tablespoons dijon mustard";
+    }
+
+    ingredient ingredient_21 measured by mass {
+        name "2 tablespoons maple syrup";
+    }
+
+    ingredient ingredient_22 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_23 measured by mass {
+        name "1/2 teaspoon black pepper";
+    }
+
+    ingredient ingredient_24 measured by mass {
+        name "2 honey crisp apples, diced and tossed in lemon juice";
+    }
+
+    ingredient ingredient_25 measured by mass {
+        name "12 oz goat cheese";
+    }
+
+    ingredient ingredient_26 measured by mass {
+        name "1/2 cup almonds, chopped";
+    }
+
+    ingredient ingredient_27 measured by mass {
+        name "9-12 cups curly kale, shredded or finely chopped";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add wild rice, olive oil, and chicken broth to a saucepan. Bring to a boil, then reduce to low heat and cover with a lid. After 45-50 minutes, turn off the heat and keep it covered to help it finish cooking.";
+        }
+        operation step_2 does prepare {
+            note "Cut sweet potatoes into 1/4\" rounds and then cut into quarters. Add the sweet potatoes to a bowl with the oil and all of the seasonings and toss well to coat. Transfer to a baking sheet, cover with aluminum foil (optional) and roast for 20-25 minutes, tossing them once halfway through. You can also air fry, covered with a piece of tinfoil, at 375˚F for 20-25 minutes.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Add chicken to a bowl with oil and all seasonings and toss well to coat. Transfer to a baking sheet and roast at 400˚F for 12-20 minutes (the time depends on the thickness of your chicken. Make sure to cook to an internal temperature of 165˚F).";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Dice the apples and toss in lemon juice. If you are making this for meal prep, wait to prep the apple until the day you plan to eat the bowl. Finely chop the kale and portion the goat cheese.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Chop the almonds and add to a small skillet over medium low heat. Toast for 5-7 minutes, stirring often to prevent burning, until lightly browned.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Whisk together all of the dressing ingredients until emulsified.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note ". Start with a base of 1.5 to 2 cups of kale, then top with ~1/2 cup of chopped chicken, ~1/2 cup of sweet potatoes, ~1/2 cup of wild rice, a handful of apples and almonds, ~2 oz goat cheese, and drizzle balsamic dressing over the top and enjoy!";
+            after step_6;
+        }
+    }
+}

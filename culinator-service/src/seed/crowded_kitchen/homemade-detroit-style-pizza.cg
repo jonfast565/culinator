@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_homemade_detroit_style_pizza {
+    title "Homemade Detroit-Style Pizza";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-detroit-style-pizza/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 1500 min;
+    description "Unless you're from the Midwest, chances are you've never tried Detroit-style pizza. You're definitely missing out! Focaccia-style dough is topped with two types of cheeses, sauce is spread on top, and the whole thing is baked, creating a delicious pan pizza with a cheesy crust on every slice.";
+
+    ingredient ingredient_1 measured by mass {
+        name "300g bread flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "220g water";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/2 tablespoon (3g) kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "5g instant yeast";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "Olive oil, as necessary (to grease bowl and pan)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "15-20 slices of pepperoni";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "6 oz Butterkäse, muenster, or provolone cheese, cubed";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "6 oz low moisture whole milk mozzarella, shredded";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 cup vodka sauce";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "2-3 tablespoons hot honey";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "red pepper flakes";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "We made ours in a food processor, which is way easier than kneading or using a stand mixer. Just combine flour, yeast, and salt in the bowl, pulse to combine, and then slowly pour in your water. Let your food processor run until it forms a ball, which should take 30 seconds, and then let it go another 30 seconds.";
+        }
+        operation step_2 does prepare {
+            note ". Just note, the dough will be super sticky. Pour a little oil over the top of the dough, cover with a piece of plastic wrap, and let the dough cold ferment in the fridge for at least overnight, but ideally for 3 days.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Oil your pizza pan, and then transfer your dough into it. Oil your fingers, and pat/stretch the dough until it fills the entire pan, all the way to the corners. This will likely take 2-3 instances of patting and stretching. When you get it as far as you can, let it rest for 30 minutes, and then repeat. Make sure to stretch from the middle to ensure that the dough has an even thickness.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Place cubed cheese evenly on the dough, being sure to place pieces around the edge. Sprinkle the mozzarella around the cubed cheese, making sure to go all the way to the edges. The cheese will brown against the edge of the pan, creating the pizza's signature cheese \"crown\".";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "on top of the cheese in 3 lines, then top with pepperoni. I know this sounds weird, but the sauce goes on top of the cheese on a Detroit-style pizza!";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "on the bottom rack of your oven, until cheese is starting to brown and the pepperoni is starting to char. Let cool slightly before removing from the pan. Slice and serve drizzled with hot honey and red pepper flakes.";
+            after step_5;
+        }
+    }
+}

@@ -1,0 +1,86 @@
+culinator 0.3;
+
+recipe ck_candied_pecans_and_almonds {
+    title "Candied Pecans and Almonds";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/candied-pecans-and-almonds/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 70 min;
+    description "These candied pecans and almonds are an easy, delicious holiday treat that also make for an excellent DIY gift! They have a sweet, crunchy, spiced coating that's absolutely addictive. Disclaimer: it's pretty difficult to stop eating these!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 1/2 cups unsalted pecans";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 1/2 cups unsalted almonds";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 large egg white";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 tablespoon water";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 cup granulated sugar";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/4 cup light brown sugar";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 teaspoon salt";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/4 teaspoon nutmeg";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/8 teaspoon cloves";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "Optional: Pinch of cayenne";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Preheat oven to 250˚F.";
+        }
+        operation step_2 does prepare {
+            note "Lightly grease a nonstick sheet pan with cooking spray or oil.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "In a large bowl, whisk together egg white, water and vanilla until frothy. Add in the pecans and almonds and stir until well coated.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "In a separate bowl, whisk together sugar, brown sugar, salt, cinnamon, nutmeg, cloves, and cayenne if using. Pour sugar mixture over the nuts and stir well until the nuts are evenly coated.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Spread the nuts in an even layer on the baking sheet and place on the middle rack of your oven. Stir the nuts every 15 minutes, baking for a total of 55-60 minutes.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Remove from the oven, stir, and let cool completely before enjoying.";
+            after step_5;
+        }
+    }
+}

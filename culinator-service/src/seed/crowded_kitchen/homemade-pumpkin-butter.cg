@@ -1,0 +1,54 @@
+culinator 0.3;
+
+recipe ck_homemade_pumpkin_butter {
+    title "Homemade Pumpkin Butter";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-pumpkin-butter/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 35 min;
+    description "This 5-ingredient Homemade Pumpkin Butter is a rich, thick, perfectly spiced spread that's easy to make (only 5 minutes of prep time!) and tastes even Better Than Store-Bought. We use it as the filling for our copycat Pumpkin Pie Pop Tarts, and it's also delicious spread on toast, waffles, or pancakes, in a hand pie, atop yogurt or oatmeal, or swirled into baked goods.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 15 oz can pure pumpkin purée";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/4 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/4 cup light brown sugar (packed)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/2 cup water";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons pumpkin pie spice";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1/2 teaspoon kosher salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add all ingredients to a medium-sized saucepan over medium heat and whisk or stir with a spatula until everything is well incorporated.";
+        }
+        operation step_2 does prepare {
+            note "Bring the pumpkin butter to a gentle simmer, then reduce the heat to medium-low.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Let the mixture cook for about 30 minutes, stirring every 5 or so minutes, until the pumpkin butter reduces by about 25%. It should be thick, darker in color than when you started, smooth, and more like a paste than a purée. You should end up with almost exactly 2 cups of pumpkin butter.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Let the pumpkin butter cool completely before transferring it to an airtight container. Store in the refrigerator for 1-2 weeks or in the freezer for up to 3 months.";
+            after step_3;
+        }
+    }
+}

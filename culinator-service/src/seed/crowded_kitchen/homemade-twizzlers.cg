@@ -1,0 +1,74 @@
+culinator 0.3;
+
+recipe ck_homemade_twizzlers {
+    title "Homemade Twizzlers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-twizzlers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 330 min;
+    description "These homemade Twizzlers have the stretch, flavor, and chew of the store-bought version, except they're made with real fruit! There are surprisingly only a few ingredients needed to make these, and you don't need any corn syrup!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 cups hulled strawberries (250 g)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "Juice of 1/2 large lemon (~1 tablespoon)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup granulated sugar (200 g)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 cups cake flour (240 g)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1½ cups cold water";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2-3 tablespoons freeze-dried strawberries (ground and seeds strained out (6-10g))";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "Natural red food coloring (optional)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "To a blender, add the strawberries, lemon juice, and a splash of water and blend until smooth, then use a fine mesh sieve to strain out the strawberry seeds.";
+        }
+        operation step_2 does prepare {
+            note "To a wide-bottomed saucepan over medium low heat, add the strawberry pureé and granulated sugar. Bring to a simmer and let cook for roughly 10 minutes, until the color intensifies and the syrup thickens.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While the syrup cooks, to a large mixing bowl add the cake flour, 1.5 cups cold water, and the freeze-dried strawberry powder. Whisk thoroughly, until there are no clumps (even small ones) remaining.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Once the syrup has thickened, turn the heat to low, add the flour and water mixture in small (1/4 cup) batches, whisking with each addition, until all of the flour and water mixture has been added. If you're using food coloring, add it in now.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Turn the heat back to medium low and continue cooking, stirring frequently and scraping the bottom to prevent scorching. After a few minutes, you'll see some clumps start to form. Continue cooking and stirring. The mixture will become very clumpy (and honestly, it will look like you've messed up, but don't worry! Just keep going).";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Once the dough doesn't have any visibly wet sections remaining (it should resemble a glossy play-doh), move it to a nonstick work surface and let it cool for a few minutes.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Once the dough is cooled, shape your twizzlers by rolling out two 1-tablespoon portions of dough into 1/4 inch thick strands, then wrap them around each other into a roughly 8-inch long twist. You can also try using a piping bag (not recommended – you need some SERIOUS muscle for this) or a spritz cookie press to pipe the dough out. (Spritz also not recommended – it can be finicky.)";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "If you have a dehydrator, dehydrate for roughly 5 hours at 140˚F. They're done when they're chewy, but not tough, and the center is no longer wet. The best way to test this is by taking a bite! If you don't have a dehydrator, move to a parchment-lined baking sheet and bake on the oven's lowest setting with the oven door slightly cracked open for 3-4 hours.";
+            after step_7;
+        }
+    }
+}

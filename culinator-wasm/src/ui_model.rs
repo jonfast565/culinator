@@ -146,6 +146,7 @@ pub struct UiFormulaIngredient {
 #[derive(Serialize, Debug)]
 #[serde(rename_all = "camelCase")]
 pub struct UiFormula {
+    pub raw: Formula,
     pub id: String,
     pub symbol: String,
     pub name: String,
@@ -438,6 +439,7 @@ fn formula(item: &Formula) -> UiFormula {
         _ => None,
     };
     UiFormula {
+        raw: item.clone(),
         id: item.id.to_string(),
         symbol: item.symbol.clone(),
         name: item.name.clone(),

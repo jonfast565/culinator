@@ -49,6 +49,7 @@ pub(crate) fn emit_cg(
 
     if !instructions.is_empty() {
         out.push_str("\n    process preparation {\n");
+        let mut step_number = 0;
         for (index, instruction) in instructions.iter().enumerate() {
             let text = instruction.trim();
             if text.is_empty() {
@@ -56,9 +57,14 @@ pub(crate) fn emit_cg(
                 continue;
             }
             out.push_str(&format!(
-                "        operation step_{index} does prepare {{\n            description {};\n            duration 5 min;\n            labor active;\n        }}\n",
+                "        operation step_{step_number} does prepare {{\n            note {};\n",
                 quote(text)
             ));
+            if step_number > 0 {
+                out.push_str(&format!("            after step_{};\n", step_number - 1));
+            }
+            out.push_str("        }\n");
+            step_number += 1;
         }
         out.push_str("    }\n");
     } else {

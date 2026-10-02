@@ -1,0 +1,58 @@
+culinator 0.3;
+
+recipe ck_vegan_peanut_butter_cups {
+    title "Vegan Peanut Butter Cups";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/vegan-peanut-butter-cups/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 45 min;
+    description "Easy, healthy(ish), crowd-pleasing - what can't these homemade vegan peanut butter cups do? They're the perfect weeknight treat! Make a big batch and store in the fridge or freezer for a quick snack when that chocolate craving hits.";
+
+    ingredient ingredient_1 measured by mass {
+        name "14 ounces dark chocolate, melted with 1 tsp coconut oil";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup smooth peanut butter (unsweetened)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3 tablespoons melted coconut oil";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 1/2 tablespoon maple syrup";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "3/4 teaspoon cinnamon (optional)";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 1/2 teaspoon vanilla extract";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Chop dark chocolate into small shards (or if using chocolate chips, skip this) and place in heat-safe bowl with 1 tsp coconut oil. Melt in microwave in 30 second intervals, stirring well between each interval, until completely melted.";
+        }
+        operation step_2 does prepare {
+            note "Meanwhile, whisk together peanut butter, melted coconut oil, maple syrup, cinnamon and vanilla until smooth.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Line a mini muffin tin with mini muffin liners. Pour a small amount (~1-1 1/2 teaspoon) of chocolate into liner. Using a pastry brush or the back of the spoon, spread the chocolate all the way up the sides of the liner. Repeat for the entire tin. Freeze for 10 minutes, until solidified.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Transfer peanut butter filling to a piping bag and fill each liner a little more than 3/4 of the way full, leaving room at the top for more chocolate. Freeze for 10-15 minutes, until mostly solid.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Top off each peanut butter cup with more chocolate all the way to the edge, fully covering the peanut butter filling. Return to freezer once more until set – about 20 minutes.";
+            after step_4;
+        }
+    }
+}

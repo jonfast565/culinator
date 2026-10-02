@@ -1,0 +1,102 @@
+culinator 0.3;
+
+recipe ck_homemade_cherry_gummies {
+    title "Cherry Gummies";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-cherry-gummies/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 590 min;
+    description "These homemade cherry gummies are sweet, tart, chewy, and super cute! With only 6 ingredients, these taste like real fruit and are so much better than store bought!";
+
+    ingredient ingredient_1 measured by mass {
+        name "180 g tart cherries (~1 cup blended)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 envelopes (14g or ~5 teaspoons powdered gelatin)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "3 tablespoons lime juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "3 tablespoons honey";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "90 g green apple";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 tablespoon mint";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 tablespoons lime juice (goes in blender)";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 envelope (7g or ~2 1/2 teaspoons powdered gelatin)";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 1/2 tablespoon lime juice (goes in gelatin)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 1/2 tablespoon honey";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Make the Cherry Layer:: If your cherries are frozen, defrost in the microwave for 45-60 seconds. Add cherries to blender and blend until completely smooth.";
+        }
+        operation step_2 does prepare {
+            note "In a small bowl, sprinkle gelatin evenly over lime juice, then stir thoroughly until there are no dry grains visible. Let sit for 5 minutes.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While the gelatin blooms, combine cherry purée with honey in a small saucepan over low heat, and stir until combined. You want to heat the purée enough to melt the gelatin (>~120˚F), but you don't want to bring it to a boil, which will denature the gelatin. If the mixture is too hot when you add the gelatin, your gummies will not set properly. A thermometer is essential for getting this step right!";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add gelatin and lime juice mixture to the fruit puree, and stir until it's completely dissolved. Remove pan from heat and let cool for about 5 minutes.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Make the Lime Layer (optional):: Add apple, mint, and 2 tablespoons of lime juice to a blender and blend until completely smooth.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "In a small container, sprinkle gelatin evenly over lime juice, then stir thoroughly until there are no dry grains visible. Let sit for 5 minutes.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "While the gelatin blooms, combine apple and mint purée with honey in a small saucepan over low heat, and stir until combined. You want to heat the purée enough to melt the gelatin (>~120˚F), but you don't want to bring it to a boil, which will denature the gelatin.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Add gelatin and lime juice mixture to the fruit puree, and stir until it's completely dissolved. Remove pan from heat and let cool for about 5 minutes.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Make the Gummies:: Give your silicone molds a light spray with avocado oil or cooking spray.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Use a dropper to fill up the fruit molds. Fill two droppers, one with cherry and one with apple, and at the same time fill the mold - red in the cherry shape and green in the stem/leaf shape. Filling them at the same time will help the colors from running together too much.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "Move the molds to your refrigerator. Refrigerate for an hour and a half to let them set up.";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "Remove from the molds and place on a wire rack, and let sit for 8 hours or overnight. The gummies will shrink significantly and achieve a more intense flavor and a chewy, gummy texture. Ideally, place them in front of a fan or an area with good air flow to help them dry out faster. If your kitchen is very warm and/or humid, this may take quite a while or they may not set. If needed, you can let them dry out in the refrigerator.";
+            after step_11;
+        }
+    }
+}

@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe ck_copycat_ritz_cheese_cracker_sandwiches {
+    title "Copycat Ritz Cheese Cracker Sandwiches";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/copycat-ritz-cheese-cracker-sandwiches/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 105 min;
+    description "These nostalgic copycat Ritz Cheese Cracker Sandwiches are part of our homemade snack series: Better Than Store-Bought. With a buttery, crisp homemade cracker and an easy, 3-ingredient cheddar cheese filling, these are much easier than they look. These cracker sandwiches are mini, just like Ritz Bits!";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 ½ cups bread flour";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 ½ teaspoons baking powder";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "6 tablespoons cold unsalted butter, cubed";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "½ cup cold water";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 egg, beaten + 1 tablespoon water";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Salt for topping";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "4 ounces sharp cheddar cheese, diced into 1/2-inch cubes (or shredded)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 tablespoon whole milk";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "2 teaspoons corn starch";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the bread flour, chilled butter, baking powder, sugar, and salt to a food processor and pulse a few times, until the butter pieces are about the size of peas. If you don't have a food processor, you can gently work the dough together with your hands or use a pastry cutter.";
+        }
+        operation step_2 does prepare {
+            note "Add in the water and pulse a few more times to incorporate. Don't overwork the dough.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Shape and chill your dough. Move the dough to a baking mat or another clean surface and press it together until it forms a ball. Flatten it into a ½ inch thick rectangle, wrap with plastic wrap, and chill in the fridge for at least an hour.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Meanwhile, preheat your oven to 350˚F and line a baking sheet with parchment paper.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "While the dough is chilling, combine cheddar cheese and milk in a small saucepan over low heat, until the cheese is melted. Whisk or stir in the corn starch until the cheese starts to thicken, then transfer to a small bowl and place in the refrigerator.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Roll your chilled dough into a rectangle about ⅛-inch thick. Cut into rounds with a 1-inch fluted pastry ring or cookie cutter and carefully transfer to the baking sheet. The crackers don't really expand, so you can space them closely together.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Using a fork, pierce the crackers 2-3x each (this keeps them from puffing up too much in the oven). In a small bowl, whisk together the egg and water. Brush each cracker lightly with egg wash and sprinkle with salt.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Bake for about 15 minutes, until the crackers are crisp and brown on the bottom. Let them cool.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "While the crackers bake, break apart the cooled cheese mixture into chunks and pulse in the food processor for about 10 seconds, until smooth. Transfer the cheese mixture to a piping bag or a plastic bag and cut off the tip.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Pipe about 1/2 teaspoon of cheese filling between two crackers and sandwich together. Repeat with all crackers. Enjoy!";
+            after step_9;
+        }
+    }
+}

@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe ck_homemade_graham_crackers {
+    title "Homemade Graham Crackers";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-graham-crackers/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 140 min;
+    description "Learn how to make homemade graham crackers with simple ingredients and easy steps. Crisp, sweet, and infused with warm cinnamon flavor, this recipe tastes just like the store-bought versions you know and love - and might be even better!";
+
+    ingredient ingredient_1 measured by mass {
+        name "6 tablespoons unsalted butter, room temperature";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1/4 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1/3 cup brown sugar";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 egg";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 tablespoons honey";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1 1/2 cups Bob's Red Mill Whole Wheat Flour";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "3/4 cup Bob's Red Mill All Purpose Flour";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon baking soda";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 teaspoon cinnamon";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Using a hand mixer or stand mixer, cream the butter and both sugars for about 2 minutes or until light and fluffy.";
+        }
+        operation step_2 does prepare {
+            note "Add the egg, vanilla, and honey to the butter mixture, and mix until well combined.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "In a separate bowl, stir both flours, the baking soda, cinnamon, and salt until well combined.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the dry mixture to the bowl of wet ingredients, and beat on medium speed until the dough comes together.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Transfer to a clean surface and knead the dough with your hands for 1-2 minutes, until it comes together in a smooth ball.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Flatten the dough roughly into a rectangle, and wrap it tightly in plastic wrap. Then, transfer it to the fridge for at least one hour or up to overnight.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Preheat the oven to 350˚F and line two baking sheets with parchment paper.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Transfer the chilled dough to a lightly floured surface. Use a rolling pin to roll it out into a rectangle roughly 1/8-¼ inch thick, it should be about 16 x 10 inches. Then, use a pizza wheel, bench scraper, or knife to cut rectangles roughly 2 x 5 inches in size. Transfer the graham crackers to parchment paper-lined baking sheets, leaving about 2 inches between each piece.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Use a paring knife to score each graham cracker lengthwise and widthwise. Lengthwise is technically optional, but it creates an authentic look! Next, use a skewer or the tines of a fork to dock the dough (poke holes) in several places.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Transfer the graham crackers to the preheated oven. Bake for 9-11 minutes, until they’re lightly golden and set. Remove from the oven, let cool for 1 minute, then transfer to a wire cooling rack to cool completely.";
+            after step_9;
+        }
+    }
+}

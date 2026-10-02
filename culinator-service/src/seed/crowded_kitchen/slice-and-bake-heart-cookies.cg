@@ -1,0 +1,90 @@
+culinator 0.3;
+
+recipe ck_slice_and_bake_heart_cookies {
+    title "Slice and Bake Valentine's Day Cookies";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/slice-and-bake-heart-cookies/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 102 min;
+    description "Remember those slice and bake cookies from your childhood that came in a tube? These homemade slice and bake heart cookies are surprisingly easy to make, taste better than the original, and are free from preservatives and artificial coloring.";
+
+    ingredient ingredient_1 measured by mass {
+        name "3/4 cup unsalted butter, softened to room temperature";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 large eggs";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 1/2 cups all purpose flour";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "1 teaspoon baking powder";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "1/2 teaspoon salt";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "Red or pink food coloring (we used this natural food coloring)";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add butter, sugar and vanilla extract to a large mixing bowl (or stand mixer). Beat at medium speed until light and fluffy, about 3 minutes.";
+        }
+        operation step_2 does prepare {
+            note "Add in eggs one at a time, mixing just until combined.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "In a separate bowl, whisk together the flour, baking powder and salt.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Add the dry ingredients to the wet ingredients in 3-4 batches, until the dough comes together. If the dough is too wet, add in an additional 1-2 tbsp of flour as needed. (This can depend on the size of your eggs, etc.)";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Remove about 1/2-2/3 of the dough and set aside. Add several drops of food coloring to the remaining dough and mix until combined. Add more food coloring to reach desired hue.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Place the pink dough in the freezer for 5 minutes, then roll out into a rectangle about 1/2-inch thick on a lightly floured surface. Return to the freezer for 20 minutes. This will make it much easier to cut out the hearts without ruining their shape.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Use a small heart cookie cutter (roughly 1.5\" across) to cut out hearts. Dip a finger in a little bit of water and lightly rub on the floured side of the cookie before adhering another heart. This helps them stick together, but don’t overdo the water, you only need a tiny amount. Repeat with all hearts until you have a log about 10-inches long.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Return the log to the freezer for at least 30 minutes, or until frozen solid. Remove from freezer and press the plain cookie dough directly onto and around the hearts. Make sure to really press it in so you don’t end up with any gaps. Roll into a smooth log.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Wrap in plastic wrap and chill for at least 30 minutes.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Preheat oven to 350˚F and line 2 baking sheets with parchment paper.";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "When you’re ready to bake, slice the dough into 1/4” rounds, then space 2 inches apart on the baking sheets. Bake for ~12 minutes, or until the bottoms are light golden brown. Remove from the oven and let cool.";
+            after step_10;
+        }
+    }
+}

@@ -17,6 +17,21 @@ impl FormulaService {
         Self { repository }
     }
 
+    pub fn preview_batch(
+        &self,
+        request: &culinator_parser::BatchRequest,
+    ) -> culinator_parser::BatchPreview {
+        culinator_parser::plan_batch(request)
+    }
+
+    pub fn apply_batch(
+        &self,
+        request: &culinator_parser::BatchRequest,
+        fingerprint: &str,
+    ) -> Result<culinator_parser::BatchPreview, ApplicationError> {
+        culinator_parser::apply_batch(request, fingerprint).map_err(ApplicationError::InvalidInput)
+    }
+
     pub fn calculate(
         &self,
         formula: &Formula,

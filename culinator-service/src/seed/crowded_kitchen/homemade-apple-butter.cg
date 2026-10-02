@@ -1,0 +1,82 @@
+culinator 0.3;
+
+recipe ck_homemade_apple_butter {
+    title "Homemade Apple Butter";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-apple-butter/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 210 min;
+    description "Smooth, perfectly spiced homemade apple butter is perfect for spreading on toast, stirring into oatmeal or yogurt, or even marinating pork or chicken. This big batch apple butter recipe is freezer friendly, and makes enough that you can package some up for a DIY gift for friends and family! This recipe makes a large batch (4 cups of apple butter). You can easily divide the quantities in half if you don't think you will use that much.";
+
+    ingredient ingredient_1 measured by mass {
+        name "4 lbs (10-12) sweet apples, diced into 1-inch pieces (we use a mixture of fuji, gala, honeycrisp, and/or golden delicious)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 lbs (~5) tart apples, diced into 1-inch pieces (we use granny smith or cortland)";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2/3 cup 100% apple cider or juice";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1/2 cup pure maple syrup";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/3 cup light brown sugar, packed";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 tablespoons freshly squeezed lemon juice";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2 teaspoons ground cinnamon";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "3/4 teaspoon ground nutmeg";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/2 teaspoon ground cloves";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1/4 teaspoon allspice";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1/4 teaspoon kosher salt";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Add the diced apples to a large, heavy bottomed pot (we used a 7 qt. dutch oven). Add in the apple cider, maple syrup, brown sugar, lemon juice, vanilla, cinnamon, nutmeg, cloves, allspice and salt. Stir well until the apples are evenly coated.";
+        }
+        operation step_2 does prepare {
+            note "Bring to a simmer over medium heat. Cover and cook over medium-low for 75 minutes, stirring every 15-20 minutes, until the apples are very soft.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Remove from heat and use an immersion blender to puree until completely smooth (be careful of hot splashes!). If you don't have an immersion blender, you can use a regular heat safe blender, but you'll have to do it in two batches.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Once the apples are blended, return to low heat and cover half of the pot with a lid (you'll need to let steam out, but this prevents it from splattering all over your stove). Continue to cook, stirring every 15 minutes or so to prevent burning on the bottom, for 2-3 more hours. The larger the diameter of your pot, the faster it will cook. When the apple butter is done, it should be a deep brown color and should have a thick, spreadable, jammy consistency.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Let it cool completely before transferring to jars or an airtight container. It will keep in the refrigerator for 2-3 weeks, or the freezer for 6 months.";
+            after step_4;
+        }
+    }
+}

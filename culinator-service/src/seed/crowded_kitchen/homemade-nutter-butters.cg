@@ -1,0 +1,102 @@
+culinator 0.3;
+
+recipe ck_homemade_nutter_butters {
+    title "Homemade Nutter Butters";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-nutter-butters/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 135 min;
+    description "A homemade version of your favorite Nutter Butters with two crisp peanut butter cookies sandwiching a delicious, easy peanut butter cream filling! These are easy to make (no special molds needed) and truly taste SO much better than store-bought.";
+
+    ingredient ingredient_1 measured by mass {
+        name "1 cup unsalted butter (melted)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "1 cup granulated sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "1 cup natural creamy peanut butter* (no sugar added, just peanuts and salt)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "2 large eggs";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "2 teaspoons vanilla extract";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "2 cups all-purpose flour";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "2 tablespoons cornstarch";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "1 teaspoon baking soda";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 teaspoon baking powder";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/2 cup natural creamy peanut butter (no sugar added, just peanuts and salt)";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 cup powdered sugar";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "4 - 5 tablespoons milk of choice";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "1 teaspoon vanilla extract";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Make the cookies:: In a large mixing bowl, mix together the melted butter, sugar and peanut butter using an electric mixer until smooth and completely incorporated. Add in the eggs and vanilla extract one at a time, mixing well between each addition.";
+        }
+        operation step_2 does prepare {
+            note "In a separate bowl, whisk together the flour, cornstarch, baking soda and baking powder. Add the dry ingredients to the wet ingredients and mix just until there are no dry streaks remaining. The dough should be thick.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Cover and refrigerate the dough for at least one hour.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Preheat the oven to 325˚F and line two baking sheets with parchment paper.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Scoop the dough out in one teaspoon-sized portions. Roll each portion into a ball, then place two balls next to each other (touching) on the baking sheet, spacing them about 1 1/2 inches apart. (It's quickest to scoop all of the dough first, then roll into balls after.)";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Using the tines of a fork, press down widthwise and then lengthwise to create a criss cross pattern and to flatten out the dough.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Bake for 13-15 minutes, until the bottoms are deep golden brown. Remove from the oven and let cool for a few minutes, then transfer the cookies to a cooling rack to cool completely before filling.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Make the filling:: Add the peanut butter, powdered sugar, 4 tablespoons of milk and vanilla to a mixing bowl and mix until smooth and completely incorporated. If it's too thick to pipe, add an additional 1 tbsp of milk.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Transfer the mixture to a piping bag (or just any regular plastic bag and cut off the corner to pipe). Flip over a cookie so the flat bottom is facing up. Pipe a ~1/2 teaspoon dollop on each side of the cookie. Place another cookie on top to create a sandwich. Repeat and enjoy!";
+            after step_8;
+        }
+    }
+}

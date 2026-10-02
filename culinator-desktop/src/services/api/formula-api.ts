@@ -6,6 +6,8 @@
  * calculator no longer uses them as the editor source of truth.
  */
 import type {
+  BatchPreview,
+  BatchRequest,
   DoughTempRequest,
   DoughTempResponse,
   Formula,
@@ -16,6 +18,22 @@ import type {
   PrefermentBuildRequest,
 } from "../../domain/types";
 import { hasConfiguredService, serviceRequest, serviceRpc } from "../transport/websocket-client";
+import { batchApplyWasm, batchPreviewWasm } from "../wasm/parser";
+
+export async function previewFormulaBatch(request: BatchRequest): Promise<BatchPreview> {
+  if (hasConfiguredService())
+    return serviceRpc("formulas.batchPreview", request as unknown as Record<string, unknown>);
+  return batchPreviewWasm(request);
+}
+
+export async function applyFormulaBatch(
+  request: BatchRequest,
+  sourceFingerprint: string,
+): Promise<BatchPreview> {
+  if (hasConfiguredService())
+    return serviceRpc("formulas.batchApply", { batch: request, sourceFingerprint });
+  return batchApplyWasm(request, sourceFingerprint);
+}
 
 const formulaKey = "culinator.demo.formulas";
 function stored(): Formula[] {

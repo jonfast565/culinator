@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe ck_kale_broccoli_salad {
+    title "Kale and Broccoli Salad";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/kale-broccoli-salad/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 30 min;
+    description "This Kale Broccoli Salad is packed with crunchy vegetables (similar to the bagged ones you can find at the grocery store - but made even better!). It's topped with cranberries, almonds, and parmesan, as well as a homemade poppy seed dressing for the best sweet and tangy bite! Make it in under 30 minutes for a quick and easy side dish. With 8 hearty servings, this veggie-packed salad can be great for holiday gatherings, quick dinners, or make-ahead meal prep.";
+
+    ingredient ingredient_1 measured by mass {
+        name "3 packed cups kale, finely chopped (1 large bunch)";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "3 cups broccoli florets, finely chopped (1 head), save the stalks";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "½ pound brussels sprouts, shredded";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "½ small head radicchio, shredded";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "⅔ cup dried cranberries";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "⅔ cup toasted slivered almonds, toasted";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "½ cup shredded parmesan cheese";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "¼ cup mayonnaise";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "¼ cup Greek yogurt";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1 tablespoon apple cider vinegar";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1 tablespoon honey";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "1 tablespoon orange juice";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "2 tablespoons lemon juice";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "1 teaspoon kosher salt";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "¼ teaspoon black pepper";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "½ teaspoon onion powder";
+    }
+
+    ingredient ingredient_17 measured by mass {
+        name "1 tablespoon poppy seeds";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Finely chop the kale and the florets parts of the broccoli. Reserve the stems.";
+        }
+        operation step_2 does prepare {
+            note "Use a food processor fitted with a shredding attachment to shred the broccoli stalks, brussels sprouts, and radicchio.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Make the dressing: In a small bowl, combine all dressing ingredients and whisk to combine.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Assemble the salad: In a large bowl, toss together shredded kale, broccoli, brussels sprouts, radicchio, cranberries, and almonds. Drizzle with dressing, and toss until evenly coated. Top with parmesan cheese.";
+            after step_3;
+        }
+    }
+}

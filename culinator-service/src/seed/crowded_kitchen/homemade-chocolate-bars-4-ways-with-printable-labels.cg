@@ -1,0 +1,234 @@
+culinator 0.3;
+
+recipe ck_homemade_chocolate_bars_4_ways_with_printable_labels {
+    title "Homemade Chocolate Bars (4 Ways)";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-chocolate-bars-4-ways-with-printable-labels/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 45 min;
+    description "These beautiful homemade chocolate bars are easy to make and are a great DIY gift for the holidays (or any occasion!). We made four flavors: Oreo & Candy Cane, Peanut Butter Banana, Candied Lemon & Coconut and Strawberry Ice Cream Sundae, but the options are endless. Download our free, printable labels below!";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 oz ruby chocolate";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "2 oz white chocolate";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "candy canes (crushed)";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "Oreos (crushed)";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "3.5 oz bar white chocolate";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "candied lemon peel (finely chopped)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "shredded coconut";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "3.5 oz bar milk chocolate";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "banana chips (lightly crushed)";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "peanut butter";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "peanuts (chopped)";
+    }
+
+    ingredient ingredient_12 measured by mass {
+        name "flakey sea salt";
+    }
+
+    ingredient ingredient_13 measured by mass {
+        name "3.5 oz bar dark chocolate";
+    }
+
+    ingredient ingredient_14 measured by mass {
+        name "waffle cones (crushed)";
+    }
+
+    ingredient ingredient_15 measured by mass {
+        name "freeze dried strawberries (lightly crushed)";
+    }
+
+    ingredient ingredient_16 measured by mass {
+        name "sprinkles";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "Guide for Tempering Chocolate (you can skip tempering, but keep in mind that your chocolate will not have that characteristic snap of a chocolate bar, and it will be soft):: In a double boiler fitted with a candy thermometer, melt 2/3 of your chocolate to the \"Melt To\" temp listed in the table below, stirring constantly.";
+        }
+        operation step_2 does prepare {
+            note "Add the reserved 1/3 of the unmelted chocolate to the melted mixture and stir, cooling the chocolate to the \"Cool To\" temp listed in the table below.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "Continue stirring over low heat, warming the chocolate to the \"Working Temp\" listed in the table below.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Tempering Temperatures by Chocolate Type";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Chocolate";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Melt To";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Cool To";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Working Temp";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Dark";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "45–50°C / 113–122°F";
+            after step_9;
+        }
+        operation step_11 does prepare {
+            note "27–28°C / 80–82°F";
+            after step_10;
+        }
+        operation step_12 does prepare {
+            note "31–32°C / 88–90°F";
+            after step_11;
+        }
+        operation step_13 does prepare {
+            note "Milk";
+            after step_12;
+        }
+        operation step_14 does prepare {
+            note "40–45°C / 104–113°F";
+            after step_13;
+        }
+        operation step_15 does prepare {
+            note "26–27°C / 78–80°F";
+            after step_14;
+        }
+        operation step_16 does prepare {
+            note "29–30°C / 84–86°F";
+            after step_15;
+        }
+        operation step_17 does prepare {
+            note "White";
+            after step_16;
+        }
+        operation step_18 does prepare {
+            note "40–45°C / 104–113°F";
+            after step_17;
+        }
+        operation step_19 does prepare {
+            note "25–26°C / 77–79°F";
+            after step_18;
+        }
+        operation step_20 does prepare {
+            note "28–29°C / 82–84°F";
+            after step_19;
+        }
+        operation step_21 does prepare {
+            note "Ruby";
+            after step_20;
+        }
+        operation step_22 does prepare {
+            note "40–45°C / 104–113°F";
+            after step_21;
+        }
+        operation step_23 does prepare {
+            note "25–26°C / 77–79°F";
+            after step_22;
+        }
+        operation step_24 does prepare {
+            note "28–29°C / 82–84°F";
+            after step_23;
+        }
+        operation step_25 does prepare {
+            note "Ruby and White Chocolate Bar with Peppermint and Oreos: Optional: temper your chocolate.";
+            after step_24;
+        }
+        operation step_26 does prepare {
+            note "Arrange your mold on a clean baking sheet for easy transport. Spoon the melted ruby chocolate into a piping bag or Ziplock. Repeat with white chocolate. Snip the corners of the bags to make a small hole.";
+            after step_25;
+        }
+        operation step_27 does prepare {
+            note "Pipe a line of ruby chocolate into the mold, repeat with white chocolate. Continue to fill the mold, making a stripe pattern. Lift up the cookie sheet and gently tap it to the countertop to help remove any bubbles and level out the chocolate in the mold.";
+            after step_26;
+        }
+        operation step_28 does prepare {
+            note "Sprinkle your bar with toppings. Let set completely before removing from molds.";
+            after step_27;
+        }
+        operation step_29 does prepare {
+            note "White Chocolate Bar with Candied Lemon and Coconut: Optional: temper your chocolate.";
+            after step_28;
+        }
+        operation step_30 does prepare {
+            note "Arrange your mold on a clean cookie sheet for easy transport. Pour the melted chocolate into mold. Lift up the cookie sheet and gently tap it to the countertop to help remove any bubbles and level out the chocolate in the mold.";
+            after step_29;
+        }
+        operation step_31 does prepare {
+            note "Sprinkle your bar with toppings. Let set completely before removing from molds.";
+            after step_30;
+        }
+        operation step_32 does prepare {
+            note "Milk Chocolate Bar with Banana Chips, Peanut Butter and Peanuts: Optional: temper your chocolate.";
+            after step_31;
+        }
+        operation step_33 does prepare {
+            note "Arrange your mold on a clean cookie sheet for easy transport. Pour the melted chocolate into mold. Lift up the cookie sheet and gently tap it to the countertop to help remove any bubbles and level out the chocolate in the mold.";
+            after step_32;
+        }
+        operation step_34 does prepare {
+            note "Spoon some peanut butter into into a piping bag or Ziplock. Snip the corner of the bag to make a very small hole.";
+            after step_33;
+        }
+        operation step_35 does prepare {
+            note "Pipe the peanut butter into thin lines, and use a toothpick to drag through the bar, making a feathered pattern. Sprinkle your bar with toppings.";
+            after step_34;
+        }
+        operation step_36 does prepare {
+            note "Let set completely before removing from molds.";
+            after step_35;
+        }
+        operation step_37 does prepare {
+            note "Dark Chocolate Bar with Waffle Cones, Strawberries and Sprinkles: Optional: temper your chocolate.";
+            after step_36;
+        }
+        operation step_38 does prepare {
+            note "Arrange your mold on a clean cookie sheet for easy transport. Pour the melted chocolate into mold. Lift up the cookie sheet and gently tap it to the countertop to help remove any bubbles and level out the chocolate in the mold.";
+            after step_37;
+        }
+        operation step_39 does prepare {
+            note "Sprinkle your bar with toppings. Let set completely before removing from molds.";
+            after step_38;
+        }
+    }
+}

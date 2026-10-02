@@ -1,0 +1,98 @@
+culinator 0.3;
+
+recipe ck_homemade_strawberry_pop_tarts {
+    title "Homemade Strawberry Pop Tarts";
+    section "Better Than Store Bought";
+    source "Crowded Kitchen";
+    publisher "Crowded Kitchen";
+    source_url "https://www.crowdedkitchen.com/homemade-strawberry-pop-tarts/";
+    attribution "Recipe by Crowded Kitchen. See source URL for the original and updates.";
+    total_time 180 min;
+    description "These homemade strawberry pop tarts are SO much better than store bought. They're made with a real fruit filling and have a delicious buttery and crispy crust.";
+
+    ingredient ingredient_1 measured by mass {
+        name "2 1/2 cups all-purpose flour*";
+    }
+
+    ingredient ingredient_2 measured by mass {
+        name "4 teaspoons sugar";
+    }
+
+    ingredient ingredient_3 measured by mass {
+        name "2 teaspoons kosher salt";
+    }
+
+    ingredient ingredient_4 measured by mass {
+        name "1 cup unsalted butter (2 sticks), chilled and cubed";
+    }
+
+    ingredient ingredient_5 measured by mass {
+        name "1/2 cup cold water";
+    }
+
+    ingredient ingredient_6 measured by mass {
+        name "16 0z (~450g) strawberries (fresh or frozen – thaw if frozen)";
+    }
+
+    ingredient ingredient_7 measured by mass {
+        name "3 tablespoons honey";
+    }
+
+    ingredient ingredient_8 measured by mass {
+        name "2 teaspoons lemon juice";
+    }
+
+    ingredient ingredient_9 measured by mass {
+        name "1 egg yolk";
+    }
+
+    ingredient ingredient_10 measured by mass {
+        name "1/2-1 cup powdered sugar";
+    }
+
+    ingredient ingredient_11 measured by mass {
+        name "1-2 tbsp milk";
+    }
+
+    process preparation {
+        operation step_1 does prepare {
+            note "In a food processor, pulse together flour, salt, sugar, and butter a few times, until the butter pieces are about the size of peas. Stream in the water, pulsing as you go.";
+        }
+        operation step_2 does prepare {
+            note "Move the dough to a bowl or lightly floured surface and gently knead into a ball – be careful not to overwork the dough. Wrap in plastic wrap and shape it into a rectangle that's about 1/2\" thick. Place the dough in the refrigerator to chill for 2 hours.";
+            after step_1;
+        }
+        operation step_3 does prepare {
+            note "While the dough chills, blend your strawberries, honey, and lemon and strain through a fine mesh sieve directly into a saucepan to remove the seeds.";
+            after step_2;
+        }
+        operation step_4 does prepare {
+            note "Cook over medium heat for 20-25 minutes, until the strawberry mixture is reduced to the point where you can scrape the bottom of the pan and the jam takes a little while to run back together again. Move to a bowl to cool.";
+            after step_3;
+        }
+        operation step_5 does prepare {
+            note "Preheat oven to 300˚F and line a sheet pan with parchment paper.";
+            after step_4;
+        }
+        operation step_6 does prepare {
+            note "Divide your dough in half and roll into a roughly 14 x 14\" square on a floured surface. You should just barely be able to see the lines of your silpat or work surface through your dough, which should be about 1/8\" thick. Make sure your surface is well floured, and sprinkle some flour on the dough before rolling.";
+            after step_5;
+        }
+        operation step_7 does prepare {
+            note "Cut the dough into roughly 3.5 x 4.75\" rectangles. You'll need to two for each pop tart. Combine your scrap dough and roll out again to minimize waste.";
+            after step_6;
+        }
+        operation step_8 does prepare {
+            note "Spoon about a tablespoon of filling into each pop tart, then spread into a thin layer, leaving about 1/3\" around the border. Beat an egg yolk and brush around the border of the jam. Dock the tops of your pop tarts with a skewer or a fork, then place over the bottom, and press down and then crimp the sides.";
+            after step_7;
+        }
+        operation step_9 does prepare {
+            note "Bake for 30-35 minutes. They should be very lightly browned when you take them out, and the bottoms browned slightly.";
+            after step_8;
+        }
+        operation step_10 does prepare {
+            note "Whisk together powdered sugar and milk until a thick glaze forms. Let pop tarts cool, then spread ~1 tbsp glaze on each pop tart and top with sprinkles.";
+            after step_9;
+        }
+    }
+}
